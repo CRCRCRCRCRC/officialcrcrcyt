@@ -43,7 +43,29 @@ npm run build
 └── docs/             # 文檔
 ```
 
-## 聯絡資訊
+## 部署
 
-- YouTube: https://youtube.com/@officialcrcrcyt
-- Discord: https://discord.gg/FyrNaF6Nbj
+### Vercel 部署
+
+本項目已配置為可直接部署到 Vercel：
+
+1. Fork 此倉庫到你的 GitHub
+2. 在 [Vercel](https://vercel.com) 導入項目
+3. 配置環境變數（參考 `.env.example`）
+4. 部署完成！
+
+詳細部署指南請參考 [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+### 環境變數
+
+生產環境需要配置以下環境變數：
+- `JWT_SECRET`: JWT 密鑰
+- `ADMIN_USERNAME`: 管理員用戶名
+- `ADMIN_PASSWORD`: 管理員密碼
+- `FRONTEND_URL`: 前端域名
+
+## 聯繫方式
+
+- 📧 Email: contact@crcrc.com
+- 🌐 Website: https://crcrc.com
+- 📱 Discord: CRCRC Community

@@ -1,0 +1,20 @@
+{
+  "name": "crcrc-official-website",
+  "version": "1.0.0",
+  "description": "CRCRC 官方網站 - YouTube 頻道官網",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
+    "vercel-build": "cd frontend && npm install && npm run build"
+  },
+  "keywords": ["youtube", "website", "crcrc", "music", "空耳"],
+  "author": "CRCRC",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
