@@ -20,13 +20,17 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       if (token) {
         try {
+          console.log('🔍 驗證 token:', token.substring(0, 20) + '...')
           const response = await authAPI.verify()
+          console.log('✅ Token 驗證成功:', response.data.user)
           setUser(response.data.user)
         } catch (error) {
-          console.error('Token 驗證失敗:', error)
+          console.error('❌ Token 驗證失敗:', error)
           localStorage.removeItem('token')
           setToken(null)
         }
+      } else {
+        console.log('ℹ️  沒有 token，跳過驗證')
       }
       setLoading(false)
     }

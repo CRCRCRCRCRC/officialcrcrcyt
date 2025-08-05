@@ -25,8 +25,11 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      window.location.href = '/admin/login'
+      // 只有在不是登入頁面時才自動跳轉
+      if (!window.location.pathname.includes('/admin/login')) {
+        localStorage.removeItem('token')
+        window.location.href = '/admin/login'
+      }
     }
     return Promise.reject(error)
   }

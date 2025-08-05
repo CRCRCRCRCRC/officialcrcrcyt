@@ -35,8 +35,8 @@ const Login = () => {
       const success = await login(formData.username, formData.password)
       if (success) {
         toast.success('登入成功！')
-        // 強制重新渲染以觸發 Navigate 組件
-        window.location.href = '/admin/dashboard'
+        // 登入成功後，AuthContext 會自動更新 isAuthenticated
+        // Navigate 組件會自動處理重定向
       }
     } catch (error) {
       console.error('登入失敗:', error)

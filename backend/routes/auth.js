@@ -24,20 +24,30 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: '用戶名或密碼錯誤' });
     }
 
-    // 生成 JWT token
+    // 從資料庫獲取用戶資訊
+    const user = await database.getUserByUsername(ADMIN_USERNAME);
+    console.log('🔍 資料庫查詢用戶:', user ? `找到用戶 ID: ${user.id}` : '用戶不存在');
+
+    if (!user) {
+      console.error('❌ 登入失敗：用戶不存在');
+      return res.status(401).json({ error: '用戶不存在' });
+    }
+
+    // 生成 JWT token，使用真實的用戶 ID
     const token = jwt.sign(
-      { userId: 1, username: ADMIN_USERNAME, role: 'admin' },
+      { userId: user.id, username: user.username, role: user.role },
       process.env.JWT_SECRET || 'default-jwt-secret',
       { expiresIn: '24h' }
     );
+    console.log('✅ JWT token 生成成功，用戶 ID:', user.id);
 
     res.json({
       message: '登入成功',
       token,
       user: {
-        id: 1,
-        username: ADMIN_USERNAME,
-        role: 'admin'
+        id: user.id,
+        username: user.username,
+        role: user.role
       }
     });
   } catch (error) {

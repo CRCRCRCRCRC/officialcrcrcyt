@@ -10,7 +10,42 @@
 
 ## ✅ 已修復的問題
 
-### 1. 修復資料庫查詢方法
+### 1. 修復 JWT Token 用戶 ID 問題 (關鍵修復)
+
+**問題**: 登入時硬編碼 `userId: 1`，但資料庫中實際用戶 ID 可能不是 1
+**文件**: `backend/routes/auth.js`
+**修復**:
+- 從資料庫獲取真實的用戶資訊
+- 使用真實的用戶 ID 生成 JWT token
+
+```javascript
+// 修復前
+const token = jwt.sign(
+  { userId: 1, username: ADMIN_USERNAME, role: 'admin' },
+  // ...
+);
+
+// 修復後
+const user = await database.getUserByUsername(ADMIN_USERNAME);
+const token = jwt.sign(
+  { userId: user.id, username: user.username, role: user.role },
+  // ...
+);
+```
+
+### 2. 修復前端 API 攔截器無限循環
+
+**問題**: 401 錯誤時自動跳轉到登入頁面，造成無限循環
+**文件**: `frontend/src/services/api.js`
+**修復**: 只有在非登入頁面時才自動跳轉
+
+### 3. 優化登入成功後的重定向
+
+**問題**: 使用 `window.location.href` 強制跳轉可能導致狀態不一致
+**文件**: `frontend/src/pages/admin/Login.jsx`
+**修復**: 依賴 React Router 的 Navigate 組件自動處理重定向
+
+### 4. 修復資料庫查詢方法
 
 **文件**: `backend/routes/auth.js`
 - 將 `database.query()` 改為 `database.getUserById()`
