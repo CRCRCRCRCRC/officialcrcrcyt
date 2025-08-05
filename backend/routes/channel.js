@@ -1,30 +1,15 @@
 const express = require('express');
 const database = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const youtubeService = require('../services/youtube');
 
 const router = express.Router();
 
 // 獲取頻道資訊（公開）
 router.get('/info', async (req, res) => {
   try {
-    const channelInfo = await database.query(
-      'SELECT * FROM channel_info ORDER BY id DESC LIMIT 1'
-    );
-
-    if (channelInfo.length === 0) {
-      // 返回默認頻道資訊
-      return res.json({
-        channel_name: 'CRCRC',
-        description: '專業製作空耳音樂影片的 YouTube 頻道',
-        youtube_url: 'https://youtube.com/@officialcrcrcyt',
-        discord_url: 'https://discord.gg/FyrNaF6Nbj',
-        minecraft_discord_url: 'https://discord.gg/9jBCTheX3Y',
-        subscriber_count: 0,
-        total_views: 0
-      });
-    }
-
-    res.json(channelInfo[0]);
+    const stats = await youtubeService.getChannelStats();
+    res.json(stats);
   } catch (error) {
     console.error('獲取頻道資訊錯誤:', error);
     res.status(500).json({ error: '服務器內部錯誤' });
@@ -34,34 +19,14 @@ router.get('/info', async (req, res) => {
 // 獲取網站統計數據（公開）
 router.get('/stats', async (req, res) => {
   try {
-    // 獲取影片總數
-    const videoCountResult = await database.query(
-      'SELECT COUNT(*) as total FROM videos'
-    );
-    const videoCount = videoCountResult[0].total;
-
-    // 獲取總觀看次數
-    const viewCountResult = await database.query(
-      'SELECT SUM(view_count) as total FROM videos'
-    );
-    const totalViews = viewCountResult[0].total || 0;
-
-    // 獲取精選影片數量
-    const featuredCountResult = await database.query(
-      'SELECT COUNT(*) as total FROM videos WHERE is_featured = 1'
-    );
-    const featuredCount = featuredCountResult[0].total;
-
-    // 獲取最新影片
-    const latestVideos = await database.query(
-      'SELECT * FROM videos ORDER BY published_at DESC LIMIT 3'
-    );
+    const stats = await youtubeService.getChannelStats();
+    const videos = await youtubeService.getChannelVideos(3);
 
     res.json({
-      videoCount,
-      totalViews,
-      featuredCount,
-      latestVideos
+      videoCount: stats.videoCount,
+      totalViews: stats.viewCount,
+      subscriberCount: stats.subscriberCount,
+      latestVideos: videos,
     });
   } catch (error) {
     console.error('獲取統計數據錯誤:', error);
