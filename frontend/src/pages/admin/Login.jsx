@@ -37,13 +37,19 @@ const Login = () => {
       // 登入成功後，Navigate 組件會自動重定向
     } catch (error) {
       console.error('登入失敗:', error)
-      // 處理登入錯誤
+      // 處理登入錯誤，確保錯誤訊息是字符串
       let errorMessage = '登入時發生未知錯誤';
-      if (error.response && error.response.data && error.response.data.error) {
-        errorMessage = error.response.data.error;
+      
+      if (error.response?.data?.error) {
+        errorMessage = String(error.response.data.error);
       } else if (error.message) {
-        errorMessage = error.message;
+        errorMessage = String(error.message);
+      } else if (error.response?.status === 500) {
+        errorMessage = '服務器內部錯誤，請稍後再試';
+      } else if (error.response?.status === 401) {
+        errorMessage = '用戶名或密碼錯誤';
       }
+      
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false)
