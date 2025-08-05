@@ -10,7 +10,7 @@ const authenticateToken = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-jwt-secret');
     
     // 優先使用 KV 數據庫，如果失敗則回退到 SQLite
     let user = null;

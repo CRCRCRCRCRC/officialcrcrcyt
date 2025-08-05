@@ -176,16 +176,16 @@ class KVDatabase {
       if (users.length === 0) {
         console.log('📝 創建默認管理員用戶...');
         const bcrypt = require('bcryptjs');
-        const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
+        const hashedPassword = await bcrypt.hash('admin', 10);
         
         await this.createUser({
-          username: process.env.ADMIN_USERNAME || 'admin',
+          username: 'CRCRC',
           password: hashedPassword,
           role: 'admin',
           created_at: new Date().toISOString()
         });
         
-        console.log('✅ 默認管理員用戶創建成功');
+        console.log('✅ 默認管理員用戶創建成功 (用戶名: CRCRC, 密碼: admin)');
       }
 
       // 檢查是否已有頻道資訊

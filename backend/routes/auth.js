@@ -15,23 +15,19 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: '用戶名和密碼為必填項' });
     }
 
-    // 從資料庫查找用戶
-    const user = await database.getUserByUsername(username);
+    // 固定的管理員憑證
+    const ADMIN_USERNAME = 'CRCRC';
+    const ADMIN_PASSWORD = 'admin';
 
-    if (!user) {
-      return res.status(401).json({ error: '用戶名或密碼錯誤' });
-    }
-
-    // 驗證密碼
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
+    // 驗證固定憑證
+    if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
       return res.status(401).json({ error: '用戶名或密碼錯誤' });
     }
 
     // 生成 JWT token
     const token = jwt.sign(
-      { userId: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET,
+      { userId: 1, username: ADMIN_USERNAME, role: 'admin' },
+      process.env.JWT_SECRET || 'default-jwt-secret',
       { expiresIn: '24h' }
     );
 
@@ -39,9 +35,9 @@ router.post('/login', async (req, res) => {
       message: '登入成功',
       token,
       user: {
-        id: user.id,
-        username: user.username,
-        role: user.role
+        id: 1,
+        username: ADMIN_USERNAME,
+        role: 'admin'
       }
     });
   } catch (error) {
