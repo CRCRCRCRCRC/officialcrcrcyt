@@ -27,7 +27,10 @@ app.use(cors({
 // 速率限制
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 分鐘
-  max: 100 // 限制每個 IP 15 分鐘內最多 100 個請求
+  max: 100, // 限制每個 IP 15 分鐘內最多 100 個請求
+  standardHeaders: true, // 返回 rate limit 信息在 `RateLimit-*` headers
+  legacyHeaders: false, // 禁用 `X-RateLimit-*` headers
+  trustProxy: true // 信任代理
 });
 app.use(limiter);
 
@@ -48,19 +51,18 @@ app.get('/api/health', async (req, res) => {
   try {
     // 嘗試初始化資料庫
     await database.initializeData();
-    const dbType = process.env.UPSTASH_REDIS_REST_URL ? 'Upstash Redis' : 'Vercel KV';
-    res.json({ 
-      status: 'OK', 
+    res.json({
+      status: 'OK',
       timestamp: new Date().toISOString(),
-      database: `${dbType} Ready`
+      database: 'Neon PostgreSQL Ready'
     });
   } catch (error) {
     console.error('資料庫初始化失敗:', error);
-    res.json({ 
-      status: 'OK', 
+    res.json({
+      status: 'OK',
       timestamp: new Date().toISOString(),
-      database: 'SQLite Fallback',
-      warning: 'Database not available'
+      database: 'PostgreSQL Error',
+      warning: 'Database initialization failed'
     });
   }
 });

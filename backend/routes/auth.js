@@ -68,16 +68,11 @@ router.post('/change-password', authenticateToken, async (req, res) => {
     }
 
     // 獲取當前用戶
-    const users = await database.query(
-      'SELECT * FROM users WHERE id = ?',
-      [req.user.id]
-    );
+    const user = await database.getUserById(req.user.id);
 
-    if (users.length === 0) {
+    if (!user) {
       return res.status(404).json({ error: '用戶不存在' });
     }
-
-    const user = users[0];
 
     // 驗證當前密碼
     const isValidPassword = await bcrypt.compare(currentPassword, user.password);
@@ -89,8 +84,8 @@ router.post('/change-password', authenticateToken, async (req, res) => {
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
     // 更新密碼
-    await database.run(
-      'UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    await database.pool.query(
+      'UPDATE users SET password = $1 WHERE id = $2',
       [hashedNewPassword, req.user.id]
     );
 

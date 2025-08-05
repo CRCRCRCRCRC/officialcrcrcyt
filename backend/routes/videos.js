@@ -16,13 +16,15 @@ router.get('/', async (req, res) => {
       offset: offset
     });
 
-    // 獲取總數 - 使用 PostgreSQL 語法
-    let countQuery = 'SELECT COUNT(*) as total FROM videos';
+    // 獲取總數 - 使用資料庫類方法
+    let total;
     if (featured === 'true') {
-      countQuery += ' WHERE is_featured = true';
+      const countResult = await database.pool.query('SELECT COUNT(*) as total FROM videos WHERE is_featured = true');
+      total = parseInt(countResult.rows[0].total);
+    } else {
+      const countResult = await database.pool.query('SELECT COUNT(*) as total FROM videos');
+      total = parseInt(countResult.rows[0].total);
     }
-    const countResult = await database.pool.query(countQuery);
-    const total = parseInt(countResult.rows[0].total);
 
     res.json({
       videos,

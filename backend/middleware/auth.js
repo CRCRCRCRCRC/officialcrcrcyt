@@ -12,18 +12,8 @@ const authenticateToken = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-jwt-secret');
     
-    // 優先使用 KV 數據庫，如果失敗則回退到 SQLite
-    let user = null;
-    try {
-      user = await database.getUserById(decoded.userId);
-    } catch (kvError) {
-      console.log('KV 查詢失敗，回退到 SQLite:', kvError.message);
-      const users = await database.query(
-        'SELECT id, username, role FROM users WHERE id = ?',
-        [decoded.userId]
-      );
-      user = users.length > 0 ? users[0] : null;
-    }
+    // 使用 PostgreSQL 數據庫
+    const user = await database.getUserById(decoded.userId);
 
     if (!user) {
       return res.status(401).json({ error: '用戶不存在' });
