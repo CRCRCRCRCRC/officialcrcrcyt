@@ -44,11 +44,11 @@
   }
   
   .btn-secondary {
-    @apply btn bg-gradient-to-r from-secondary-100 to-secondary-200 text-secondary-900 hover:from-secondary-200 hover:to-secondary-300 focus:ring-secondary-500 shadow-soft;
+    @apply btn bg-gradient-to-r from-secondary-100 to-secondary-200 text-secondary-900 hover:from-secondary-200 hover:to-secondary-300 focus:ring-secondary-500 shadow-md;
   }
   
   .btn-outline {
-    @apply btn border-2 border-primary-200 bg-white/80 backdrop-blur-sm text-primary-700 hover:bg-primary-50 hover:border-primary-300 focus:ring-primary-500 shadow-soft;
+    @apply btn border-2 border-primary-200 bg-white/80 backdrop-blur-sm text-primary-700 hover:bg-primary-50 hover:border-primary-300 focus:ring-primary-500 shadow-md;
   }
   
   .btn-ghost {
@@ -69,19 +69,19 @@
   
   /* 卡片系統 */
   .card {
-    @apply bg-white/80 backdrop-blur-xl rounded-3xl shadow-soft border border-white/20 overflow-hidden transition-all duration-300 hover:shadow-medium hover:scale-[1.02];
+    @apply bg-white/80 backdrop-blur-xl rounded-3xl shadow-lg border border-white/20 overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02];
   }
   
   .card-glass {
-    @apply bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-large;
+    @apply bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl;
   }
   
   .card-gradient {
-    @apply bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-xl rounded-3xl border border-white/30 shadow-large;
+    @apply bg-gradient-to-br from-white/90 to-white/70 backdrop-blur-xl rounded-3xl border border-white/30 shadow-2xl;
   }
   
   .card-hover {
-    @apply transition-all duration-500 hover:shadow-large hover:-translate-y-2 hover:scale-[1.02];
+    @apply transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02];
   }
   
   /* 輸入框系統 */

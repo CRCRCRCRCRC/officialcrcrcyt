@@ -43,12 +43,10 @@ export const AuthProvider = ({ children }) => {
       setToken(newToken)
       setUser(userData)
       
-      return { success: true }
+      return true // 直接返回 true 表示成功
     } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || '登入失敗' 
-      }
+      console.error('登入錯誤:', error)
+      throw error // 拋出錯誤讓調用方處理
     }
   }
 

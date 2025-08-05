@@ -32,14 +32,13 @@ const Login = () => {
     setIsSubmitting(true)
 
     try {
-      const success = await login(formData.username, formData.password)
-      if (success) {
-        toast.success('登入成功！')
-      } else {
-        toast.error('用戶名或密碼錯誤')
-      }
+      await login(formData.username, formData.password)
+      toast.success('登入成功！')
+      // 登入成功後，Navigate 組件會自動重定向
     } catch (error) {
-      toast.error('登入失敗，請稍後再試')
+      console.error('登入失敗:', error)
+      const errorMessage = error.response?.data?.error || '用戶名或密碼錯誤'
+      toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
