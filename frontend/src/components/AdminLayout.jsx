@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  LayoutDashboard, 
-  Video, 
-  Settings, 
-  Users, 
+import {
+  LayoutDashboard,
+  Video,
+  Settings as SettingsIcon,
+  Users,
   BarChart3,
   LogOut,
   Menu,
@@ -46,10 +46,10 @@ const AdminLayout = () => {
       icon: Users,
       gradient: 'from-pink-500 to-red-600'
     },
-    { 
-      name: '系統設定', 
-      href: '/admin/settings', 
-      icon: Settings,
+    {
+      name: '系統設定',
+      href: '/admin/settings',
+      icon: SettingsIcon,
       gradient: 'from-green-500 to-teal-600'
     }
   ]
