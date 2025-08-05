@@ -7,7 +7,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const videoRoutes = require('./routes/videos');
 const channelRoutes = require('./routes/channel');
-const kvDatabase = require('./config/kv');
+const database = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -43,20 +43,21 @@ app.use('/api/channel', channelRoutes);
 // 健康檢查和初始化
 app.get('/api/health', async (req, res) => {
   try {
-    // 嘗試初始化 KV 數據庫
-    await kvDatabase.initializeData();
+    // 嘗試初始化資料庫
+    await database.initializeData();
+    const dbType = process.env.UPSTASH_REDIS_REST_URL ? 'Upstash Redis' : 'Vercel KV';
     res.json({ 
       status: 'OK', 
       timestamp: new Date().toISOString(),
-      database: 'KV Ready'
+      database: `${dbType} Ready`
     });
   } catch (error) {
-    console.error('KV 初始化失敗:', error);
+    console.error('資料庫初始化失敗:', error);
     res.json({ 
       status: 'OK', 
       timestamp: new Date().toISOString(),
       database: 'SQLite Fallback',
-      warning: 'KV database not available'
+      warning: 'Database not available'
     });
   }
 });

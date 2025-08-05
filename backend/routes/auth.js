@@ -2,7 +2,6 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const database = require('../config/database');
-const kvDatabase = require('../config/kv');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -19,7 +18,7 @@ router.post('/login', async (req, res) => {
     // 優先使用 KV 數據庫查找用戶
     let user = null;
     try {
-      user = await kvDatabase.getUserByUsername(username);
+      user = await database.getUserByUsername(username);
     } catch (kvError) {
       console.log('KV 查詢失敗，回退到 SQLite:', kvError.message);
       const users = await database.query(

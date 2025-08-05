@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
 const database = require('../config/database');
-const kvDatabase = require('../config/kv');
 
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -16,7 +15,7 @@ const authenticateToken = async (req, res, next) => {
     // 優先使用 KV 數據庫，如果失敗則回退到 SQLite
     let user = null;
     try {
-      user = await kvDatabase.getUserById(decoded.userId);
+      user = await database.getUserById(decoded.userId);
     } catch (kvError) {
       console.log('KV 查詢失敗，回退到 SQLite:', kvError.message);
       const users = await database.query(
