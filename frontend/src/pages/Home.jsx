@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 import { Play, Youtube, Users, Eye, Star, Sparkles, Music, Heart, TrendingUp, Award, Zap } from 'lucide-react'
 import { videoAPI, channelAPI } from '../services/api'
-import youtubeService from '../services/youtube'
+// import youtubeService from '../services/youtube' // 不再使用前端 YouTube 服務
 import LoadingSpinner from '../components/LoadingSpinner'
 
 const Home = () => {
@@ -31,60 +31,47 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 嘗試獲取真實的 YouTube 數據
-        try {
-          console.log('正在獲取 YouTube 數據...')
-          const [youtubeChannelInfo, youtubeVideos] = await Promise.all([
-            youtubeService.getChannelInfo(),
-            youtubeService.getPopularVideos('UCYourChannelIdHere', 6) // 請替換為實際頻道 ID
-          ])
+        console.log('正在從後端 API 獲取數據...')
+        
+        // 直接使用後端 API（已集成 YouTube API）
+        const [videosResponse, channelResponse, statsResponse] = await Promise.all([
+          videoAPI.getAll({ featured: true, limit: 6 }),
+          channelAPI.getInfo(),
+          channelAPI.getStats()
+        ])
 
-          if (youtubeChannelInfo) {
-            setChannelInfo({
-              name: youtubeChannelInfo.title,
-              description: youtubeChannelInfo.description,
-              subscriber_count: youtubeChannelInfo.subscriberCount,
-              video_count: youtubeChannelInfo.videoCount,
-              view_count: youtubeChannelInfo.viewCount,
-              avatar_url: youtubeChannelInfo.thumbnails?.high?.url,
-              banner_url: youtubeChannelInfo.bannerExternalUrl
-            })
-
-            setStats({
-              totalVideos: youtubeChannelInfo.videoCount,
-              totalViews: youtubeChannelInfo.viewCount,
-              totalSubscribers: youtubeChannelInfo.subscriberCount,
-              totalLikes: youtubeVideos.reduce((sum, video) => sum + (video.likeCount || 0), 0)
-            })
-          }
-
-          if (youtubeVideos && youtubeVideos.length > 0) {
-            const formattedVideos = youtubeVideos.map(video => ({
-              id: video.id,
-              title: video.title,
-              description: video.description,
-              youtube_id: video.id,
-              thumbnail_url: video.thumbnails?.high?.url || video.thumbnails?.medium?.url,
-              view_count: video.viewCount,
-              duration: youtubeService.formatDuration(video.duration),
-              published_at: video.publishedAt
-            }))
-            setFeaturedVideos(formattedVideos)
-          }
-        } catch (youtubeError) {
-          console.warn('YouTube API 獲取失敗，使用本地數據:', youtubeError)
-          
-          // 回退到本地 API
-          const [videosRes, channelRes, statsRes] = await Promise.all([
-            videoAPI.getAll({ featured: true, limit: 6 }),
-            channelAPI.getInfo(),
-            channelAPI.getStats()
-          ])
-
-          setFeaturedVideos(videosRes.data.videos || [])
-          setChannelInfo(channelRes.data || {})
-          setStats(statsRes.data || {})
+        // 設置影片數據
+        if (videosResponse.data?.videos) {
+          setFeaturedVideos(videosResponse.data.videos)
         }
+
+        // 設置頻道資訊
+        if (channelResponse.data) {
+          setChannelInfo({
+            name: channelResponse.data.title || 'CRCRC',
+            description: channelResponse.data.description || '專業製作空耳音樂影片的 YouTube 頻道',
+            subscriber_count: parseInt(channelResponse.data.subscriberCount) || 0,
+            video_count: parseInt(channelResponse.data.videoCount) || 0,
+            view_count: parseInt(channelResponse.data.viewCount) || 0
+          })
+        }
+
+        // 設置統計數據
+        if (statsResponse.data) {
+          setStats({
+            totalVideos: parseInt(statsResponse.data.videoCount) || 0,
+            totalViews: parseInt(statsResponse.data.totalViews) || 0,
+            totalSubscribers: parseInt(statsResponse.data.subscriberCount) || 0,
+            totalLikes: 0 // 暫時設為 0，可以後續從影片數據計算
+          })
+        }
+
+        console.log('數據獲取成功:', {
+          videos: videosResponse.data?.videos?.length || 0,
+          channelInfo: channelResponse.data,
+          stats: statsResponse.data
+        })
+
       } catch (error) {
         console.error('獲取首頁數據失敗:', error)
         // 設置默認數據
@@ -291,7 +278,7 @@ const Home = () => {
             {[
               {
                 icon: Play,
-                value: (stats.totalVideos || stats.videoCount || 0).toLocaleString(),
+                value: (stats.totalVideos || 0).toLocaleString(),
                 label: "精彩影片",
                 color: "from-blue-500 to-cyan-500",
                 bgColor: "from-blue-50 to-cyan-50",
@@ -299,7 +286,7 @@ const Home = () => {
               },
               {
                 icon: Eye,
-                value: formatNumber(stats.totalViews || stats.view_count || 0),
+                value: formatNumber(stats.totalViews || 0),
                 label: "總觀看次數",
                 color: "from-purple-500 to-pink-500",
                 bgColor: "from-purple-50 to-pink-50",
@@ -307,7 +294,7 @@ const Home = () => {
               },
               {
                 icon: Users,
-                value: formatNumber(stats.totalSubscribers || stats.subscriber_count || 0),
+                value: formatNumber(stats.totalSubscribers || 0),
                 label: "訂閱人數",
                 color: "from-green-500 to-emerald-500",
                 bgColor: "from-green-50 to-emerald-50",
