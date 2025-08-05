@@ -256,7 +256,6 @@ const Home = () => {
                   to="/videos"
                   className="btn-large btn-ghost group"
                 >
-                  <Play className="w-6 h-6 mr-3 group-hover:animate-pulse" />
                   <span className="text-lg font-bold">觀看影片</span>
                 </Link>
               </motion.div>
@@ -518,9 +517,7 @@ const Home = () => {
                 to="/videos"
                 className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500 text-white font-bold text-lg rounded-2xl hover:from-primary-600 hover:via-purple-600 hover:to-pink-600 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 group"
               >
-                <Play className="w-6 h-6 mr-3 group-hover:animate-pulse" />
                 <span>查看所有影片</span>
-                <Sparkles className="w-5 h-5 ml-3 group-hover:animate-bounce" />
               </Link>
             </motion.div>
           </motion.div>
