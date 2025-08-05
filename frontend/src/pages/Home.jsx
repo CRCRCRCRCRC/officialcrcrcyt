@@ -83,10 +83,9 @@ const Home = () => {
           view_count: 1000000
         })
         setStats({
-          totalVideos: 100,
-          totalViews: 1000000,
-          totalSubscribers: 10000,
-          totalLikes: 0
+          totalVideos: 0,
+          totalViews: 0,
+          totalSubscribers: 0
         })
         setFeaturedVideos([])
       } finally {
@@ -278,7 +277,7 @@ const Home = () => {
             {[
               {
                 icon: Play,
-                value: stats.totalVideos > 0 ? `${stats.totalVideos}+` : "100+",
+                value: stats.totalVideos > 0 ? stats.totalVideos.toString() : "0",
                 label: "精選作品",
                 color: "from-blue-500 to-cyan-500",
                 bgColor: "from-blue-50 to-cyan-50",
@@ -294,19 +293,11 @@ const Home = () => {
               },
               {
                 icon: Users,
-                value: stats.totalSubscribers > 0 ? `${formatNumber(stats.totalSubscribers)}+` : "10,000+",
+                value: stats.totalSubscribers > 0 ? formatNumber(stats.totalSubscribers) : "0",
                 label: "訂閱者",
                 color: "from-green-500 to-emerald-500",
                 bgColor: "from-green-50 to-emerald-50",
                 delay: 0.6
-              },
-              {
-                icon: Star,
-                value: formatNumber(stats.totalLikes || 0),
-                label: "總讚數",
-                color: "from-yellow-500 to-orange-500",
-                bgColor: "from-yellow-50 to-orange-50",
-                delay: 0.8
               }
             ].map((stat, index) => (
               <motion.div
