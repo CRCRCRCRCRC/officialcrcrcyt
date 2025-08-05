@@ -234,19 +234,15 @@ const Home = () => {
               animate={heroInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 1, delay: 0.9 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-6"
-            >
-              <motion.a
+請你一直使用繁體中中            >
+              <a
                 href="https://youtube.com/@officialcrcrcyt"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-large bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-glow-lg group"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="btn-large bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-glow-lg"
               >
-                <Youtube className="w-6 h-6 mr-3 group-hover:animate-bounce" />
                 <span className="text-lg font-bold">訂閱頻道</span>
-                <Zap className="w-5 h-5 ml-2 text-yellow-300" />
-              </motion.a>
+              </a>
               
               <motion.div
                 whileHover={{ scale: 1.05 }}
@@ -254,7 +250,7 @@ const Home = () => {
               >
                 <Link
                   to="/videos"
-                  className="btn-large btn-ghost group"
+                  className="btn-large btn-ghost"
                 >
                   <span className="text-lg font-bold">觀看影片</span>
                 </Link>
