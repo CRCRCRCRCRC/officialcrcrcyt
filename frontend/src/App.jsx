@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import Layout from './components/Layout'
+import AdminLayout from './components/AdminLayout'
 import Home from './pages/Home'
 import Videos from './pages/Videos'
 import VideoDetail from './pages/VideoDetail'
@@ -33,29 +34,15 @@ function App() {
         {/* 管理員後台 */}
         <Route path="/admin" element={
           <ProtectedRoute>
-            <AdminDashboard />
+            <AdminLayout />
           </ProtectedRoute>
-        } />
-        <Route path="/admin/dashboard" element={
-          <ProtectedRoute>
-            <AdminDashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/videos" element={
-          <ProtectedRoute>
-            <AdminVideos />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/channel" element={
-          <ProtectedRoute>
-            <AdminChannel />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/settings" element={
-          <ProtectedRoute>
-            <AdminSettings />
-          </ProtectedRoute>
-        } />
+        }>
+          <Route index element={<AdminDashboard />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="videos" element={<AdminVideos />} />
+          <Route path="channel" element={<AdminChannel />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
 
         {/* 404 頁面 */}
         <Route path="*" element={<NotFound />} />
