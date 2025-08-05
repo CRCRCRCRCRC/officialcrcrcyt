@@ -299,47 +299,17 @@ class NeonDatabase {
       if (parseInt(videoCount.rows[0].count) === 0) {
         console.log('📝 創建示例影片數據...');
         
-        const sampleVideos = [
-          {
-            title: "ILLIT - 'Billyeoon Goyangi (Do The Dance)' 空耳版《捅隻鳥》",
-            description: "ILLIT 的熱門歌曲空耳版本，歡迎大家在留言區分享空耳歌詞！",
-            youtube_id: "sample_video_1",
-            thumbnail_url: "https://img.youtube.com/vi/sample_video_1/maxresdefault.jpg",
-            duration: "3:25",
-            view_count: 88,
-            published_at: new Date().toISOString(),
-            is_featured: true,
-            tags: "ILLIT,空耳,K-pop,舞蹈"
-          },
-          {
-            title: "i-dle - 'Good Thing' 空耳版《把椅子固定》",
-            description: "(G)I-DLE 的經典歌曲空耳版本",
-            youtube_id: "sample_video_2",
-            thumbnail_url: "https://img.youtube.com/vi/sample_video_2/maxresdefault.jpg",
-            duration: "3:12",
-            view_count: 156,
-            published_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            is_featured: true,
-            tags: "(G)I-DLE,空耳,K-pop"
-          },
-          {
-            title: "izna - 'SIGN' 空耳版《買火雞》",
-            description: "izna 的最新歌曲空耳版本",
-            youtube_id: "sample_video_3",
-            thumbnail_url: "https://img.youtube.com/vi/sample_video_3/maxresdefault.jpg",
-            duration: "3:45",
-            view_count: 203,
-            published_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-            is_featured: false,
-            tags: "izna,空耳,K-pop"
-          }
-        ];
+        // 不創建示例影片，讓管理員自己添加真實影片
+        const sampleVideos = [];
 
-        for (const video of sampleVideos) {
-          await this.createVideo(video);
+        if (sampleVideos.length > 0) {
+          for (const video of sampleVideos) {
+            await this.createVideo(video);
+          }
+          console.log('✅ 示例影片數據創建成功');
+        } else {
+          console.log('ℹ️  跳過示例影片創建，請在管理後台添加真實影片');
         }
-        
-        console.log('✅ 示例影片數據創建成功');
       }
 
       // 設置默認網站設置

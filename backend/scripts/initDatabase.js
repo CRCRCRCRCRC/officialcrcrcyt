@@ -56,62 +56,11 @@ async function initDatabase() {
       console.log('ℹ️  頻道資訊已存在，跳過創建');
     }
 
-    // 添加一些示例影片數據
+    // 跳過示例影片創建，讓管理員添加真實影片
     const existingVideos = await database.query('SELECT * FROM videos');
     
     if (existingVideos.length === 0) {
-      console.log('📝 創建示例影片數據...');
-      
-      const sampleVideos = [
-        {
-          title: "ILLIT - 'Billyeoon Goyangi (Do The Dance)' 空耳版《捅隻鳥》",
-          description: "ILLIT 的熱門歌曲空耳版本，歡迎大家在留言區分享空耳歌詞！",
-          youtube_id: "sample_video_1",
-          thumbnail_url: "https://img.youtube.com/vi/sample_video_1/maxresdefault.jpg",
-          duration: "3:25",
-          view_count: 88,
-          published_at: new Date().toISOString(),
-          is_featured: 1,
-          tags: "ILLIT,空耳,K-pop,舞蹈"
-        },
-        {
-          title: "i-dle - 'Good Thing' 空耳版《把椅子固定》",
-          description: "(G)I-DLE 的經典歌曲空耳版本",
-          youtube_id: "sample_video_2",
-          thumbnail_url: "https://img.youtube.com/vi/sample_video_2/maxresdefault.jpg",
-          duration: "3:12",
-          view_count: 156,
-          published_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          is_featured: 1,
-          tags: "(G)I-DLE,空耳,K-pop"
-        },
-        {
-          title: "izna - 'SIGN' 空耳版《買火雞》",
-          description: "izna 的最新歌曲空耳版本",
-          youtube_id: "sample_video_3",
-          thumbnail_url: "https://img.youtube.com/vi/sample_video_3/maxresdefault.jpg",
-          duration: "3:45",
-          view_count: 203,
-          published_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-          is_featured: 0,
-          tags: "izna,空耳,K-pop"
-        }
-      ];
-
-      for (const video of sampleVideos) {
-        await database.run(
-          `INSERT INTO videos (
-            title, description, youtube_id, thumbnail_url, duration,
-            view_count, published_at, is_featured, tags
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            video.title, video.description, video.youtube_id, video.thumbnail_url,
-            video.duration, video.view_count, video.published_at, video.is_featured, video.tags
-          ]
-        );
-      }
-      
-      console.log('✅ 示例影片數據創建成功');
+      console.log('ℹ️  資料庫為空，請在管理後台添加真實影片');
     } else {
       console.log('ℹ️  影片數據已存在，跳過創建');
     }
