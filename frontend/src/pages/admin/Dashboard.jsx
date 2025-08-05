@@ -32,17 +32,42 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // 獲取統計數據
-      const [videosResponse, statsResponse] = await Promise.all([
-        videoAPI.getAll({ limit: 5 }),
-        channelAPI.getStats()
-      ])
+      // 設置默認數據
+      const defaultStats = {
+        totalVideos: 0,
+        totalViews: 0,
+        totalSubscribers: 0,
+        featuredVideos: 0
+      }
+      
+      const defaultVideos = []
 
-      setRecentVideos(videosResponse.data.videos)
-      setStats(statsResponse.data)
+      // 嘗試獲取統計數據
+      try {
+        const [videosResponse, statsResponse] = await Promise.all([
+          videoAPI.getAll({ limit: 5 }).catch(() => ({ data: { videos: defaultVideos } })),
+          channelAPI.getStats().catch(() => ({ data: defaultStats }))
+        ])
+
+        setRecentVideos(videosResponse.data?.videos || defaultVideos)
+        setStats(statsResponse.data || defaultStats)
+      } catch (error) {
+        console.warn('部分數據載入失敗，使用默認數據:', error)
+        setRecentVideos(defaultVideos)
+        setStats(defaultStats)
+      }
     } catch (error) {
       console.error('獲取儀表板數據失敗:', error)
-      toast.error('載入數據失敗')
+      toast.error('載入數據失敗，顯示默認數據')
+      
+      // 設置默認數據以防止白屏
+      setRecentVideos([])
+      setStats({
+        totalVideos: 0,
+        totalViews: 0,
+        totalSubscribers: 0,
+        featuredVideos: 0
+      })
     } finally {
       setLoading(false)
     }
@@ -166,28 +191,42 @@ const Dashboard = () => {
             </div>
             
             <div className="space-y-4">
-              {recentVideos.map((video) => (
-                <div key={video.id} className="flex items-center space-x-4">
-                  <img
-                    src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id}/default.jpg`}
-                    alt={video.title}
-                    className="w-16 h-12 object-cover rounded"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {video.title}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {video.view_count?.toLocaleString()} 次觀看
-                    </p>
+              {recentVideos && recentVideos.length > 0 ? (
+                recentVideos.map((video) => (
+                  <div key={video.id || Math.random()} className="flex items-center space-x-4">
+                    <img
+                      src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id}/default.jpg`}
+                      alt={video.title || '影片'}
+                      className="w-16 h-12 object-cover rounded bg-gray-200"
+                      onError={(e) => {
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA2NCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0yNiAyMEwyNiAyOEwzMiAyNEwyNiAyMFoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+'
+                      }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {video.title || '無標題'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {video.view_count?.toLocaleString() || '0'} 次觀看
+                      </p>
+                    </div>
+                    {video.is_featured && (
+                      <span className="bg-primary-100 text-primary-800 text-xs px-2 py-1 rounded-full">
+                        精選
+                      </span>
+                    )}
                   </div>
-                  {video.is_featured && (
-                    <span className="bg-primary-100 text-primary-800 text-xs px-2 py-1 rounded-full">
-                      精選
-                    </span>
-                  )}
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 mb-2">
+                    <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-gray-500 text-sm">暫無影片數據</p>
                 </div>
-              ))}
+              )}
             </div>
           </motion.div>
 
