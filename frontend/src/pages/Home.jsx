@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
-import { Play, Youtube, Users, Eye, Star } from 'lucide-react'
+import { Play, Youtube, Users, Eye, Star, Sparkles, Music, Heart, TrendingUp, Award, Zap } from 'lucide-react'
 import { videoAPI, channelAPI } from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 
@@ -15,6 +15,7 @@ const Home = () => {
   const [heroRef, heroInView] = useInView({ threshold: 0.1, triggerOnce: true })
   const [statsRef, statsInView] = useInView({ threshold: 0.1, triggerOnce: true })
   const [videosRef, videosInView] = useInView({ threshold: 0.1, triggerOnce: true })
+  const [ctaRef, ctaInView] = useInView({ threshold: 0.1, triggerOnce: true })
 
   useEffect(() => {
     const fetchData = async () => {
@@ -49,104 +50,292 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section ref={heroRef} className="relative bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative container-custom py-20 lg:py-32">
+      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        {/* 動態背景 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600"></div>
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 via-transparent to-yellow-400/30"></div>
+        
+        {/* 動態粒子效果 */}
+        <div className="absolute inset-0">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-2 h-2 bg-white/20 rounded-full"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+              }}
+              animate={{
+                y: [0, -30, 0],
+                opacity: [0.2, 0.8, 0.2],
+                scale: [1, 1.5, 1],
+              }}
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
+              }}
+            />
+          ))}
+        </div>
+        
+        {/* 漸變光暈 */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-pink-400/30 to-purple-600/30 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-400/30 to-cyan-600/30 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-yellow-400/20 to-orange-600/20 rounded-full blur-3xl animate-glow"></div>
+        
+        <div className="relative container-custom py-20 lg:py-32 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={heroInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className="max-w-4xl mx-auto text-center"
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="max-w-5xl mx-auto"
           >
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold mb-6">
-              歡迎來到
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-300">
+            {/* 標題上方的裝飾 */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={heroInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="flex items-center justify-center mb-8"
+            >
+              <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-md rounded-full px-6 py-3 border border-white/20">
+                <Sparkles className="w-5 h-5 text-yellow-300 animate-pulse" />
+                <span className="text-white/90 font-medium">專業空耳音樂創作</span>
+                <Music className="w-5 h-5 text-pink-300 animate-bounce" />
+              </div>
+            </motion.div>
+            
+            {/* 主標題 */}
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={heroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 1, delay: 0.3 }}
+              className="text-5xl md:text-7xl lg:text-8xl font-display font-black mb-8 leading-tight"
+            >
+              <span className="text-white drop-shadow-2xl">歡迎來到</span>
+              <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300 animate-shimmer">
                 CRCRC
               </span>
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-100 mb-8 max-w-2xl mx-auto">
-              專業製作空耳音樂影片的 YouTube 頻道，將流行歌曲重新詮釋成有趣的空耳版本
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
+            </motion.h1>
+            
+            {/* 副標題 */}
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={heroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 1, delay: 0.5 }}
+              className="text-xl md:text-2xl lg:text-3xl text-white/90 mb-12 max-w-3xl mx-auto leading-relaxed font-light"
+            >
+              將流行歌曲重新詮釋成
+              <span className="text-gradient-warm font-semibold"> 有趣的空耳版本</span>
+              <br />
+              帶給你前所未有的音樂體驗
+            </motion.p>
+            
+            {/* 特色標籤 */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={heroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 1, delay: 0.7 }}
+              className="flex flex-wrap items-center justify-center gap-4 mb-12"
+            >
+              {[
+                { icon: Heart, text: "創意無限", color: "from-pink-400 to-red-400" },
+                { icon: TrendingUp, text: "熱門推薦", color: "from-green-400 to-blue-400" },
+                { icon: Award, text: "品質保證", color: "from-yellow-400 to-orange-400" },
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={heroInView ? { opacity: 1, scale: 1 } : {}}
+                  transition={{ duration: 0.6, delay: 0.8 + index * 0.1 }}
+                  className={`flex items-center space-x-2 bg-gradient-to-r ${item.color} rounded-full px-4 py-2 text-white font-medium shadow-lg`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span className="text-sm">{item.text}</span>
+                </motion.div>
+              ))}
+            </motion.div>
+            
+            {/* CTA 按鈕 */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={heroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 1, delay: 0.9 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-6"
+            >
+              <motion.a
                 href="https://youtube.com/@officialcrcrcyt"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn bg-white text-primary-700 hover:bg-gray-100 px-8 py-3 text-lg font-semibold"
+                className="btn-large bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-glow-lg group"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Youtube className="w-5 h-5 mr-2" />
-                訂閱頻道
-              </a>
-              <Link
-                to="/videos"
-                className="btn border-2 border-white text-white hover:bg-white hover:text-primary-700 px-8 py-3 text-lg font-semibold"
+                <Youtube className="w-6 h-6 mr-3 group-hover:animate-bounce" />
+                <span className="text-lg font-bold">訂閱頻道</span>
+                <Zap className="w-5 h-5 ml-2 text-yellow-300" />
+              </motion.a>
+              
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <Play className="w-5 h-5 mr-2" />
-                觀看影片
-              </Link>
-            </div>
+                <Link
+                  to="/videos"
+                  className="btn-large btn-ghost group"
+                >
+                  <Play className="w-6 h-6 mr-3 group-hover:animate-pulse" />
+                  <span className="text-lg font-bold">觀看影片</span>
+                </Link>
+              </motion.div>
+            </motion.div>
           </motion.div>
         </div>
         
-        {/* Decorative elements */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 right-10 w-32 h-32 bg-yellow-300/20 rounded-full blur-xl"></div>
+        {/* 底部波浪效果 */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg viewBox="0 0 1440 120" className="w-full h-20 fill-white">
+            <path d="M0,64L48,69.3C96,75,192,85,288,80C384,75,480,53,576,48C672,43,768,53,864,64C960,75,1056,85,1152,80C1248,75,1344,53,1392,42.7L1440,32L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
+          </svg>
+        </div>
       </section>
 
       {/* Stats Section */}
-      <section ref={statsRef} className="py-16 bg-white">
-        <div className="container-custom">
+      <section ref={statsRef} className="py-24 relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-primary-50"></div>
+        <div className="relative container-custom">
+          {/* 標題 */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={statsInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            className="text-center mb-16"
           >
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Play className="w-8 h-8 text-primary-600" />
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                {stats.videoCount || 0}
-              </h3>
-              <p className="text-gray-600">精彩影片</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Eye className="w-8 h-8 text-primary-600" />
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                {(stats.totalViews || 0).toLocaleString()}
-              </h3>
-              <p className="text-gray-600">總觀看次數</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="w-8 h-8 text-primary-600" />
-              </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                {stats.featuredCount || 0}
-              </h3>
-              <p className="text-gray-600">精選作品</p>
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-gradient mb-4">
+              我們的成就
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              用數字見證我們的創作熱情與觀眾的喜愛
+            </p>
+          </motion.div>
+          
+          {/* 統計卡片 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Play,
+                value: stats.videoCount || 0,
+                label: "精彩影片",
+                color: "from-blue-500 to-cyan-500",
+                bgColor: "from-blue-50 to-cyan-50",
+                delay: 0.2
+              },
+              {
+                icon: Eye,
+                value: (stats.totalViews || 0).toLocaleString(),
+                label: "總觀看次數",
+                color: "from-purple-500 to-pink-500",
+                bgColor: "from-purple-50 to-pink-50",
+                delay: 0.4
+              },
+              {
+                icon: Star,
+                value: stats.featuredCount || 0,
+                label: "精選作品",
+                color: "from-yellow-500 to-orange-500",
+                bgColor: "from-yellow-50 to-orange-50",
+                delay: 0.6
+              }
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                animate={statsInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+                transition={{ duration: 0.8, delay: stat.delay }}
+                className="group"
+              >
+                <div className={`card-gradient bg-gradient-to-br ${stat.bgColor} p-8 text-center card-hover group-hover:shadow-glow`}>
+                  {/* 圖標 */}
+                  <motion.div
+                    className={`w-20 h-20 bg-gradient-to-r ${stat.color} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300`}
+                    whileHover={{ rotate: 360, scale: 1.1 }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <stat.icon className="w-10 h-10 text-white" />
+                  </motion.div>
+                  
+                  {/* 數值 */}
+                  <motion.h3
+                    className="text-4xl md:text-5xl font-display font-black text-gray-900 mb-3"
+                    initial={{ scale: 0 }}
+                    animate={statsInView ? { scale: 1 } : {}}
+                    transition={{ duration: 0.6, delay: stat.delay + 0.3, type: "spring", bounce: 0.4 }}
+                  >
+                    {stat.value}
+                  </motion.h3>
+                  
+                  {/* 標籤 */}
+                  <p className="text-lg font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300">
+                    {stat.label}
+                  </p>
+                  
+                  {/* 裝飾線條 */}
+                  <div className={`h-1 bg-gradient-to-r ${stat.color} rounded-full mx-auto mt-4 w-12 group-hover:w-20 transition-all duration-300`}></div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          
+          {/* 底部裝飾 */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={statsInView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ duration: 1, delay: 0.8 }}
+            className="text-center mt-16"
+          >
+            <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-primary-500 to-pink-500 rounded-full px-6 py-3 text-white font-semibold shadow-lg">
+              <Sparkles className="w-5 h-5 animate-pulse" />
+              <span>持續創作中...</span>
+              <Heart className="w-5 h-5 animate-bounce text-pink-200" />
             </div>
           </motion.div>
         </div>
       </section>
 
       {/* Featured Videos Section */}
-      <section ref={videosRef} className="py-16 bg-gray-50">
-        <div className="container-custom">
+      <section ref={videosRef} className="py-24 relative overflow-hidden">
+        {/* 背景裝飾 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary-50 via-white to-primary-50"></div>
+        <div className="absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-blue-200/30 to-purple-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-gradient-to-r from-pink-200/30 to-yellow-200/30 rounded-full blur-3xl"></div>
+        
+        <div className="relative container-custom">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={videosInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8 }}
           >
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-display font-bold text-gray-900 mb-4">
-                精選影片
+            {/* 標題區塊 */}
+            <div className="text-center mb-16">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={videosInView ? { opacity: 1, scale: 1 } : {}}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="inline-flex items-center space-x-2 bg-gradient-to-r from-primary-500 to-pink-500 rounded-full px-6 py-2 text-white font-medium mb-6"
+              >
+                <Star className="w-5 h-5 animate-pulse" />
+                <span>精選作品</span>
+                <Sparkles className="w-5 h-5 animate-bounce" />
+              </motion.div>
+              
+              <h2 className="text-4xl md:text-6xl font-display font-black text-gradient mb-6">
+                熱門影片
               </h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
                 探索我們最受歡迎的空耳音樂作品
+                <br />
+                <span className="text-gradient-warm font-semibold">每一部都是精心製作的藝術品</span>
               </p>
             </div>
 
@@ -155,101 +344,238 @@ const Home = () => {
                 {featuredVideos.map((video, index) => (
                   <motion.div
                     key={video.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={videosInView ? { opacity: 1, y: 0 } : {}}
-                    transition={{ duration: 0.8, delay: index * 0.1 }}
-                    className="card group hover:shadow-lg transition-all duration-300"
+                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                    animate={videosInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+                    transition={{ duration: 0.8, delay: index * 0.15 }}
+                    className="group"
                   >
-                    <div className="relative overflow-hidden">
-                      <img
-                        src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`}
-                        alt={video.title}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <Play className="w-12 h-12 text-white" />
-                      </div>
-                      {video.duration && (
-                        <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-                          {video.duration}
+                    <div className="card-gradient p-2 card-hover group-hover:shadow-glow">
+                      {/* 影片縮圖 */}
+                      <div className="relative overflow-hidden rounded-2xl">
+                        <img
+                          src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`}
+                          alt={video.title}
+                          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        
+                        {/* 播放覆蓋層 */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                          <motion.div
+                            className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Play className="w-8 h-8 text-white ml-1" />
+                          </motion.div>
                         </div>
-                      )}
-                    </div>
-                    <div className="p-6">
-                      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                        {video.title}
-                      </h3>
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                        {video.description}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-500">
-                          {video.view_count?.toLocaleString()} 次觀看
-                        </span>
-                        <Link
-                          to={`/videos/${video.id}`}
-                          className="text-primary-600 hover:text-primary-700 font-medium text-sm"
-                        >
-                          觀看影片
-                        </Link>
+                        
+                        {/* 時長標籤 */}
+                        {video.duration && (
+                          <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full font-medium">
+                            {video.duration}
+                          </div>
+                        )}
+                        
+                        {/* 熱門標籤 */}
+                        <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-3 py-1 rounded-full font-bold flex items-center space-x-1">
+                          <TrendingUp className="w-3 h-3" />
+                          <span>熱門</span>
+                        </div>
+                      </div>
+                      
+                      {/* 內容區塊 */}
+                      <div className="p-6">
+                        <h3 className="font-bold text-gray-900 mb-3 line-clamp-2 text-lg group-hover:text-primary-600 transition-colors duration-300">
+                          {video.title}
+                        </h3>
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed">
+                          {video.description}
+                        </p>
+                        
+                        {/* 底部資訊 */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2 text-sm text-gray-500">
+                            <Eye className="w-4 h-4" />
+                            <span>{video.view_count?.toLocaleString()} 次觀看</span>
+                          </div>
+                          <Link
+                            to={`/videos/${video.id}`}
+                            className="btn-small bg-gradient-to-r from-primary-500 to-pink-500 text-white hover:from-primary-600 hover:to-pink-600 group-hover:shadow-lg transition-all duration-300"
+                          >
+                            觀看
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-500">暫無精選影片</p>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={videosInView ? { opacity: 1, scale: 1 } : {}}
+                transition={{ duration: 0.8 }}
+                className="text-center py-16"
+              >
+                <div className="card-glass p-12 max-w-md mx-auto">
+                  <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">暫無精選影片</p>
+                  <p className="text-gray-400 text-sm mt-2">敬請期待更多精彩內容</p>
+                </div>
+              </motion.div>
             )}
 
-            <div className="text-center mt-12">
+            {/* CTA 按鈕 */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={videosInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="text-center mt-16"
+            >
               <Link
                 to="/videos"
-                className="btn-primary px-8 py-3 text-lg"
+                className="btn-large bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500 text-white hover:from-primary-600 hover:via-purple-600 hover:to-pink-600 shadow-glow-lg group"
               >
-                查看所有影片
+                <Play className="w-6 h-6 mr-3 group-hover:animate-pulse" />
+                <span className="text-lg font-bold">查看所有影片</span>
+                <Sparkles className="w-5 h-5 ml-3 group-hover:animate-bounce" />
               </Link>
-            </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-secondary-900 text-white">
-        <div className="container-custom text-center">
+      <section ref={ctaRef} className="py-24 relative overflow-hidden">
+        {/* 動態背景 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+        
+        {/* 動畫背景元素 */}
+        <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl animate-float"></div>
+        <div className="absolute top-32 right-20 w-24 h-24 bg-yellow-300/20 rounded-full blur-lg animate-float" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-pink-300/15 rounded-full blur-2xl animate-float" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-32 right-1/3 w-28 h-28 bg-blue-300/20 rounded-full blur-xl animate-float" style={{ animationDelay: '0.5s' }}></div>
+        
+        {/* 粒子效果 */}
+        <div className="absolute inset-0">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 bg-white/30 rounded-full animate-float"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                animationDuration: `${3 + Math.random() * 2}s`
+              }}
+            ></div>
+          ))}
+        </div>
+        
+        <div className="relative container-custom">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
+            initial={{ opacity: 0, y: 50 }}
+            animate={ctaInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 1 }}
+            className="text-center"
           >
-            <h2 className="text-3xl md:text-4xl font-display font-bold mb-4">
-              加入我們的社群
-            </h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-              訂閱我們的 YouTube 頻道，加入 Discord 群組，與其他粉絲一起分享音樂的樂趣
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            {/* 標題裝飾 */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={ctaInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-md rounded-full px-6 py-3 text-white font-medium mb-8 border border-white/30"
+            >
+              <Zap className="w-5 h-5 animate-pulse" />
+              <span>立即加入</span>
+              <Heart className="w-5 h-5 animate-bounce" />
+            </motion.div>
+            
+            {/* 主標題 */}
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              animate={ctaInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-white mb-6 leading-tight"
+            >
+              準備好體驗
+              <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-300 to-blue-300 animate-shimmer">
+                空耳音樂
+              </span>
+              <br />
+              的魅力了嗎？
+            </motion.h2>
+            
+            {/* 副標題 */}
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={ctaInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="text-xl md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto leading-relaxed"
+            >
+              加入我們的社群，一起探索音樂的無限可能
+              <br />
+              <span className="text-yellow-300 font-semibold">讓每一個音符都充滿驚喜</span>
+            </motion.p>
+            
+            {/* CTA 按鈕組 */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={ctaInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="flex flex-col sm:flex-row gap-6 justify-center items-center"
+            >
+              <Link
+                to="/videos"
+                className="group relative overflow-hidden bg-white text-primary-600 px-10 py-4 rounded-2xl font-bold text-lg hover:bg-gray-50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                <div className="relative flex items-center space-x-3">
+                  <Play className="w-6 h-6 group-hover:animate-pulse" />
+                  <span>開始探索</span>
+                  <Sparkles className="w-5 h-5 group-hover:animate-bounce" />
+                </div>
+              </Link>
+              
               <a
                 href="https://youtube.com/@officialcrcrcyt"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn bg-primary-600 text-white hover:bg-primary-700 px-8 py-3 text-lg"
+                className="group relative overflow-hidden bg-transparent border-2 border-white text-white px-10 py-4 rounded-2xl font-bold text-lg hover:bg-white hover:text-primary-600 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105"
               >
-                <Youtube className="w-5 h-5 mr-2" />
-                訂閱 YouTube
+                <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative flex items-center space-x-3">
+                  <Youtube className="w-6 h-6 group-hover:animate-pulse" />
+                  <span>訂閱頻道</span>
+                  <TrendingUp className="w-5 h-5 group-hover:animate-bounce" />
+                </div>
               </a>
-              <a
-                href="https://discord.gg/FyrNaF6Nbj"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn border-2 border-white text-white hover:bg-white hover:text-secondary-900 px-8 py-3 text-lg"
-              >
-                <Users className="w-5 h-5 mr-2" />
-                加入 Discord
-              </a>
-            </div>
+            </motion.div>
+            
+            {/* 底部裝飾 */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={ctaInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 1, delay: 0.8 }}
+              className="mt-16 flex justify-center items-center space-x-8"
+            >
+              <div className="flex items-center space-x-2 text-white/70">
+                <Users className="w-5 h-5" />
+                <span className="text-sm">10,000+ 訂閱者</span>
+              </div>
+              <div className="w-px h-6 bg-white/30"></div>
+              <div className="flex items-center space-x-2 text-white/70">
+                <Award className="w-5 h-5" />
+                <span className="text-sm">100+ 精選作品</span>
+              </div>
+              <div className="w-px h-6 bg-white/30"></div>
+              <div className="flex items-center space-x-2 text-white/70">
+                <Heart className="w-5 h-5" />
+                <span className="text-sm">無限創意</span>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
