@@ -12,6 +12,9 @@ const database = require('./config/database');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// 設置信任代理 (Vercel 需要)
+app.set('trust proxy', 1);
+
 // 安全中間件
 app.use(helmet());
 app.use(cors({
