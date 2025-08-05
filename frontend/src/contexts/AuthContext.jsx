@@ -36,17 +36,24 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
+      console.log('嘗試登入:', { username })
       const response = await authAPI.login(username, password)
+      console.log('登入響應:', response.data)
+      
       const { token: newToken, user: userData } = response.data
       
-      localStorage.setItem('token', newToken)
-      setToken(newToken)
-      setUser(userData)
-      
-      return true // 直接返回 true 表示成功
+      if (newToken && userData) {
+        localStorage.setItem('token', newToken)
+        setToken(newToken)
+        setUser(userData)
+        console.log('登入成功，用戶數據:', userData)
+        return true
+      } else {
+        throw new Error('登入響應數據不完整')
+      }
     } catch (error) {
       console.error('登入錯誤:', error)
-      throw error // 拋出錯誤讓調用方處理
+      throw error
     }
   }
 

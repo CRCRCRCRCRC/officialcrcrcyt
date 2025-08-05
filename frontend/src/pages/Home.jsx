@@ -86,7 +86,7 @@ const Home = () => {
           totalVideos: 100,
           totalViews: 1000000,
           totalSubscribers: 10000,
-          totalLikes: 50000
+          totalLikes: 0
         })
         setFeaturedVideos([])
       } finally {
@@ -278,8 +278,8 @@ const Home = () => {
             {[
               {
                 icon: Play,
-                value: (stats.totalVideos || 0).toLocaleString(),
-                label: "精彩影片",
+                value: stats.totalVideos > 0 ? `${stats.totalVideos}+` : "100+",
+                label: "精選作品",
                 color: "from-blue-500 to-cyan-500",
                 bgColor: "from-blue-50 to-cyan-50",
                 delay: 0.2
@@ -294,8 +294,8 @@ const Home = () => {
               },
               {
                 icon: Users,
-                value: formatNumber(stats.totalSubscribers || 0),
-                label: "訂閱人數",
+                value: stats.totalSubscribers > 0 ? `${formatNumber(stats.totalSubscribers)}+` : "10,000+",
+                label: "訂閱者",
                 color: "from-green-500 to-emerald-500",
                 bgColor: "from-green-50 to-emerald-50",
                 delay: 0.6

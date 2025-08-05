@@ -32,9 +32,12 @@ const Login = () => {
     setIsSubmitting(true)
 
     try {
-      await login(formData.username, formData.password)
-      toast.success('登入成功！')
-      // 登入成功後，Navigate 組件會自動重定向
+      const success = await login(formData.username, formData.password)
+      if (success) {
+        toast.success('登入成功！')
+        // 強制重新渲染以觸發 Navigate 組件
+        window.location.href = '/admin/dashboard'
+      }
     } catch (error) {
       console.error('登入失敗:', error)
       // 處理登入錯誤，確保錯誤訊息是字符串
