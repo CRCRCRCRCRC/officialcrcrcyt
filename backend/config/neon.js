@@ -1,0 +1,366 @@
+const { Pool } = require('pg');
+
+class NeonDatabase {
+  constructor() {
+    this.pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
+    this.initializeTables();
+  }
+
+  async initializeTables() {
+    try {
+      // 創建用戶表
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          username VARCHAR(255) UNIQUE NOT NULL,
+          password VARCHAR(255) NOT NULL,
+          role VARCHAR(50) DEFAULT 'user',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // 創建影片表
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS videos (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(500) NOT NULL,
+          description TEXT,
+          youtube_id VARCHAR(255) UNIQUE NOT NULL,
+          thumbnail_url VARCHAR(500),
+          duration VARCHAR(20),
+          view_count INTEGER DEFAULT 0,
+          published_at TIMESTAMP,
+          is_featured BOOLEAN DEFAULT false,
+          tags TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // 創建頻道資訊表
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS channel_info (
+          id SERIAL PRIMARY KEY,
+          channel_name VARCHAR(255),
+          description TEXT,
+          youtube_url VARCHAR(500),
+          discord_url VARCHAR(500),
+          minecraft_discord_url VARCHAR(500),
+          subscriber_count INTEGER DEFAULT 0,
+          total_views INTEGER DEFAULT 0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // 創建網站設置表
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS site_settings (
+          id SERIAL PRIMARY KEY,
+          setting_key VARCHAR(255) UNIQUE NOT NULL,
+          setting_value TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      console.log('✅ PostgreSQL 資料表初始化完成');
+    } catch (error) {
+      console.error('❌ PostgreSQL 資料表初始化失敗:', error);
+    }
+  }
+
+  // 用戶相關操作
+  async createUser(userData) {
+    const { username, password, role = 'user' } = userData;
+    const result = await this.pool.query(
+      'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id',
+      [username, password, role]
+    );
+    return result.rows[0].id;
+  }
+
+  async getUserByUsername(username) {
+    const result = await this.pool.query(
+      'SELECT * FROM users WHERE username = $1',
+      [username]
+    );
+    return result.rows[0] || null;
+  }
+
+  async getUserById(userId) {
+    const result = await this.pool.query(
+      'SELECT * FROM users WHERE id = $1',
+      [userId]
+    );
+    return result.rows[0] || null;
+  }
+
+  async updateUser(userId, userData) {
+    const { username, password, role } = userData;
+    await this.pool.query(
+      'UPDATE users SET username = $1, password = $2, role = $3 WHERE id = $4',
+      [username, password, role, userId]
+    );
+    return true;
+  }
+
+  // 影片相關操作
+  async createVideo(videoData) {
+    const {
+      title, description, youtube_id, thumbnail_url, duration,
+      view_count = 0, published_at, is_featured = false, tags
+    } = videoData;
+    
+    const result = await this.pool.query(`
+      INSERT INTO videos (title, description, youtube_id, thumbnail_url, duration, view_count, published_at, is_featured, tags)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id
+    `, [title, description, youtube_id, thumbnail_url, duration, view_count, published_at, is_featured, tags]);
+    
+    return result.rows[0].id;
+  }
+
+  async getVideos(options = {}) {
+    const { featured, limit, offset } = options;
+    let query = 'SELECT * FROM videos';
+    let params = [];
+    
+    if (featured) {
+      query += ' WHERE is_featured = true';
+    }
+    
+    query += ' ORDER BY created_at DESC';
+    
+    if (limit) {
+      query += ` LIMIT $${params.length + 1}`;
+      params.push(limit);
+      
+      if (offset) {
+        query += ` OFFSET $${params.length + 1}`;
+        params.push(offset);
+      }
+    }
+    
+    const result = await this.pool.query(query, params);
+    return result.rows;
+  }
+
+  async getVideoById(videoId) {
+    const result = await this.pool.query(
+      'SELECT * FROM videos WHERE id = $1',
+      [videoId]
+    );
+    return result.rows[0] || null;
+  }
+
+  async updateVideo(videoId, videoData) {
+    const {
+      title, description, youtube_id, thumbnail_url, duration,
+      view_count, published_at, is_featured, tags
+    } = videoData;
+    
+    await this.pool.query(`
+      UPDATE videos SET 
+        title = $1, description = $2, youtube_id = $3, thumbnail_url = $4,
+        duration = $5, view_count = $6, published_at = $7, is_featured = $8,
+        tags = $9, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $10
+    `, [title, description, youtube_id, thumbnail_url, duration, view_count, published_at, is_featured, tags, videoId]);
+    
+    return true;
+  }
+
+  async deleteVideo(videoId) {
+    await this.pool.query('DELETE FROM videos WHERE id = $1', [videoId]);
+    return true;
+  }
+
+  // 頻道資訊操作
+  async getChannelInfo() {
+    const result = await this.pool.query('SELECT * FROM channel_info LIMIT 1');
+    return result.rows[0] || {};
+  }
+
+  async updateChannelInfo(channelData) {
+    const {
+      channel_name, description, youtube_url, discord_url,
+      minecraft_discord_url, subscriber_count, total_views
+    } = channelData;
+    
+    // 檢查是否已有記錄
+    const existing = await this.pool.query('SELECT id FROM channel_info LIMIT 1');
+    
+    if (existing.rows.length > 0) {
+      await this.pool.query(`
+        UPDATE channel_info SET 
+          channel_name = $1, description = $2, youtube_url = $3, discord_url = $4,
+          minecraft_discord_url = $5, subscriber_count = $6, total_views = $7,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $8
+      `, [channel_name, description, youtube_url, discord_url, minecraft_discord_url, subscriber_count, total_views, existing.rows[0].id]);
+    } else {
+      await this.pool.query(`
+        INSERT INTO channel_info (channel_name, description, youtube_url, discord_url, minecraft_discord_url, subscriber_count, total_views)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `, [channel_name, description, youtube_url, discord_url, minecraft_discord_url, subscriber_count, total_views]);
+    }
+    
+    return true;
+  }
+
+  // 網站設置操作
+  async getSiteSetting(key) {
+    const result = await this.pool.query(
+      'SELECT setting_value FROM site_settings WHERE setting_key = $1',
+      [key]
+    );
+    return result.rows[0]?.setting_value || null;
+  }
+
+  async setSiteSetting(key, value) {
+    await this.pool.query(`
+      INSERT INTO site_settings (setting_key, setting_value)
+      VALUES ($1, $2)
+      ON CONFLICT (setting_key)
+      DO UPDATE SET setting_value = $2, updated_at = CURRENT_TIMESTAMP
+    `, [key, value]);
+    return true;
+  }
+
+  async getAllSiteSettings() {
+    const result = await this.pool.query('SELECT setting_key, setting_value FROM site_settings');
+    const settings = {};
+    result.rows.forEach(row => {
+      settings[row.setting_key] = row.setting_value;
+    });
+    return settings;
+  }
+
+  // 統計數據
+  async getStats() {
+    const videoCount = await this.pool.query('SELECT COUNT(*) FROM videos');
+    const featuredCount = await this.pool.query('SELECT COUNT(*) FROM videos WHERE is_featured = true');
+    const viewsSum = await this.pool.query('SELECT SUM(view_count) FROM videos');
+    const channelInfo = await this.getChannelInfo();
+    
+    return {
+      total_videos: parseInt(videoCount.rows[0].count),
+      featured_videos: parseInt(featuredCount.rows[0].count),
+      total_views: parseInt(viewsSum.rows[0].sum) || 0,
+      subscriber_count: parseInt(channelInfo.subscriber_count) || 0
+    };
+  }
+
+  // 初始化數據
+  async initializeData() {
+    try {
+      // 檢查是否已有用戶
+      const userCount = await this.pool.query('SELECT COUNT(*) FROM users');
+      
+      if (parseInt(userCount.rows[0].count) === 0) {
+        console.log('📝 創建默認管理員用戶...');
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
+        
+        await this.createUser({
+          username: process.env.ADMIN_USERNAME || 'admin',
+          password: hashedPassword,
+          role: 'admin'
+        });
+        
+        console.log('✅ 默認管理員用戶創建成功');
+      }
+
+      // 檢查是否已有頻道資訊
+      const channelInfo = await this.getChannelInfo();
+      
+      if (!channelInfo.channel_name) {
+        console.log('📝 創建默認頻道資訊...');
+        await this.updateChannelInfo({
+          channel_name: 'CRCRC',
+          description: '專業製作空耳音樂影片的 YouTube 頻道，將流行歌曲重新詮釋成有趣的空耳版本。',
+          youtube_url: 'https://youtube.com/@officialcrcrcyt',
+          discord_url: 'https://discord.gg/FyrNaF6Nbj',
+          minecraft_discord_url: 'https://discord.gg/9jBCTheX3Y',
+          subscriber_count: 0,
+          total_views: 0
+        });
+        console.log('✅ 默認頻道資訊創建成功');
+      }
+
+      // 檢查是否已有示例影片
+      const videoCount = await this.pool.query('SELECT COUNT(*) FROM videos');
+      
+      if (parseInt(videoCount.rows[0].count) === 0) {
+        console.log('📝 創建示例影片數據...');
+        
+        const sampleVideos = [
+          {
+            title: "ILLIT - 'Billyeoon Goyangi (Do The Dance)' 空耳版《捅隻鳥》",
+            description: "ILLIT 的熱門歌曲空耳版本，歡迎大家在留言區分享空耳歌詞！",
+            youtube_id: "sample_video_1",
+            thumbnail_url: "https://img.youtube.com/vi/sample_video_1/maxresdefault.jpg",
+            duration: "3:25",
+            view_count: 88,
+            published_at: new Date().toISOString(),
+            is_featured: true,
+            tags: "ILLIT,空耳,K-pop,舞蹈"
+          },
+          {
+            title: "i-dle - 'Good Thing' 空耳版《把椅子固定》",
+            description: "(G)I-DLE 的經典歌曲空耳版本",
+            youtube_id: "sample_video_2",
+            thumbnail_url: "https://img.youtube.com/vi/sample_video_2/maxresdefault.jpg",
+            duration: "3:12",
+            view_count: 156,
+            published_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            is_featured: true,
+            tags: "(G)I-DLE,空耳,K-pop"
+          },
+          {
+            title: "izna - 'SIGN' 空耳版《買火雞》",
+            description: "izna 的最新歌曲空耳版本",
+            youtube_id: "sample_video_3",
+            thumbnail_url: "https://img.youtube.com/vi/sample_video_3/maxresdefault.jpg",
+            duration: "3:45",
+            view_count: 203,
+            published_at: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+            is_featured: false,
+            tags: "izna,空耳,K-pop"
+          }
+        ];
+
+        for (const video of sampleVideos) {
+          await this.createVideo(video);
+        }
+        
+        console.log('✅ 示例影片數據創建成功');
+      }
+
+      // 設置默認網站設置
+      const siteTitle = await this.getSiteSetting('site_title');
+      
+      if (!siteTitle) {
+        console.log('📝 創建默認網站設置...');
+        await this.setSiteSetting('site_title', 'CRCRC 官方網站');
+        await this.setSiteSetting('site_description', '專業製作空耳音樂影片的 YouTube 頻道');
+        await this.setSiteSetting('contact_email', 'contact@crcrc.com');
+        await this.setSiteSetting('featured_video_count', '6');
+        console.log('✅ 默認網站設置創建成功');
+      }
+
+      console.log('🎉 PostgreSQL 數據庫初始化完成！');
+      return true;
+    } catch (error) {
+      console.error('❌ PostgreSQL 數據庫初始化失敗:', error);
+      throw error;
+    }
+  }
+}
+
+module.exports = new NeonDatabase();
