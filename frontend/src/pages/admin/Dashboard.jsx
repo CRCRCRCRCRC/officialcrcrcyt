@@ -31,47 +31,46 @@ const Dashboard = () => {
   }, [])
 
   const fetchDashboardData = async () => {
+    setLoading(true);
     try {
-      // 設置默認數據
       const defaultStats = {
         totalVideos: 0,
         totalViews: 0,
         totalSubscribers: 0,
-        featuredVideos: 0
-      }
-      
-      const defaultVideos = []
+        featuredVideos: 0,
+      };
+      const defaultVideos = [];
 
-      // 嘗試獲取統計數據
-      try {
-        const [videosResponse, statsResponse] = await Promise.all([
-          videoAPI.getAll({ limit: 5 }).catch(() => ({ data: { videos: defaultVideos } })),
-          channelAPI.getStats().catch(() => ({ data: defaultStats }))
-        ])
+      const videosResponse = await videoAPI.getAll({ limit: 5 }).catch((err) => {
+        console.error("獲取影片數據失敗:", err);
+        toast.error("無法載入最新影片數據。");
+        return { data: { videos: defaultVideos } };
+      });
 
-        setRecentVideos(videosResponse.data?.videos || defaultVideos)
-        setStats(statsResponse.data || defaultStats)
-      } catch (error) {
-        console.warn('部分數據載入失敗，使用默認數據:', error)
-        setRecentVideos(defaultVideos)
-        setStats(defaultStats)
-      }
+      const statsResponse = await channelAPI.getStats().catch((err) => {
+        console.error("獲取頻道統計數據失敗:", err);
+        toast.error("無法載入頻道統計數據。");
+        return { data: defaultStats };
+      });
+
+      setRecentVideos(videosResponse.data?.videos || defaultVideos);
+      setStats(statsResponse.data || defaultStats);
+
     } catch (error) {
-      console.error('獲取儀表板數據失敗:', error)
-      toast.error('載入數據失敗，顯示默認數據')
-      
-      // 設置默認數據以防止白屏
-      setRecentVideos([])
+      console.error('獲取儀表板數據時發生嚴重錯誤:', error);
+      toast.error('載入儀表板時發生未知錯誤，請稍後再試。');
+      // 即使發生嚴重錯誤，也設置預設數據以防止白屏
+      setRecentVideos([]);
       setStats({
         totalVideos: 0,
         totalViews: 0,
         totalSubscribers: 0,
-        featuredVideos: 0
-      })
+        featuredVideos: 0,
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleLogout = () => {
     logout()

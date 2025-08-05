@@ -234,7 +234,7 @@ const Home = () => {
               animate={heroInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 1, delay: 0.9 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-6"
-請你一直使用繁體中中            >
+            >
               <a
                 href="https://youtube.com/@officialcrcrcyt"
                 target="_blank"
