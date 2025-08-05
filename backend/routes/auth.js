@@ -15,18 +15,8 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: '用戶名和密碼為必填項' });
     }
 
-    // 優先使用 KV 數據庫查找用戶
-    let user = null;
-    try {
-      user = await database.getUserByUsername(username);
-    } catch (kvError) {
-      console.log('KV 查詢失敗，回退到 SQLite:', kvError.message);
-      const users = await database.query(
-        'SELECT * FROM users WHERE username = ?',
-        [username]
-      );
-      user = users.length > 0 ? users[0] : null;
-    }
+    // 從資料庫查找用戶
+    const user = await database.getUserByUsername(username);
 
     if (!user) {
       return res.status(401).json({ error: '用戶名或密碼錯誤' });

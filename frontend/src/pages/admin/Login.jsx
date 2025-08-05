@@ -37,8 +37,14 @@ const Login = () => {
       // 登入成功後，Navigate 組件會自動重定向
     } catch (error) {
       console.error('登入失敗:', error)
-      const errorMessage = error.response?.data?.error || '用戶名或密碼錯誤'
-      toast.error(errorMessage)
+      // 處理登入錯誤
+      let errorMessage = '登入時發生未知錯誤';
+      if (error.response && error.response.data && error.response.data.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false)
     }
