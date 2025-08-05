@@ -1,13 +1,35 @@
 const axios = require('axios');
+const database = require('../config/database');
 
 const API_KEY = process.env.YOUTUBE_API_KEY;
-const CHANNEL_ID = process.env.YOUTUBE_CHANNEL_ID;
 const BASE_URL = 'https://www.googleapis.com/youtube/v3';
+
+// 獲取頻道 ID
+async function getChannelId() {
+  // 優先使用環境變數
+  if (process.env.YOUTUBE_CHANNEL_ID) {
+    return process.env.YOUTUBE_CHANNEL_ID;
+  }
+  
+  // 從資料庫獲取
+  try {
+    const channelId = await database.getSiteSetting('youtube_channel_id');
+    return channelId;
+  } catch (error) {
+    console.error('無法從資料庫獲取頻道 ID:', error);
+    return null;
+  }
+}
 
 // 獲取頻道統計數據
 async function getChannelStats() {
-  if (!API_KEY || !CHANNEL_ID) {
-    throw new Error('YouTube API key and Channel ID must be configured.');
+  if (!API_KEY) {
+    throw new Error('YouTube API key must be configured.');
+  }
+  
+  const CHANNEL_ID = await getChannelId();
+  if (!CHANNEL_ID) {
+    throw new Error('YouTube Channel ID must be configured.');
   }
 
   try {
@@ -42,8 +64,13 @@ async function getChannelStats() {
 
 // 獲取頻道影片
 async function getChannelVideos(maxResults = 10) {
-  if (!API_KEY || !CHANNEL_ID) {
-    throw new Error('YouTube API key and Channel ID must be configured.');
+  if (!API_KEY) {
+    throw new Error('YouTube API key must be configured.');
+  }
+  
+  const CHANNEL_ID = await getChannelId();
+  if (!CHANNEL_ID) {
+    throw new Error('YouTube Channel ID must be configured.');
   }
 
   try {
