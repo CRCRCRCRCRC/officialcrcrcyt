@@ -614,11 +614,7 @@ const Home = () => {
                 className="group relative overflow-hidden bg-white text-primary-600 w-64 h-16 rounded-2xl font-bold text-lg hover:bg-gray-50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 border-2 border-white hover:border-gray-100 flex items-center justify-center"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                <div className="relative flex items-center space-x-3">
-                  <Play className="w-6 h-6 group-hover:animate-pulse" />
-                  <span>開始探索</span>
-                  <Sparkles className="w-5 h-5 group-hover:animate-bounce" />
-                </div>
+                <span className="relative">開始探索</span>
               </Link>
               
               <a
@@ -628,11 +624,7 @@ const Home = () => {
                 className="group relative overflow-hidden bg-red-600 text-white w-64 h-16 rounded-2xl font-bold text-lg hover:bg-red-700 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 border-2 border-red-600 hover:border-red-700 flex items-center justify-center"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="relative flex items-center space-x-3">
-                  <Youtube className="w-6 h-6 group-hover:animate-pulse" />
-                  <span>訂閱頻道</span>
-                  <TrendingUp className="w-5 h-5 group-hover:animate-bounce" />
-                </div>
+                <span className="relative">訂閱頻道</span>
               </a>
             </motion.div>
             
