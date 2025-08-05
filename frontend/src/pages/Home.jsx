@@ -611,19 +611,17 @@ const Home = () => {
             >
               <Link
                 to="/videos"
-                className="group relative overflow-hidden bg-white text-primary-600 w-64 h-16 rounded-2xl font-bold text-lg hover:bg-gray-50 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 border-2 border-white hover:border-gray-100 flex items-center justify-center"
+                className="group relative overflow-hidden bg-white text-primary-600 w-48 h-14 rounded-xl font-bold text-base hover:bg-gray-50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 border border-gray-200 hover:border-gray-300 flex items-center justify-center"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-pink-500 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                <span className="relative">開始探索</span>
+                <span className="relative">觀看影片</span>
               </Link>
               
               <a
                 href="https://youtube.com/@officialcrcrcyt"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative overflow-hidden bg-red-600 text-white w-64 h-16 rounded-2xl font-bold text-lg hover:bg-red-700 transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 border-2 border-red-600 hover:border-red-700 flex items-center justify-center"
+                className="group relative overflow-hidden bg-red-600 text-white w-48 h-14 rounded-xl font-bold text-base hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 border border-red-600 hover:border-red-700 flex items-center justify-center"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <span className="relative">訂閱頻道</span>
               </a>
             </motion.div>
