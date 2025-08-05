@@ -1,13 +1,13 @@
-import { useState, useContext } from 'react'
+import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Lock, User, Eye, EyeOff } from 'lucide-react'
-import { AuthContext } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
 const Login = () => {
-  const { login, isAuthenticated, loading } = useContext(AuthContext)
+  const { login, isAuthenticated, loading } = useAuth()
   const [formData, setFormData] = useState({
     username: '',
     password: ''

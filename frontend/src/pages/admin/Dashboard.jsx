@@ -1,22 +1,22 @@
-import { useState, useEffect, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
   BarChart3, 
-  Video, 
-  Eye, 
   Users, 
-  TrendingUp,
+  Video, 
+  TrendingUp, 
   Calendar,
+  LogOut,
   Settings,
-  LogOut
+  Eye
 } from 'lucide-react'
-import { AuthContext } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { videoAPI, channelAPI } from '../../services/api'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
 const Dashboard = () => {
-  const { logout } = useContext(AuthContext)
+  const { logout } = useAuth()
   const [stats, setStats] = useState({
     totalVideos: 0,
     totalViews: 0,

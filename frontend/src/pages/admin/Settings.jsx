@@ -1,24 +1,24 @@
-import { useState, useEffect, useContext } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
-  Save, 
+  Settings as SettingsIcon, 
+  User, 
   Shield, 
-  Globe, 
   Bell, 
-  Database,
+  Globe, 
+  Save, 
+  Eye, 
+  EyeOff,
   Key,
-  User,
-  Lock,
-  Eye,
-  EyeOff
+  Database
 } from 'lucide-react'
-import { AuthContext } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { settingsAPI } from '../../services/api'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
 const Settings = () => {
-  const { user } = useContext(AuthContext)
+  const { user, changePassword } = useAuth()
   const [activeTab, setActiveTab] = useState('general')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -118,16 +118,17 @@ const Settings = () => {
     setSaving(true)
 
     try {
-      await settingsAPI.changePassword({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword
-      })
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      })
-      toast.success('密碼已更新')
+      const result = await changePassword(passwordData.currentPassword, passwordData.newPassword)
+      if (result.success) {
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        })
+        toast.success('密碼已更新')
+      } else {
+        toast.error(result.error || '密碼更新失敗')
+      }
     } catch (error) {
       console.error('更改密碼失敗:', error)
       toast.error('密碼更新失敗')
