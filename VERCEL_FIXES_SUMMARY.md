@@ -57,7 +57,8 @@ ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your_secure_password
 NODE_ENV=production
 FRONTEND_URL=https://officialcrcrcyt.vercel.app
-YOUTUBE_API_KEY=your_youtube_api_key  # 可選，用於 YouTube 功能
+YOUTUBE_API_KEY=your_youtube_api_key        # 必須設置以啟用 YouTube 功能
+YOUTUBE_CHANNEL_ID=your_youtube_channel_id  # 必須設置以啟用 YouTube 功能
 ```
 
 ## 📝 測試建議
