@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const database = require('../config/database');
+const kvDatabase = require('../config/kv');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -15,17 +16,22 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: '用戶名和密碼為必填項' });
     }
 
-    // 查找用戶
-    const users = await database.query(
-      'SELECT * FROM users WHERE username = ?',
-      [username]
-    );
-
-    if (users.length === 0) {
-      return res.status(401).json({ error: '用戶名或密碼錯誤' });
+    // 優先使用 KV 數據庫查找用戶
+    let user = null;
+    try {
+      user = await kvDatabase.getUserByUsername(username);
+    } catch (kvError) {
+      console.log('KV 查詢失敗，回退到 SQLite:', kvError.message);
+      const users = await database.query(
+        'SELECT * FROM users WHERE username = ?',
+        [username]
+      );
+      user = users.length > 0 ? users[0] : null;
     }
 
-    const user = users[0];
+    if (!user) {
+      return res.status(401).json({ error: '用戶名或密碼錯誤' });
+    }
 
     // 驗證密碼
     const isValidPassword = await bcrypt.compare(password, user.password);

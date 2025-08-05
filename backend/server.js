@@ -7,6 +7,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const videoRoutes = require('./routes/videos');
 const channelRoutes = require('./routes/channel');
+const kvDatabase = require('./config/kv');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -39,9 +40,25 @@ app.use('/api/auth', authRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/channel', channelRoutes);
 
-// 健康檢查
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+// 健康檢查和初始化
+app.get('/api/health', async (req, res) => {
+  try {
+    // 嘗試初始化 KV 數據庫
+    await kvDatabase.initializeData();
+    res.json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      database: 'KV Ready'
+    });
+  } catch (error) {
+    console.error('KV 初始化失敗:', error);
+    res.json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      database: 'SQLite Fallback',
+      warning: 'KV database not available'
+    });
+  }
 });
 
 // 404 處理

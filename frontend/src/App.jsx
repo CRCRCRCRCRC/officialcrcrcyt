@@ -6,11 +6,11 @@ import Videos from './pages/Videos'
 import VideoDetail from './pages/VideoDetail'
 import About from './pages/About'
 import Contact from './pages/Contact'
-import AdminLogin from './pages/admin/AdminLogin'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import AdminVideos from './pages/admin/AdminVideos'
-import AdminChannel from './pages/admin/AdminChannel'
-import AdminSettings from './pages/admin/AdminSettings'
+import AdminLogin from './pages/admin/Login'
+import AdminDashboard from './pages/admin/Dashboard'
+import AdminVideos from './pages/admin/Videos'
+import AdminChannel from './pages/admin/Channel'
+import AdminSettings from './pages/admin/Settings'
 import ProtectedRoute from './components/ProtectedRoute'
 import NotFound from './pages/NotFound'
 
@@ -32,6 +32,11 @@ function App() {
 
         {/* 管理員後台 */}
         <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/dashboard" element={
           <ProtectedRoute>
             <AdminDashboard />
           </ProtectedRoute>

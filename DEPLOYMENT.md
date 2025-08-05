@@ -7,6 +7,7 @@
 1. 確保你的代碼已推送到 GitHub 倉庫
 2. 註冊 [Vercel](https://vercel.com) 帳號
 3. 連接你的 GitHub 帳號到 Vercel
+4. **環境變數設定**: 在 Vercel 中設定所需的環境變數
 
 ### 2. 部署到 Vercel
 

@@ -80,7 +80,24 @@ export const channelAPI = {
     api.get('/channel/settings'),
   
   updateSettings: (data) => 
-    api.put('/channel/settings', data)
+    api.put('/channel/settings', data),
+  
+  uploadImage: (formData) => 
+    api.post('/channel/upload-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+}
+
+// 設定 API
+export const settingsAPI = {
+  getAll: () => 
+    api.get('/settings'),
+  
+  update: (data) => 
+    api.put('/settings', data),
+  
+  changePassword: (data) => 
+    api.post('/settings/change-password', data)
 }
 
 // 通用 API 函數

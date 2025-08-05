@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const database = require('../config/database');
+const kvDatabase = require('../config/kv');
 
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -12,17 +13,24 @@ const authenticateToken = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // 驗證用戶是否仍然存在
-    const users = await database.query(
-      'SELECT id, username, role FROM users WHERE id = ?',
-      [decoded.userId]
-    );
+    // 優先使用 KV 數據庫，如果失敗則回退到 SQLite
+    let user = null;
+    try {
+      user = await kvDatabase.getUserById(decoded.userId);
+    } catch (kvError) {
+      console.log('KV 查詢失敗，回退到 SQLite:', kvError.message);
+      const users = await database.query(
+        'SELECT id, username, role FROM users WHERE id = ?',
+        [decoded.userId]
+      );
+      user = users.length > 0 ? users[0] : null;
+    }
 
-    if (users.length === 0) {
+    if (!user) {
       return res.status(401).json({ error: '用戶不存在' });
     }
 
-    req.user = users[0];
+    req.user = user;
     next();
   } catch (error) {
     console.error('Token 驗證失敗:', error);
