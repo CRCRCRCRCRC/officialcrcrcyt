@@ -13,6 +13,9 @@ const authenticateToken = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-jwt-secret');
     console.log('🔍 JWT 解碼成功:', { userId: decoded.userId, username: decoded.username });
 
+    // 確保資料庫已初始化
+    await database.initializeData();
+
     // 使用 PostgreSQL 數據庫
     const user = await database.getUserById(decoded.userId);
     console.log('🔍 資料庫查詢用戶:', user ? `找到用戶 ${user.username}` : '用戶不存在');

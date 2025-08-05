@@ -24,6 +24,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: '用戶名或密碼錯誤' });
     }
 
+    // 確保資料庫已初始化
+    console.log('🔄 確保資料庫已初始化...');
+    await database.initializeData();
+
     // 從資料庫獲取用戶資訊
     const user = await database.getUserByUsername(ADMIN_USERNAME);
     console.log('🔍 資料庫查詢用戶:', user ? `找到用戶 ID: ${user.id}` : '用戶不存在');

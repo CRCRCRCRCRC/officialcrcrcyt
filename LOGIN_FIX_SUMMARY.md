@@ -4,13 +4,33 @@
 
 根據 Vercel 日誌分析，登入問題的根本原因是：
 
-1. **資料庫方法錯誤**: `TypeError: database.query is not a function`
-2. **Express Rate Limit 配置問題**: `ValidationError: The 'X-Forwarded-For' header`
-3. **PostgreSQL 語法不一致**: 混用了 SQLite 和 PostgreSQL 語法
+1. **資料庫初始化時機問題** (最關鍵): 登入請求發生在資料庫初始化之前
+   - 登入請求: 13:58:56
+   - 資料庫初始化: 13:59:25
+   - 結果: 用戶還沒有被創建，所以登入失敗
+
+2. **資料庫方法錯誤**: `TypeError: database.query is not a function`
+3. **Express Rate Limit 配置問題**: `ValidationError: The 'X-Forwarded-For' header`
+4. **PostgreSQL 語法不一致**: 混用了 SQLite 和 PostgreSQL 語法
 
 ## ✅ 已修復的問題
 
-### 1. 修復 JWT Token 用戶 ID 問題 (關鍵修復)
+### 1. 修復資料庫初始化時機問題 (最關鍵修復)
+
+**問題**: 登入請求發生在資料庫初始化之前，導致用戶不存在
+**文件**: `backend/routes/auth.js`, `backend/middleware/auth.js`
+**修復**: 在登入和 token 驗證時確保資料庫已初始化
+
+```javascript
+// 在登入路由中添加
+console.log('🔄 確保資料庫已初始化...');
+await database.initializeData();
+
+// 在 auth 中間件中添加
+await database.initializeData();
+```
+
+### 2. 修復 JWT Token 用戶 ID 問題
 
 **問題**: 登入時硬編碼 `userId: 1`，但資料庫中實際用戶 ID 可能不是 1
 **文件**: `backend/routes/auth.js`
