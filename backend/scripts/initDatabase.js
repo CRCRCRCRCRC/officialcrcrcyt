@@ -126,7 +126,8 @@ async function initDatabase() {
         { key: 'site_title', value: 'CRCRC 官方網站', description: '網站標題' },
         { key: 'site_description', value: '專業製作空耳音樂影片的 YouTube 頻道', description: '網站描述' },
         { key: 'contact_email', value: 'contact@crcrc.com', description: '聯絡信箱' },
-        { key: 'featured_video_count', value: '6', description: '首頁精選影片數量' }
+        { key: 'featured_video_count', value: '6', description: '首頁精選影片數量' },
+        { key: 'youtube_channel_id', value: 'UCLG-31GRtc0JQ7o1GZDofHA', description: 'YouTube 頻道 ID' }
       ];
 
       for (const setting of defaultSettings) {
