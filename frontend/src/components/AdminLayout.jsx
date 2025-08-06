@@ -84,7 +84,7 @@ const AdminLayout = () => {
       <motion.div
         initial={false}
         animate={{ x: sidebarOpen ? 0 : '-100%' }}
-        className="fixed inset-y-0 left-0 z-50 w-72 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-2xl lg:translate-x-0"
+        className="fixed inset-y-0 left-0 z-50 w-64 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-2xl lg:translate-x-0"
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
@@ -188,7 +188,7 @@ const AdminLayout = () => {
       </motion.div>
 
       {/* Main content */}
-      <div className="lg:ml-72">
+      <div className="lg:ml-64">
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-white/20">
           <div className="flex h-16 items-center justify-between px-6">
