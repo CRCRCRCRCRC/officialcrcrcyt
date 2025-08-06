@@ -188,7 +188,7 @@ const AdminLayout = () => {
       </motion.div>
 
       {/* Main content */}
-      <div className="lg:ml-64">
+      <div className="lg:pl-64">
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-white/20">
           <div className="flex h-16 items-center justify-between px-6">
@@ -219,7 +219,9 @@ const AdminLayout = () => {
 
         {/* Page content */}
         <main className="p-6">
-          <Outlet />
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
