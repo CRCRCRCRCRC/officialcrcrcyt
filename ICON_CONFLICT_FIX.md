@@ -18,7 +18,13 @@ import { Settings } from 'lucide-react'
 
 ## ✅ 修復方案
 
+發現了兩個問題需要修復：
+
+### 問題 1: AdminLayout.jsx 中的圖標名稱衝突
 將圖標導入時重新命名，避免與頁面組件名稱衝突：
+
+### 問題 2: Dashboard.jsx 中缺少 Settings 圖標導入
+在 Dashboard.jsx 中使用了 Settings 圖標但沒有導入：
 
 ### 修復前
 ```jsx
@@ -58,6 +64,31 @@ const navigation = [
     gradient: 'from-green-500 to-teal-600'
   }
 ]
+```
+
+### Dashboard.jsx 修復
+
+**修復前**:
+```jsx
+// Dashboard.jsx - 缺少 Settings 導入
+import {
+  BarChart3, Users, Video, // ... 其他圖標
+} from 'lucide-react'
+
+// 但在組件中使用了 Settings
+<Settings className="w-5 h-5 text-green-600 group-hover:text-white" />
+```
+
+**修復後**:
+```jsx
+// Dashboard.jsx - 添加 Settings 導入
+import {
+  BarChart3, Users, Video, Settings, // ✅ 添加 Settings 導入
+  // ... 其他圖標
+} from 'lucide-react'
+
+// 現在可以正常使用
+<Settings className="w-5 h-5 text-green-600 group-hover:text-white" />
 ```
 
 ## 🎯 修復結果

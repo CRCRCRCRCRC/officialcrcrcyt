@@ -16,7 +16,8 @@ import {
   Clock,
   Globe,
   Sparkles,
-  Activity
+  Activity,
+  Settings
 } from 'lucide-react'
 import { videoAPI, channelAPI } from '../../services/api'
 import LoadingSpinner from '../../components/LoadingSpinner'
