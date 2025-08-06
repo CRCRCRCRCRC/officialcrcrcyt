@@ -219,9 +219,7 @@ const AdminLayout = () => {
 
         {/* Page content */}
         <main className="p-6">
-          <div className="max-w-7xl mx-auto">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
     </div>
