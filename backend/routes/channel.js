@@ -200,4 +200,15 @@ router.get('/youtube-data', authenticateToken, requireAdmin, async (req, res) =>
   }
 });
 
+// 獲取儀表板數據（需要管理員權限）
+router.get('/dashboard', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const dashboardData = await youtubeService.getDashboardData();
+    res.json(dashboardData);
+  } catch (error) {
+    console.error('獲取儀表板數據錯誤:', error);
+    res.status(500).json({ error: '無法獲取儀表板數據: ' + error.message });
+  }
+});
+
 module.exports = router;

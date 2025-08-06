@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Search, Play, Filter } from 'lucide-react'
-import { videoAPI } from '../services/api'
+import { videoAPI, channelAPI } from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 const Videos = () => {
@@ -16,21 +16,50 @@ const Videos = () => {
   const fetchVideos = async (page = 1, search = '', featured = false) => {
     setLoading(true)
     try {
-      let response
-      if (search) {
-        response = await videoAPI.search(search, { page, limit: 12 })
+      // 如果沒有搜索條件，從 YouTube API 獲取
+      if (!search && !featured) {
+        const dashboardResponse = await channelAPI.getDashboard()
+        const youtubeVideos = dashboardResponse.data.latestVideos || []
+
+        // 轉換 YouTube 數據格式以匹配現有組件
+        const formattedVideos = youtubeVideos.map(video => ({
+          id: video.id,
+          title: video.title,
+          description: video.description,
+          thumbnail_url: video.thumbnails?.medium?.url || video.thumbnails?.default?.url,
+          youtube_id: video.id,
+          view_count: video.viewCount || 0,
+          like_count: video.likeCount || 0,
+          published_at: video.publishedAt,
+          duration: video.duration,
+          url: video.url,
+          is_featured: video.likeCount > 1000 // 根據點讚數判斷是否為精選
+        }))
+
+        setVideos(formattedVideos)
+        setTotalPages(1) // YouTube API 一次返回所有數據
+        console.log('使用 YouTube API 數據')
       } else {
-        response = await videoAPI.getAll({ 
-          page, 
-          limit: 12, 
-          featured: featured ? 'true' : undefined 
-        })
+        // 對於搜索和精選，使用本地 API
+        let response
+        if (search) {
+          response = await videoAPI.search(search, { page, limit: 12 })
+        } else {
+          response = await videoAPI.getAll({
+            page,
+            limit: 12,
+            featured: featured ? 'true' : undefined
+          })
+        }
+
+        setVideos(response.data.videos || [])
+        setTotalPages(response.data.pagination?.pages || 1)
+        console.log('使用本地 API 數據')
       }
-      
-      setVideos(response.data.videos)
-      setTotalPages(response.data.pagination.pages)
     } catch (error) {
       console.error('獲取影片失敗:', error)
+      setVideos([])
+      setTotalPages(1)
     } finally {
       setLoading(false)
     }

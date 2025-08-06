@@ -31,61 +31,47 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('正在從後端 API 獲取數據...')
-        
-        // 直接使用後端 API（已集成 YouTube API）
-        const [videosResponse, channelResponse, statsResponse] = await Promise.all([
-          videoAPI.getAll({ featured: true, limit: 6 }),
-          channelAPI.getInfo(),
-          channelAPI.getStats()
-        ])
+        console.log('正在從 YouTube API 獲取數據...')
 
-        // 設置影片數據
-        if (videosResponse.data?.videos) {
-          setFeaturedVideos(videosResponse.data.videos)
-        }
+        const dashboardResponse = await channelAPI.getDashboard()
+        const data = dashboardResponse.data
 
-        // 設置頻道資訊
-        if (channelResponse.data) {
-          setChannelInfo({
-            name: channelResponse.data.title || 'CRCRC',
-            description: channelResponse.data.description || '專業製作空耳音樂影片的 YouTube 頻道',
-            subscriber_count: parseInt(channelResponse.data.subscriberCount) || 0,
-            video_count: parseInt(channelResponse.data.videoCount) || 0,
-            view_count: parseInt(channelResponse.data.viewCount) || 0
-          })
-        }
-
-        // 設置統計數據
-        if (statsResponse.data) {
-          setStats({
-            totalVideos: parseInt(statsResponse.data.videoCount) || 0,
-            totalViews: parseInt(statsResponse.data.totalViews) || 0,
-            totalSubscribers: parseInt(statsResponse.data.subscriberCount) || 0,
-            totalLikes: 0 // 暫時設為 0，可以後續從影片數據計算
-          })
-        }
-
-        console.log('數據獲取成功:', {
-          videos: videosResponse.data?.videos?.length || 0,
-          channelInfo: channelResponse.data,
-          stats: statsResponse.data
+        // 設置 YouTube 數據
+        setChannelInfo({
+          name: data.channelTitle || 'CRCRC',
+          description: '專業製作空耳音樂影片的 YouTube 頻道',
+          subscriber_count: parseInt(data.subscriberCount) || 0,
+          video_count: parseInt(data.totalVideos) || 0,
+          view_count: parseInt(data.totalViews) || 0
         })
 
+        setStats({
+          totalVideos: parseInt(data.totalVideos) || 0,
+          totalViews: parseInt(data.totalViews) || 0,
+          totalSubscribers: parseInt(data.subscriberCount) || 0,
+          totalLikes: data.latestVideos?.reduce((sum, video) => sum + (video.likeCount || 0), 0) || 0
+        })
+
+        // 設置最新影片作為精選影片
+        setFeaturedVideos(data.latestVideos || [])
+
+        console.log('YouTube 數據獲取成功:', data)
+
       } catch (error) {
-        console.error('獲取首頁數據失敗:', error)
-        // 設置默認數據
+        console.error('獲取 YouTube 數據失敗:', error)
+        // 設置空數據
         setChannelInfo({
           name: 'CRCRC',
           description: '專業空耳音樂創作頻道',
-          subscriber_count: 10000,
-          video_count: 100,
-          view_count: 1000000
+          subscriber_count: 0,
+          video_count: 0,
+          view_count: 0
         })
         setStats({
           totalVideos: 0,
           totalViews: 0,
-          totalSubscribers: 0
+          totalSubscribers: 0,
+          totalLikes: 0
         })
         setFeaturedVideos([])
       } finally {

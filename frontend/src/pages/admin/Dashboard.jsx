@@ -17,7 +17,8 @@ import {
   Globe,
   Sparkles,
   Activity,
-  Settings
+  Settings,
+  RefreshCw
 } from 'lucide-react'
 import { videoAPI, channelAPI } from '../../services/api'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -32,6 +33,7 @@ const Dashboard = () => {
   })
   const [recentVideos, setRecentVideos] = useState([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [timeRange, setTimeRange] = useState('7d')
 
   useEffect(() => {
@@ -41,44 +43,45 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const defaultStats = {
-        totalVideos: 0,
-        totalViews: 0,
-        totalSubscribers: 0,
-        featuredVideos: 0,
-      };
-      const defaultVideos = [];
+      const response = await channelAPI.getDashboard();
+      const data = response.data;
 
-      const videosResponse = await videoAPI.getAll({ limit: 5 }).catch((err) => {
-        console.error("獲取影片數據失敗:", err);
-        toast.error("無法載入最新影片數據。");
-        return { data: { videos: defaultVideos } };
+      setStats({
+        totalVideos: parseInt(data.totalVideos) || 0,
+        totalViews: parseInt(data.totalViews) || 0,
+        totalSubscribers: parseInt(data.subscriberCount) || 0,
+        featuredVideos: data.latestVideos?.length || 0
       });
 
-      const statsResponse = await channelAPI.getStats().catch((err) => {
-        console.error("獲取頻道統計數據失敗:", err);
-        toast.error("無法載入頻道統計數據。");
-        return { data: defaultStats };
-      });
-
-      setRecentVideos(videosResponse.data?.videos || defaultVideos);
-      setStats(statsResponse.data || defaultStats);
-
+      setRecentVideos(data.latestVideos || []);
+      toast.success('已從 YouTube 獲取最新數據');
     } catch (error) {
-      console.error('獲取儀表板數據時發生嚴重錯誤:', error);
-      toast.error('載入儀表板時發生未知錯誤，請稍後再試。');
-      // 即使發生嚴重錯誤，也設置預設數據以防止白屏
-      setRecentVideos([]);
+      console.error('獲取 YouTube 儀表板數據失敗:', error);
+      toast.error('無法載入 YouTube 數據，請檢查 API 設置');
+
+      // 設置空數據
       setStats({
         totalVideos: 0,
         totalViews: 0,
         totalSubscribers: 0,
-        featuredVideos: 0,
+        featuredVideos: 0
       });
+      setRecentVideos([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const refreshData = async () => {
+    setRefreshing(true);
+    try {
+      await fetchDashboardData();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+
 
   const handleLogout = () => {
     logout()
@@ -97,39 +100,39 @@ const Dashboard = () => {
   const statCards = [
     {
       title: '總影片數',
-      value: stats.totalVideos,
+      value: stats.totalVideos?.toLocaleString() || '0',
       icon: Video,
       gradient: 'from-blue-500 to-cyan-500',
-      change: '+12%',
+      change: 'YouTube 同步',
       trend: 'up',
-      description: '本月新增 3 部影片'
+      description: 'YouTube 頻道影片總數'
     },
     {
       title: '總觀看次數',
       value: formatNumber(stats.totalViews),
       icon: Eye,
       gradient: 'from-emerald-500 to-teal-500',
-      change: '+24%',
+      change: 'YouTube 同步',
       trend: 'up',
-      description: '較上月成長 24%'
+      description: '所有影片累計觀看數'
     },
     {
       title: '訂閱者數',
       value: formatNumber(stats.totalSubscribers),
       icon: Users,
       gradient: 'from-purple-500 to-pink-500',
-      change: '+15%',
+      change: 'YouTube 同步',
       trend: 'up',
-      description: '本週新增 127 位'
+      description: 'YouTube 頻道訂閱人數'
     },
     {
-      title: '精選影片',
-      value: stats.featuredVideos,
+      title: '最新影片',
+      value: stats.featuredVideos?.toLocaleString() || '0',
       icon: Star,
       gradient: 'from-orange-500 to-red-500',
-      change: '+5%',
+      change: '即時更新',
       trend: 'up',
-      description: '推薦內容表現優異'
+      description: '最近發布的影片數量'
     }
   ]
 
@@ -171,9 +174,21 @@ const Dashboard = () => {
                   })}
                 </p>
               </div>
-              <div className="hidden md:block">
-                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Sparkles className="w-10 h-10 text-white" />
+              <div className="flex items-center space-x-4">
+                <motion.button
+                  onClick={refreshData}
+                  disabled={refreshing}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl text-white font-medium hover:bg-white/30 transition-all duration-300 flex items-center disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-5 h-5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                  {refreshing ? '更新中...' : '刷新數據'}
+                </motion.button>
+                <div className="hidden md:block">
+                  <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <Sparkles className="w-10 h-10 text-white" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -274,7 +289,7 @@ const Dashboard = () => {
                   >
                     <div className="relative">
                       <img
-                        src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id}/default.jpg`}
+                        src={video.thumbnails?.medium?.url || video.thumbnail_url || `https://img.youtube.com/vi/${video.id || video.youtube_id}/mqdefault.jpg`}
                         alt={video.title || '影片'}
                         className="w-20 h-14 object-cover rounded-lg bg-gray-200 group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
@@ -286,24 +301,35 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+                      <a
+                        href={video.url || `https://www.youtube.com/watch?v=${video.id || video.youtube_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors block"
+                      >
                         {video.title || '無標題'}
-                      </p>
+                      </a>
                       <div className="flex items-center space-x-4 mt-1">
                         <span className="text-xs text-gray-500 flex items-center">
                           <Eye className="w-3 h-3 mr-1" />
-                          {video.view_count?.toLocaleString() || '0'} 次觀看
+                          {(video.viewCount || video.view_count || 0).toLocaleString()} 次觀看
                         </span>
+                        {video.likeCount && (
+                          <span className="text-xs text-gray-500 flex items-center">
+                            <Heart className="w-3 h-3 mr-1" />
+                            {video.likeCount.toLocaleString()}
+                          </span>
+                        )}
                         <span className="text-xs text-gray-500 flex items-center">
                           <Clock className="w-3 h-3 mr-1" />
-                          {video.duration || '未知'}
+                          {video.publishedAt ? new Date(video.publishedAt).toLocaleDateString('zh-TW') : '未知'}
                         </span>
                       </div>
                     </div>
-                    {video.is_featured && (
+                    {(video.is_featured || video.likeCount > 1000) && (
                       <span className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs px-3 py-1 rounded-full font-medium flex items-center">
                         <Star className="w-3 h-3 mr-1" />
-                        精選
+                        {video.is_featured ? '精選' : '熱門'}
                       </span>
                     )}
                   </motion.div>

@@ -18,9 +18,10 @@ import {
   ExternalLink,
   Heart,
   Share2,
-  Download
+  Download,
+  RefreshCw
 } from 'lucide-react'
-import { videoAPI } from '../../services/api'
+import { videoAPI, channelAPI } from '../../services/api'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
@@ -33,6 +34,7 @@ const Videos = () => {
   const [selectedVideos, setSelectedVideos] = useState([])
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [videoToDelete, setVideoToDelete] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     fetchVideos()
@@ -40,14 +42,40 @@ const Videos = () => {
 
   const fetchVideos = async () => {
     try {
-      const response = await videoAPI.getAll()
-      setVideos(response.data.videos)
+      const dashboardResponse = await channelAPI.getDashboard()
+      const youtubeVideos = dashboardResponse.data.latestVideos || []
+
+      // 轉換 YouTube 數據格式
+      const formattedVideos = youtubeVideos.map(video => ({
+        id: video.id,
+        title: video.title,
+        description: video.description,
+        thumbnail_url: video.thumbnails?.medium?.url || video.thumbnails?.default?.url,
+        youtube_id: video.id,
+        view_count: video.viewCount || 0,
+        like_count: video.likeCount || 0,
+        published_at: video.publishedAt,
+        duration: video.duration,
+        url: video.url,
+        is_featured: video.likeCount > 1000,
+        status: 'published' // YouTube 上的影片都是已發布狀態
+      }))
+
+      setVideos(formattedVideos)
+      toast.success('已從 YouTube 同步最新影片數據')
     } catch (error) {
-      console.error('獲取影片失敗:', error)
-      toast.error('載入影片失敗')
+      console.error('獲取 YouTube 影片失敗:', error)
+      toast.error('無法載入 YouTube 影片，請檢查 API 設置')
+      setVideos([])
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
+  }
+
+  const refreshVideos = async () => {
+    setRefreshing(true)
+    await fetchVideos()
   }
 
   const handleToggleFeatured = async (videoId, currentStatus) => {
@@ -109,14 +137,26 @@ const Videos = () => {
             管理您的 YouTube 影片內容，共 {filteredVideos.length} 部影片
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="mt-4 sm:mt-0 inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 font-medium"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          新增影片
-        </motion.button>
+        <div className="flex items-center space-x-3">
+          <motion.button
+            onClick={refreshVideos}
+            disabled={refreshing}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center px-4 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-all duration-300 font-medium disabled:opacity-50"
+          >
+            <RefreshCw className={`w-5 h-5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? '同步中...' : '同步 YouTube'}
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 font-medium"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            新增影片
+          </motion.button>
+        </div>
       </div>
 
       {/* Filters & Controls */}

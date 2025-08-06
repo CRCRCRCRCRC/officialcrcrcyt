@@ -91,7 +91,10 @@ export const channelAPI = {
     }),
 
   getYouTubeData: () =>
-    api.get('/channel/youtube-data')
+    api.get('/channel/youtube-data'),
+
+  getDashboard: () =>
+    api.get('/channel/dashboard')
 }
 
 // 設定 API
