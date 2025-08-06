@@ -25,6 +25,7 @@ const Settings = () => {
   const [saving, setSaving] = useState(false)
   const [availableVideos, setAvailableVideos] = useState([])
   const [featuredVideoId, setFeaturedVideoId] = useState('')
+  const [thumbnailQuality, setThumbnailQuality] = useState('maxres')
 
   useEffect(() => {
     fetchSettings()
@@ -39,6 +40,7 @@ const Settings = () => {
 
       setAvailableVideos(response.data.availableVideos || [])
       setFeaturedVideoId(response.data.featuredVideoId || '')
+      setThumbnailQuality(response.data.thumbnailQuality || 'maxres')
     } catch (error) {
       console.error('獲取設定失敗:', error)
       toast.error('載入設定失敗')
@@ -58,7 +60,10 @@ const Settings = () => {
     try {
       const token = localStorage.getItem('token')
       await axios.post('/api/settings/featured-video',
-        { videoId: featuredVideoId },
+        {
+          videoId: featuredVideoId,
+          thumbnailQuality: thumbnailQuality
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       )
       toast.success('熱門影片設定已更新')
@@ -142,6 +147,27 @@ const Settings = () => {
           </div>
 
           <div className="space-y-6">
+            {/* 縮圖解析度設定 */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-4">
+                縮圖解析度設定
+              </label>
+              <p className="text-gray-600 text-sm mb-4">
+                選擇熱門影片縮圖的解析度品質
+              </p>
+              <select
+                value={thumbnailQuality}
+                onChange={(e) => setThumbnailQuality(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md"
+              >
+                <option value="maxres">最高解析度 (1280x720)</option>
+                <option value="standard">標準解析度 (640x480)</option>
+                <option value="high">高解析度 (480x360)</option>
+                <option value="medium">中等解析度 (320x180)</option>
+                <option value="default">預設解析度 (120x90)</option>
+              </select>
+            </div>
+
             <div>
               <label className="block text-sm font-semibold text-gray-800 mb-4">
                 選擇首頁熱門影片

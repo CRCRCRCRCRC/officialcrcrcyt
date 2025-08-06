@@ -5,14 +5,7 @@ import { Search, Play, Filter } from 'lucide-react'
 import { videoAPI, channelAPI } from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 import YouTubePlayer from '../components/YouTubePlayer'
-
-// 解碼 HTML 實體
-const decodeHtmlEntities = (text) => {
-  if (!text) return text;
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = text;
-  return textarea.value;
-}
+import { formatDuration, formatNumber, decodeHtmlEntities } from '../utils/formatters'
 
 const Videos = () => {
   const [videos, setVideos] = useState([])
@@ -190,7 +183,7 @@ const Videos = () => {
                       </div>
                       {video.duration && (
                         <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-                          {video.duration}
+                          {formatDuration(video.duration)}
                         </div>
                       )}
                       {video.is_featured && (

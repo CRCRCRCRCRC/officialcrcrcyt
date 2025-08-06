@@ -7,14 +7,7 @@ import { videoAPI, channelAPI, settingsAPI } from '../services/api'
 // import youtubeService from '../services/youtube' // 不再使用前端 YouTube 服務
 import LoadingSpinner from '../components/LoadingSpinner'
 import YouTubePlayer from '../components/YouTubePlayer'
-
-// 解碼 HTML 實體
-const decodeHtmlEntities = (text) => {
-  if (!text) return text;
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = text;
-  return textarea.value;
-}
+import { formatDuration, formatNumber, decodeHtmlEntities, getThumbnailUrl } from '../utils/formatters'
 
 const Home = () => {
   const [featuredVideos, setFeaturedVideos] = useState([])
@@ -24,16 +17,9 @@ const Home = () => {
   const [playerOpen, setPlayerOpen] = useState(false)
   const [currentVideoId, setCurrentVideoId] = useState('')
   const [currentVideoTitle, setCurrentVideoTitle] = useState('')
+  const [thumbnailQuality, setThumbnailQuality] = useState('maxres')
 
-  // 格式化數字顯示
-  const formatNumber = (num) => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M'
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K'
-    }
-    return num?.toLocaleString() || '0'
-  }
+
 
   // 播放影片
   const playVideo = (video) => {
@@ -57,6 +43,7 @@ const Home = () => {
         try {
           const featuredResponse = await settingsAPI.getFeaturedVideo()
           featuredVideo = featuredResponse.data.featuredVideo
+          setThumbnailQuality(featuredResponse.data.thumbnailQuality || 'maxres')
           console.log('設定的熱門影片:', featuredVideo)
         } catch (error) {
           console.log('沒有設定熱門影片，使用預設')
@@ -424,15 +411,14 @@ const Home = () => {
                       {/* 影片縮圖 */}
                       <div className="relative overflow-hidden rounded-2xl aspect-video">
                         <img
-                          src={video.thumbnails?.maxres?.url || video.thumbnails?.standard?.url || video.thumbnails?.high?.url || video.thumbnail_url || `https://img.youtube.com/vi/${video.id || video.youtube_id}/maxresdefault.jpg`}
+                          src={getThumbnailUrl(video, thumbnailQuality)}
                           alt={decodeHtmlEntities(video.title) || '無標題'}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           onError={(e) => {
-                            // 如果最高解析度失敗，嘗試標準解析度
-                            if (e.target.src.includes('maxresdefault')) {
-                              e.target.src = `https://img.youtube.com/vi/${video.id || video.youtube_id}/sddefault.jpg`
-                            } else {
-                              e.target.src = `https://img.youtube.com/vi/${video.id || video.youtube_id}/hqdefault.jpg`
+                            // 如果指定解析度失敗，嘗試降級
+                            const fallbackUrl = getThumbnailUrl(video, 'high')
+                            if (e.target.src !== fallbackUrl) {
+                              e.target.src = fallbackUrl
                             }
                           }}
                         />
@@ -454,7 +440,7 @@ const Home = () => {
                         {/* 時長標籤 */}
                         {video.duration && (
                           <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full font-medium">
-                            {video.duration}
+                            {formatDuration(video.duration)}
                           </div>
                         )}
                         

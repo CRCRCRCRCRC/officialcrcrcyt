@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, Calendar, Eye, Tag, ExternalLink, Share2 } from 'lucide-react'
 import { videoAPI } from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
+import { formatDuration, formatNumber, decodeHtmlEntities } from '../utils/formatters'
 import toast from 'react-hot-toast'
 
 const VideoDetail = () => {
@@ -229,7 +230,7 @@ const VideoDetail = () => {
                           />
                           {relatedVideo.duration && (
                             <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">
-                              {relatedVideo.duration}
+                              {formatDuration(relatedVideo.duration)}
                             </div>
                           )}
                         </div>
