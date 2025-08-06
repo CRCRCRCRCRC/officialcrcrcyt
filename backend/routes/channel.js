@@ -1,7 +1,39 @@
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const database = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const youtubeService = require('../services/youtube');
+
+// 設置 multer 用於文件上傳
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB 限制
+  },
+  fileFilter: function (req, file, cb) {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('只允許上傳圖片文件'));
+    }
+  }
+});
 
 const router = express.Router();
 
@@ -127,6 +159,44 @@ router.put('/settings', authenticateToken, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error('更新網站設置錯誤:', error);
     res.status(500).json({ error: '服務器內部錯誤' });
+  }
+});
+
+// 上傳圖片（需要管理員權限）
+router.post('/upload-image', authenticateToken, requireAdmin, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: '沒有上傳文件' });
+    }
+
+    const { type } = req.body; // 'avatar' 或 'banner'
+    const imageUrl = `/uploads/${req.file.filename}`;
+
+    // 更新資料庫中的圖片 URL
+    if (type === 'avatar') {
+      await database.setSiteSetting('avatar_image', imageUrl);
+    } else if (type === 'banner') {
+      await database.setSiteSetting('banner_image', imageUrl);
+    }
+
+    res.json({
+      message: '圖片上傳成功',
+      url: imageUrl
+    });
+  } catch (error) {
+    console.error('圖片上傳錯誤:', error);
+    res.status(500).json({ error: '服務器內部錯誤' });
+  }
+});
+
+// 獲取 YouTube 頻道數據（需要管理員權限）
+router.get('/youtube-data', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const stats = await youtubeService.getChannelStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('獲取 YouTube 數據錯誤:', error);
+    res.status(500).json({ error: '無法獲取 YouTube 數據: ' + error.message });
   }
 });
 

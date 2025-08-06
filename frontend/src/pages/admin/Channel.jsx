@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Save, 
-  Upload, 
-  Youtube, 
-  Users, 
+import {
+  Save,
+  Upload,
+  Youtube,
+  Users,
   Eye,
   Calendar,
-  ExternalLink
+  ExternalLink,
+  RefreshCw,
+  Play
 } from 'lucide-react'
 import { channelAPI } from '../../services/api'
 import LoadingSpinner from '../../components/LoadingSpinner'
@@ -15,16 +17,18 @@ import toast from 'react-hot-toast'
 
 const Channel = () => {
   const [channelInfo, setChannelInfo] = useState({
-    name: '',
+    title: '',
     description: '',
-    youtube_url: '',
-    subscriber_count: 0,
-    total_views: 0,
+    subscriberCount: 0,
+    viewCount: 0,
+    videoCount: 0,
+    thumbnails: {},
+    customUrl: '',
     banner_url: '',
     avatar_url: ''
   })
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     fetchChannelInfo()
@@ -32,38 +36,37 @@ const Channel = () => {
 
   const fetchChannelInfo = async () => {
     try {
-      const response = await channelAPI.getInfo()
-      setChannelInfo(response.data)
+      // 直接從 YouTube API 獲取數據
+      const response = await channelAPI.getYouTubeData()
+      setChannelInfo(prev => ({
+        ...prev,
+        title: response.data.title,
+        description: response.data.description,
+        subscriberCount: parseInt(response.data.subscriberCount) || 0,
+        viewCount: parseInt(response.data.viewCount) || 0,
+        videoCount: parseInt(response.data.videoCount) || 0,
+        thumbnails: response.data.thumbnails,
+        customUrl: `https://youtube.com/@${response.data.title}`
+      }))
+      toast.success('已從 YouTube 獲取最新數據')
     } catch (error) {
-      console.error('獲取頻道資訊失敗:', error)
-      toast.error('載入頻道資訊失敗')
+      console.error('獲取 YouTube 數據失敗:', error)
+      toast.error('無法獲取 YouTube 數據，請檢查 API 設定')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setChannelInfo(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setSaving(true)
-
+  const refreshYouTubeData = async () => {
+    setRefreshing(true)
     try {
-      await channelAPI.updateInfo(channelInfo)
-      toast.success('頻道資訊已更新')
-    } catch (error) {
-      console.error('更新頻道資訊失敗:', error)
-      toast.error('更新失敗')
+      await fetchChannelInfo()
     } finally {
-      setSaving(false)
+      setRefreshing(false)
     }
   }
+
+
 
   const handleImageUpload = async (type, file) => {
     if (!file) return
@@ -111,17 +114,29 @@ const Channel = () => {
                 管理您的 YouTube 頻道資訊與設定
               </p>
             </div>
-            <motion.a
-              href={channelInfo.youtube_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center"
-            >
-              <ExternalLink className="w-5 h-5 mr-2" />
-              查看頻道
-            </motion.a>
+            <div className="flex space-x-3">
+              <motion.button
+                onClick={refreshYouTubeData}
+                disabled={refreshing}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center disabled:opacity-50"
+              >
+                <RefreshCw className={`w-5 h-5 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? '更新中...' : '刷新數據'}
+              </motion.button>
+              <motion.a
+                href={channelInfo.customUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-6 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center"
+              >
+                <ExternalLink className="w-5 h-5 mr-2" />
+                查看頻道
+              </motion.a>
+            </div>
           </div>
         </div>
       </div>
@@ -140,7 +155,7 @@ const Channel = () => {
               <Users className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-3xl font-bold bg-gradient-to-r from-red-500 to-pink-600 bg-clip-text text-transparent mb-2">
-              {channelInfo.subscriber_count?.toLocaleString() || '0'}
+              {channelInfo.subscriberCount?.toLocaleString() || '0'}
             </h3>
             <p className="text-gray-600 font-medium">訂閱者</p>
             <div className="mt-4 text-sm text-gray-500">
@@ -159,7 +174,7 @@ const Channel = () => {
               <Eye className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-3xl font-bold bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent mb-2">
-              {channelInfo.total_views?.toLocaleString() || '0'}
+              {channelInfo.viewCount?.toLocaleString() || '0'}
             </h3>
             <p className="text-gray-600 font-medium">總觀看數</p>
             <div className="mt-4 text-sm text-gray-500">
@@ -175,14 +190,14 @@ const Channel = () => {
             className="bg-white bg-opacity-80 backdrop-blur-xl rounded-2xl border border-white border-opacity-20 shadow-xl p-8 text-center group hover:shadow-2xl transition-all duration-300"
           >
             <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-              <Youtube className="w-8 h-8 text-white" />
+              <Play className="w-8 h-8 text-white" />
             </div>
             <h3 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent mb-2">
-              {channelInfo.name || 'CRCRC'}
+              {channelInfo.videoCount?.toLocaleString() || '0'}
             </h3>
-            <p className="text-gray-600 font-medium">頻道名稱</p>
+            <p className="text-gray-600 font-medium">影片數量</p>
             <div className="mt-4 text-sm text-gray-500">
-              YouTube 頻道標識
+              YouTube 頻道影片總數
             </div>
           </motion.div>
         </div>
@@ -203,53 +218,50 @@ const Channel = () => {
             </h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Channel Name */}
-            <div className="bg-gray-50 bg-opacity-50 rounded-xl p-6">
-              <label htmlFor="name" className="block text-sm font-semibold text-gray-800 mb-3">
-                頻道名稱
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={channelInfo.name}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md"
-                placeholder="請輸入頻道名稱"
-              />
-            </div>
+          <div className="space-y-8">
+            {/* YouTube 頻道資訊 */}
+            <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                <div className="w-6 h-6 bg-gradient-to-r from-red-500 to-pink-600 rounded-lg mr-3"></div>
+                YouTube 頻道資訊
+                <span className="ml-auto text-sm text-gray-500">自動從 YouTube API 獲取</span>
+              </h3>
 
-            {/* Channel Description */}
-            <div className="bg-gray-50 bg-opacity-50 rounded-xl p-6">
-              <label htmlFor="description" className="block text-sm font-semibold text-gray-800 mb-3">
-                頻道描述
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                rows={5}
-                value={channelInfo.description}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md resize-none"
-                placeholder="請輸入頻道描述，介紹您的頻道內容與特色..."
-              />
-            </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-3">
+                    頻道名稱
+                  </label>
+                  <div className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl shadow-sm text-gray-700">
+                    {channelInfo.title || '載入中...'}
+                  </div>
+                </div>
 
-            {/* YouTube URL */}
-            <div className="bg-gray-50 bg-opacity-50 rounded-xl p-6">
-              <label htmlFor="youtube_url" className="block text-sm font-semibold text-gray-800 mb-3">
-                YouTube 頻道連結
-              </label>
-              <input
-                type="url"
-                id="youtube_url"
-                name="youtube_url"
-                value={channelInfo.youtube_url}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md"
-                placeholder="https://www.youtube.com/@your-channel"
-              />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-800 mb-3">
+                    頻道連結
+                  </label>
+                  <div className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <a
+                      href={channelInfo.customUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-red-600 hover:text-red-800 transition-colors"
+                    >
+                      {channelInfo.customUrl || '載入中...'}
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <label className="block text-sm font-semibold text-gray-800 mb-3">
+                  頻道描述
+                </label>
+                <div className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl shadow-sm text-gray-700 min-h-[120px] whitespace-pre-wrap">
+                  {channelInfo.description || '載入中...'}
+                </div>
+              </div>
             </div>
 
             {/* Channel Images */}
@@ -341,74 +353,28 @@ const Channel = () => {
               </div>
             </div>
 
-            {/* Statistics */}
+            {/* 說明文字 */}
             <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                 <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-green-600 rounded-lg mr-3"></div>
-                頻道統計數據
+                自動數據同步
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="subscriber_count" className="block text-sm font-semibold text-gray-800 mb-3">
-                    訂閱者數量
-                  </label>
-                  <input
-                    type="number"
-                    id="subscriber_count"
-                    name="subscriber_count"
-                    value={channelInfo.subscriber_count}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md"
-                    placeholder="0"
-                  />
-                  <p className="text-sm text-gray-500 mt-2">
-                    YouTube 頻道的訂閱人數
-                  </p>
-                </div>
-
-                <div>
-                  <label htmlFor="total_views" className="block text-sm font-semibold text-gray-800 mb-3">
-                    總觀看數
-                  </label>
-                  <input
-                    type="number"
-                    id="total_views"
-                    name="total_views"
-                    value={channelInfo.total_views}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-300 shadow-sm hover:shadow-md"
-                    placeholder="0"
-                  />
-                  <p className="text-sm text-gray-500 mt-2">
-                    所有影片的累計觀看次數
-                  </p>
-                </div>
+              <div className="text-gray-700 space-y-3">
+                <p className="flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+                  頻道統計數據會自動從 YouTube API 獲取，無需手動輸入
+                </p>
+                <p className="flex items-center">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mr-3"></div>
+                  點擊「刷新數據」按鈕可獲取最新的頻道資訊
+                </p>
+                <p className="flex items-center">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
+                  只有頻道圖片需要手動上傳管理
+                </p>
               </div>
             </div>
-
-            {/* Submit Button */}
-            <div className="flex justify-end pt-6 border-t border-gray-200">
-              <motion.button
-                type="submit"
-                disabled={saving}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                {saving ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3" />
-                    儲存中...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-5 h-5 mr-3" />
-                    儲存變更
-                  </>
-                )}
-              </motion.button>
-            </div>
-          </form>
+          </div>
         </motion.div>
       </div>
     </div>

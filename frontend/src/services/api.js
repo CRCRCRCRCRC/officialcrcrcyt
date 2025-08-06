@@ -85,10 +85,13 @@ export const channelAPI = {
   updateSettings: (data) => 
     api.put('/channel/settings', data),
   
-  uploadImage: (formData) => 
+  uploadImage: (formData) =>
     api.post('/channel/upload-image', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    }),
+
+  getYouTubeData: () =>
+    api.get('/channel/youtube-data')
 }
 
 // 設定 API

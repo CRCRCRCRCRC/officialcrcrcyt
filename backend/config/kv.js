@@ -1,8 +1,7 @@
-const { kv } = require('@vercel/kv');
-
 class KVDatabase {
   constructor() {
-    this.kv = kv;
+    // 將在 database.js 中設置 this.kv
+    this.kv = null;
   }
 
   // 用戶相關操作
