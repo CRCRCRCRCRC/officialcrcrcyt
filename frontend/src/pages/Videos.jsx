@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Search, Play, Filter } from 'lucide-react'
 import { videoAPI, channelAPI } from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
+import YouTubePlayer from '../components/YouTubePlayer'
 
 // 解碼 HTML 實體
 const decodeHtmlEntities = (text) => {
@@ -20,6 +21,16 @@ const Videos = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false)
+  const [playerOpen, setPlayerOpen] = useState(false)
+  const [currentVideoId, setCurrentVideoId] = useState('')
+  const [currentVideoTitle, setCurrentVideoTitle] = useState('')
+
+  // 播放影片
+  const playVideo = (video) => {
+    setCurrentVideoId(video.id || video.youtube_id)
+    setCurrentVideoTitle(decodeHtmlEntities(video.title))
+    setPlayerOpen(true)
+  }
 
   const fetchVideos = async (page = 1, search = '', featured = false) => {
     setLoading(true)
@@ -158,13 +169,7 @@ const Videos = () => {
                 >
                   <div
                     className="cursor-pointer"
-                    onClick={() => {
-                      if (video.url) {
-                        window.open(video.url, '_blank')
-                      } else if (video.youtube_id || video.id) {
-                        window.open(`https://www.youtube.com/watch?v=${video.youtube_id || video.id}`, '_blank')
-                      }
-                    }}
+                    onClick={() => playVideo(video)}
                   >
                     <div className="relative overflow-hidden aspect-video">
                       <img
@@ -261,6 +266,14 @@ const Videos = () => {
           </div>
         )}
       </div>
+
+      {/* YouTube 播放器 */}
+      <YouTubePlayer
+        videoId={currentVideoId}
+        isOpen={playerOpen}
+        onClose={() => setPlayerOpen(false)}
+        title={currentVideoTitle}
+      />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { Play, Youtube, Users, Eye, Star, Sparkles, Music, Heart, TrendingUp, Aw
 import { videoAPI, channelAPI } from '../services/api'
 // import youtubeService from '../services/youtube' // 不再使用前端 YouTube 服務
 import LoadingSpinner from '../components/LoadingSpinner'
+import YouTubePlayer from '../components/YouTubePlayer'
 
 // 解碼 HTML 實體
 const decodeHtmlEntities = (text) => {
@@ -20,6 +21,9 @@ const Home = () => {
   const [channelInfo, setChannelInfo] = useState({})
   const [stats, setStats] = useState({})
   const [loading, setLoading] = useState(true)
+  const [playerOpen, setPlayerOpen] = useState(false)
+  const [currentVideoId, setCurrentVideoId] = useState('')
+  const [currentVideoTitle, setCurrentVideoTitle] = useState('')
 
   // 格式化數字顯示
   const formatNumber = (num) => {
@@ -28,7 +32,14 @@ const Home = () => {
     } else if (num >= 1000) {
       return (num / 1000).toFixed(1) + 'K'
     }
-    return num.toLocaleString()
+    return num?.toLocaleString() || '0'
+  }
+
+  // 播放影片
+  const playVideo = (video) => {
+    setCurrentVideoId(video.id || video.youtube_id)
+    setCurrentVideoTitle(decodeHtmlEntities(video.title))
+    setPlayerOpen(true)
   }
 
   const [heroRef, heroInView] = useInView({ threshold: 0.1, triggerOnce: true })
@@ -397,18 +408,21 @@ const Home = () => {
                   >
                     <div className="card-gradient p-2 card-hover group-hover:shadow-glow">
                       {/* 影片縮圖 */}
-                      <div className="relative overflow-hidden rounded-2xl">
+                      <div className="relative overflow-hidden rounded-2xl aspect-video">
                         <img
-                          src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`}
+                          src={video.thumbnails?.medium?.url || video.thumbnail_url || `https://img.youtube.com/vi/${video.id || video.youtube_id}/maxresdefault.jpg`}
                           alt={decodeHtmlEntities(video.title) || '無標題'}
-                          className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           onError={(e) => {
-                            e.target.src = '/api/placeholder/400/225'
+                            e.target.src = `https://img.youtube.com/vi/${video.id || video.youtube_id}/hqdefault.jpg`
                           }}
                         />
                         
                         {/* 播放覆蓋層 */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                        <div
+                          className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"
+                          onClick={() => playVideo(video)}
+                        >
                           <motion.div
                             className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30"
                             whileHover={{ scale: 1.1 }}
@@ -616,6 +630,14 @@ const Home = () => {
           </motion.div>
         </div>
       </section>
+
+      {/* YouTube 播放器 */}
+      <YouTubePlayer
+        videoId={currentVideoId}
+        isOpen={playerOpen}
+        onClose={() => setPlayerOpen(false)}
+        title={currentVideoTitle}
+      />
     </div>
   )
 }
