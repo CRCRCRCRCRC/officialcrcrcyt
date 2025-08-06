@@ -105,17 +105,7 @@ export const settingsAPI = {
     api.post('/settings/featured-video', { videoId })
 }
 
-// 設定 API
-export const settingsAPI = {
-  getAll: () => 
-    api.get('/settings'),
-  
-  update: (data) => 
-    api.put('/settings', data),
-  
-  changePassword: (data) => 
-    api.post('/settings/change-password', data)
-}
+
 
 // 通用 API 函數
 export const apiCall = async (apiFunction, ...args) => {
