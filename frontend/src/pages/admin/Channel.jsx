@@ -46,7 +46,7 @@ const Channel = () => {
         viewCount: parseInt(response.data.viewCount) || 0,
         videoCount: parseInt(response.data.videoCount) || 0,
         thumbnails: response.data.thumbnails,
-        customUrl: `https://youtube.com/@${response.data.title}`
+        customUrl: `https://youtube.com/@officialcrcrcyt`
       }))
       toast.success('已從 YouTube 獲取最新數據')
     } catch (error) {
@@ -264,94 +264,7 @@ const Channel = () => {
               </div>
             </div>
 
-            {/* Channel Images */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
-                <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg mr-3"></div>
-                頻道視覺設計
-              </h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Avatar */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-4">
-                    頻道頭像
-                  </label>
-                  <div className="flex flex-col items-center space-y-4">
-                    <div className="w-24 h-24 rounded-full bg-gray-100 border-4 border-white shadow-lg overflow-hidden">
-                      {channelInfo.avatar_url ? (
-                        <img
-                          src={channelInfo.avatar_url}
-                          alt="頻道頭像"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
-                          <Youtube className="w-8 h-8 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload('avatar', e.target.files[0])}
-                        className="hidden"
-                        id="avatar-upload"
-                      />
-                      <motion.label
-                        htmlFor="avatar-upload"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="cursor-pointer px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center"
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        上傳頭像
-                      </motion.label>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Banner */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-4">
-                    頻道橫幅
-                  </label>
-                  <div className="space-y-4">
-                    <div className="w-full h-32 rounded-xl bg-gray-100 border-4 border-white shadow-lg overflow-hidden">
-                      {channelInfo.banner_url ? (
-                        <img
-                          src={channelInfo.banner_url}
-                          alt="頻道橫幅"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
-                          <Youtube className="w-8 h-8 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex justify-center">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleImageUpload('banner', e.target.files[0])}
-                        className="hidden"
-                        id="banner-upload"
-                      />
-                      <motion.label
-                        htmlFor="banner-upload"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="cursor-pointer px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center"
-                      >
-                        <Upload className="w-4 h-4 mr-2" />
-                        上傳橫幅
-                      </motion.label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* 說明文字 */}
             <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-xl p-6">

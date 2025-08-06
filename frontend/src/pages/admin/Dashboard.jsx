@@ -416,42 +416,7 @@ const Dashboard = () => {
             </div>
           </motion.div>
 
-          {/* Performance Overview */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-          >
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-white" />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900">
-                  本週表現
-                </h2>
-              </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">影片上傳</span>
-                  <span className="text-sm font-semibold text-gray-900">3 部</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">新增觀看</span>
-                  <span className="text-sm font-semibold text-green-600">+2.4K</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">新訂閱者</span>
-                  <span className="text-sm font-semibold text-blue-600">+127</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">互動率</span>
-                  <span className="text-sm font-semibold text-purple-600">8.2%</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
         </div>
       </div>
 

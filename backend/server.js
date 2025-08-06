@@ -6,8 +6,9 @@ const path = require('path');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
-const videoRoutes = require('./routes/videos');
+
 const channelRoutes = require('./routes/channel');
+const settingsRoutes = require('./routes/settings');
 const database = require('./config/database');
 
 const app = express();
@@ -44,8 +45,9 @@ app.use('/uploads', express.static('uploads'));
 
 // API 路由
 app.use('/api/auth', authRoutes);
-app.use('/api/videos', videoRoutes);
+
 app.use('/api/channel', channelRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // 健康檢查和初始化
 app.get('/api/health', async (req, res) => {

@@ -60,8 +60,8 @@ const Home = () => {
           totalLikes: data.latestVideos?.reduce((sum, video) => sum + (video.likeCount || 0), 0) || 0
         })
 
-        // 設置最新影片作為精選影片
-        setFeaturedVideos(data.latestVideos || [])
+        // 只設置第一個影片作為熱門影片
+        setFeaturedVideos(data.latestVideos ? [data.latestVideos[0]] : [])
 
         console.log('YouTube 數據獲取成功:', data)
 
@@ -386,7 +386,7 @@ const Home = () => {
             </div>
 
             {featuredVideos.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="max-w-4xl mx-auto">
                 {featuredVideos.map((video, index) => (
                   <motion.div
                     key={video.id}

@@ -97,6 +97,14 @@ export const channelAPI = {
     api.get('/channel/dashboard')
 }
 
+export const settingsAPI = {
+  getAll: () =>
+    api.get('/settings'),
+
+  updateFeaturedVideo: (videoId) =>
+    api.post('/settings/featured-video', { videoId })
+}
+
 // 設定 API
 export const settingsAPI = {
   getAll: () => 

@@ -156,12 +156,21 @@ const Videos = () => {
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   className="card group hover:shadow-lg transition-all duration-300"
                 >
-                  <Link to={`/videos/${video.id}`}>
-                    <div className="relative overflow-hidden">
+                  <div
+                    className="cursor-pointer"
+                    onClick={() => {
+                      if (video.url) {
+                        window.open(video.url, '_blank')
+                      } else if (video.youtube_id || video.id) {
+                        window.open(`https://www.youtube.com/watch?v=${video.youtube_id || video.id}`, '_blank')
+                      }
+                    }}
+                  >
+                    <div className="relative overflow-hidden aspect-video">
                       <img
-                        src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`}
+                        src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id || video.id}/maxresdefault.jpg`}
                         alt={video.title}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <Play className="w-12 h-12 text-white" />
@@ -179,21 +188,21 @@ const Videos = () => {
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors">
-                        {video.title}
+                        {decodeHtmlEntities(video.title)}
                       </h3>
                       <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                        {video.description}
+                        {decodeHtmlEntities(video.description)}
                       </p>
                       <div className="flex items-center justify-between text-sm text-gray-500">
-                        <span>{video.view_count?.toLocaleString()} 次觀看</span>
-                        {video.published_at && (
+                        <span>{(video.viewCount || video.view_count || 0).toLocaleString()} 次觀看</span>
+                        {(video.published_at || video.publishedAt) && (
                           <span>
-                            {new Date(video.published_at).toLocaleDateString('zh-TW')}
+                            {new Date(video.published_at || video.publishedAt).toLocaleDateString('zh-TW')}
                           </span>
                         )}
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </motion.div>
               ))}
             </motion.div>

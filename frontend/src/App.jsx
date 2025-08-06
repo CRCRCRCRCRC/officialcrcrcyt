@@ -9,7 +9,7 @@ import About from './pages/About'
 import Contact from './pages/Contact'
 import AdminLogin from './pages/admin/Login'
 import AdminDashboard from './pages/admin/Dashboard'
-import AdminVideos from './pages/admin/Videos'
+
 import AdminChannel from './pages/admin/Channel'
 import AdminSettings from './pages/admin/Settings'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -39,7 +39,7 @@ function App() {
         }>
           <Route index element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="videos" element={<AdminVideos />} />
+
           <Route path="channel" element={<AdminChannel />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
