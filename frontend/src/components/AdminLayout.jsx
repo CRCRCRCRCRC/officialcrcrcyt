@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -25,6 +25,18 @@ const AdminLayout = () => {
   const { user, logout } = useAuth()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isLargeScreen, setIsLargeScreen] = useState(false)
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024)
+    }
+
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   const navigation = [
@@ -81,9 +93,13 @@ const AdminLayout = () => {
       </AnimatePresence>
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-2xl transform transition-transform duration-300 lg:transform-none lg:translate-x-0 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <motion.div
+        initial={false}
+        animate={{
+          x: isLargeScreen ? 0 : (sidebarOpen ? 0 : '-100%')
+        }}
+        className="fixed inset-y-0 left-0 z-50 w-64 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-2xl"
+      >
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-20 items-center justify-between px-6 border-b border-white/10">
@@ -186,7 +202,7 @@ const AdminLayout = () => {
       </motion.div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="transition-all duration-300" style={{ paddingLeft: isLargeScreen ? '256px' : '0' }}>
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-white/20">
           <div className="flex h-16 items-center justify-between px-6">
