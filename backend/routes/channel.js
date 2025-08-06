@@ -211,4 +211,15 @@ router.get('/dashboard', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// 獲取公開的頻道數據（首頁使用，無需登入）
+router.get('/public-data', async (req, res) => {
+  try {
+    const dashboardData = await youtubeService.getDashboardData();
+    res.json(dashboardData);
+  } catch (error) {
+    console.error('獲取公開頻道數據錯誤:', error);
+    res.status(500).json({ error: '無法獲取頻道數據: ' + error.message });
+  }
+});
+
 module.exports = router;

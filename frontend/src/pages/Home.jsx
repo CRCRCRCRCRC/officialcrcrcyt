@@ -41,7 +41,7 @@ const Home = () => {
       try {
         console.log('正在從 YouTube API 獲取數據...')
 
-        const dashboardResponse = await channelAPI.getDashboard()
+        const dashboardResponse = await channelAPI.getPublicData()
         const data = dashboardResponse.data
 
         // 設置 YouTube 數據

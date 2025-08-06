@@ -94,7 +94,10 @@ export const channelAPI = {
     api.get('/channel/youtube-data'),
 
   getDashboard: () =>
-    api.get('/channel/dashboard')
+    api.get('/channel/dashboard'),
+
+  getPublicData: () =>
+    api.get('/channel/public-data')
 }
 
 export const settingsAPI = {

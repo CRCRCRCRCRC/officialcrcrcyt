@@ -26,7 +26,7 @@ const Videos = () => {
     try {
       // 如果沒有搜索條件，從 YouTube API 獲取
       if (!search && !featured) {
-        const dashboardResponse = await channelAPI.getDashboard()
+        const dashboardResponse = await channelAPI.getPublicData()
         const youtubeVideos = dashboardResponse.data.latestVideos || []
 
         // 轉換 YouTube 數據格式以匹配現有組件
