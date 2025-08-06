@@ -5,6 +5,14 @@ import { Search, Play, Filter } from 'lucide-react'
 import { videoAPI, channelAPI } from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
 
+// 解碼 HTML 實體
+const decodeHtmlEntities = (text) => {
+  if (!text) return text;
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
 const Videos = () => {
   const [videos, setVideos] = useState([])
   const [loading, setLoading] = useState(true)
@@ -24,8 +32,8 @@ const Videos = () => {
         // 轉換 YouTube 數據格式以匹配現有組件
         const formattedVideos = youtubeVideos.map(video => ({
           id: video.id,
-          title: video.title,
-          description: video.description,
+          title: decodeHtmlEntities(video.title),
+          description: decodeHtmlEntities(video.description),
           thumbnail_url: video.thumbnails?.medium?.url || video.thumbnails?.default?.url,
           youtube_id: video.id,
           view_count: video.viewCount || 0,

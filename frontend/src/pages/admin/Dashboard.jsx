@@ -24,6 +24,14 @@ import { videoAPI, channelAPI } from '../../services/api'
 import LoadingSpinner from '../../components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
+// 解碼 HTML 實體
+const decodeHtmlEntities = (text) => {
+  if (!text) return text;
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
 const Dashboard = () => {
   const [stats, setStats] = useState({
     totalVideos: 0,
@@ -307,7 +315,7 @@ const Dashboard = () => {
                         rel="noopener noreferrer"
                         className="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors block"
                       >
-                        {video.title || '無標題'}
+                        {decodeHtmlEntities(video.title) || '無標題'}
                       </a>
                       <div className="flex items-center space-x-4 mt-1">
                         <span className="text-xs text-gray-500 flex items-center">

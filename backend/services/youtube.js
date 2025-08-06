@@ -4,6 +4,28 @@ const database = require('../config/database');
 const API_KEY = process.env.YOUTUBE_API_KEY;
 const BASE_URL = 'https://www.googleapis.com/youtube/v3';
 
+// 解碼 HTML 實體
+function decodeHtmlEntities(text) {
+  if (!text) return text;
+
+  const entities = {
+    '&#39;': "'",
+    '&quot;': '"',
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&nbsp;': ' ',
+    '&#x27;': "'",
+    '&#x2F;': '/',
+    '&#x60;': '`',
+    '&#x3D;': '='
+  };
+
+  return text.replace(/&#?\w+;/g, (entity) => {
+    return entities[entity] || entity;
+  });
+}
+
 
 
 // 獲取頻道 ID
@@ -80,8 +102,8 @@ async function getChannelStats() {
       subscriberCount: stats.subscriberCount,
       viewCount: stats.viewCount,
       videoCount: stats.videoCount,
-      title: snippet.title,
-      description: snippet.description,
+      title: decodeHtmlEntities(snippet.title),
+      description: decodeHtmlEntities(snippet.description),
       thumbnails: snippet.thumbnails,
     };
   } catch (error) {
@@ -130,8 +152,8 @@ async function getChannelVideos(maxResults = 10) {
 
       return {
         id: item.id.videoId,
-        title: item.snippet.title,
-        description: item.snippet.description,
+        title: decodeHtmlEntities(item.snippet.title),
+        description: decodeHtmlEntities(item.snippet.description),
         publishedAt: item.snippet.publishedAt,
         thumbnails: item.snippet.thumbnails,
         viewCount: parseInt(stats.viewCount) || 0,

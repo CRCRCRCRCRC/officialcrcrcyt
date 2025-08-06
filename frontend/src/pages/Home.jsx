@@ -7,6 +7,14 @@ import { videoAPI, channelAPI } from '../services/api'
 // import youtubeService from '../services/youtube' // 不再使用前端 YouTube 服務
 import LoadingSpinner from '../components/LoadingSpinner'
 
+// 解碼 HTML 實體
+const decodeHtmlEntities = (text) => {
+  if (!text) return text;
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
 const Home = () => {
   const [featuredVideos, setFeaturedVideos] = useState([])
   const [channelInfo, setChannelInfo] = useState({})
@@ -392,7 +400,7 @@ const Home = () => {
                       <div className="relative overflow-hidden rounded-2xl">
                         <img
                           src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id}/maxresdefault.jpg`}
-                          alt={video.title || '無標題'}
+                          alt={decodeHtmlEntities(video.title) || '無標題'}
                           className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
                           onError={(e) => {
                             e.target.src = '/api/placeholder/400/225'
@@ -427,10 +435,10 @@ const Home = () => {
                       {/* 內容區塊 */}
                       <div className="p-6">
                         <h3 className="font-bold text-gray-900 mb-3 line-clamp-2 text-lg group-hover:text-primary-600 transition-colors duration-300">
-                          {video.title || '無標題'}
+                          {decodeHtmlEntities(video.title) || '無標題'}
                         </h3>
                         <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed">
-                          {video.description || '暫無描述'}
+                          {decodeHtmlEntities(video.description) || '暫無描述'}
                         </p>
                         
                         {/* 底部資訊 */}
