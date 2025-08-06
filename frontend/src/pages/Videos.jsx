@@ -173,9 +173,17 @@ const Videos = () => {
                   >
                     <div className="relative overflow-hidden aspect-video">
                       <img
-                        src={video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id || video.id}/maxresdefault.jpg`}
+                        src={video.thumbnails?.maxres?.url || video.thumbnails?.standard?.url || video.thumbnails?.high?.url || video.thumbnail_url || `https://img.youtube.com/vi/${video.youtube_id || video.id}/maxresdefault.jpg`}
                         alt={video.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          // 如果最高解析度失敗，嘗試標準解析度
+                          if (e.target.src.includes('maxresdefault')) {
+                            e.target.src = `https://img.youtube.com/vi/${video.youtube_id || video.id}/sddefault.jpg`
+                          } else {
+                            e.target.src = `https://img.youtube.com/vi/${video.youtube_id || video.id}/hqdefault.jpg`
+                          }
+                        }}
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <Play className="w-12 h-12 text-white" />

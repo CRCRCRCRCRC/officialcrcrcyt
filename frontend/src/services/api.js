@@ -105,7 +105,10 @@ export const settingsAPI = {
     api.get('/settings'),
 
   updateFeaturedVideo: (videoId) =>
-    api.post('/settings/featured-video', { videoId })
+    api.post('/settings/featured-video', { videoId }),
+
+  getFeaturedVideo: () =>
+    api.get('/settings/featured-video')
 }
 
 

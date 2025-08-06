@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
 import { Play, Youtube, Users, Eye, Star, Sparkles, Music, Heart, TrendingUp, Award, Zap } from 'lucide-react'
-import { videoAPI, channelAPI } from '../services/api'
+import { videoAPI, channelAPI, settingsAPI } from '../services/api'
 // import youtubeService from '../services/youtube' // 不再使用前端 YouTube 服務
 import LoadingSpinner from '../components/LoadingSpinner'
 import YouTubePlayer from '../components/YouTubePlayer'
@@ -50,7 +50,17 @@ const Home = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('正在從 YouTube API 獲取數據...')
+        console.log('正在獲取數據...')
+
+        // 首先嘗試獲取設定的熱門影片
+        let featuredVideo = null
+        try {
+          const featuredResponse = await settingsAPI.getFeaturedVideo()
+          featuredVideo = featuredResponse.data.featuredVideo
+          console.log('設定的熱門影片:', featuredVideo)
+        } catch (error) {
+          console.log('沒有設定熱門影片，使用預設')
+        }
 
         const dashboardResponse = await channelAPI.getPublicData()
         const data = dashboardResponse.data
@@ -71,8 +81,12 @@ const Home = () => {
           totalLikes: data.latestVideos?.reduce((sum, video) => sum + (video.likeCount || 0), 0) || 0
         })
 
-        // 只設置第一個影片作為熱門影片
-        setFeaturedVideos(data.latestVideos ? [data.latestVideos[0]] : [])
+        // 設置熱門影片：優先使用設定的，否則使用第一個影片
+        if (featuredVideo) {
+          setFeaturedVideos([featuredVideo])
+        } else {
+          setFeaturedVideos(data.latestVideos ? [data.latestVideos[0]] : [])
+        }
 
         console.log('YouTube 數據獲取成功:', data)
 
@@ -410,11 +424,16 @@ const Home = () => {
                       {/* 影片縮圖 */}
                       <div className="relative overflow-hidden rounded-2xl aspect-video">
                         <img
-                          src={video.thumbnails?.medium?.url || video.thumbnail_url || `https://img.youtube.com/vi/${video.id || video.youtube_id}/maxresdefault.jpg`}
+                          src={video.thumbnails?.maxres?.url || video.thumbnails?.standard?.url || video.thumbnails?.high?.url || video.thumbnail_url || `https://img.youtube.com/vi/${video.id || video.youtube_id}/maxresdefault.jpg`}
                           alt={decodeHtmlEntities(video.title) || '無標題'}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                           onError={(e) => {
-                            e.target.src = `https://img.youtube.com/vi/${video.id || video.youtube_id}/hqdefault.jpg`
+                            // 如果最高解析度失敗，嘗試標準解析度
+                            if (e.target.src.includes('maxresdefault')) {
+                              e.target.src = `https://img.youtube.com/vi/${video.id || video.youtube_id}/sddefault.jpg`
+                            } else {
+                              e.target.src = `https://img.youtube.com/vi/${video.id || video.youtube_id}/hqdefault.jpg`
+                            }
                           }}
                         />
                         
