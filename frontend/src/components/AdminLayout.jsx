@@ -66,7 +66,7 @@ const AdminLayout = () => {
   const isActive = (href) => location.pathname === href
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Mobile sidebar backdrop */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -84,7 +84,7 @@ const AdminLayout = () => {
       <motion.div
         initial={false}
         animate={{ x: sidebarOpen ? 0 : '-100%' }}
-        className="fixed inset-y-0 left-0 z-50 w-72 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-2xl lg:translate-x-0 lg:relative lg:flex lg:flex-shrink-0"
+        className="fixed inset-y-0 left-0 z-50 w-72 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-2xl lg:translate-x-0"
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
@@ -188,7 +188,7 @@ const AdminLayout = () => {
       </motion.div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="lg:ml-72">
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-white/20">
           <div className="flex h-16 items-center justify-between px-6">
@@ -218,7 +218,7 @@ const AdminLayout = () => {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="p-6">
           <Outlet />
         </main>
       </div>
