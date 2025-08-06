@@ -105,6 +105,9 @@ async function getChannelStats() {
       title: decodeHtmlEntities(snippet.title),
       description: decodeHtmlEntities(snippet.description),
       thumbnails: snippet.thumbnails,
+      publishedAt: snippet.publishedAt,
+      customUrl: snippet.customUrl || `https://youtube.com/@officialcrcrcyt`,
+      country: snippet.country || 'TW'
     };
   } catch (error) {
     console.error('Error fetching channel stats:', error.message);
@@ -187,7 +190,13 @@ async function getDashboardData() {
       totalVideos: channelStats.videoCount,
       totalViews: channelStats.viewCount,
       subscriberCount: channelStats.subscriberCount,
-      channelTitle: channelStats.title
+      videoCount: channelStats.videoCount,
+      channelTitle: channelStats.title,
+      channelDescription: channelStats.description,
+      channelThumbnails: channelStats.thumbnails,
+      customUrl: channelStats.customUrl,
+      publishedAt: channelStats.publishedAt,
+      country: channelStats.country
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error.message);

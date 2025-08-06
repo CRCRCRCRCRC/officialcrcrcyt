@@ -11,7 +11,6 @@ const Header = () => {
     { name: '首頁', href: '/' },
     { name: '影片', href: '/videos' },
     { name: '關於', href: '/about' },
-    { name: '聯絡', href: '/contact' },
   ]
 
   const isActive = (path) => location.pathname === path

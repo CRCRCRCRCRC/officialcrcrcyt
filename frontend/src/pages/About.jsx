@@ -1,7 +1,72 @@
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, Music, Heart, Award } from 'lucide-react'
+import { useInView } from 'react-intersection-observer'
+import {
+  Users,
+  Music,
+  Heart,
+  Award,
+  Youtube,
+  Calendar,
+  Eye,
+  Video,
+  Play,
+  Star
+} from 'lucide-react'
+import { channelAPI } from '../services/api'
+import { formatNumber, decodeHtmlEntities } from '../utils/formatters'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 const About = () => {
+  const [channelInfo, setChannelInfo] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const [heroRef, heroInView] = useInView({ threshold: 0.1, triggerOnce: true })
+  const [statsRef, statsInView] = useInView({ threshold: 0.1, triggerOnce: true })
+  const [featuresRef, featuresInView] = useInView({ threshold: 0.1, triggerOnce: true })
+
+  useEffect(() => {
+    const fetchChannelInfo = async () => {
+      try {
+        setLoading(true)
+        const response = await channelAPI.getPublicData()
+        const data = response.data
+
+        setChannelInfo({
+          title: data.channelTitle || 'CRCRC',
+          description: data.channelDescription || '專業空耳音樂創作頻道',
+          customUrl: data.customUrl || 'https://youtube.com/@officialcrcrcyt',
+          thumbnails: data.channelThumbnails || {},
+          subscriberCount: parseInt(data.subscriberCount) || 0,
+          videoCount: parseInt(data.videoCount) || 0,
+          viewCount: parseInt(data.totalViews) || 0,
+          publishedAt: data.publishedAt || new Date().toISOString(),
+          country: data.country || 'TW'
+        })
+      } catch (error) {
+        console.error('獲取頻道資訊失敗:', error)
+        setError('無法載入頻道資訊')
+        // 設置預設資訊
+        setChannelInfo({
+          title: 'CRCRC',
+          description: '專業空耳音樂創作頻道，致力於為觀眾帶來高質量的音樂內容。',
+          customUrl: 'https://youtube.com/@officialcrcrcyt',
+          thumbnails: {},
+          subscriberCount: 0,
+          videoCount: 0,
+          viewCount: 0,
+          publishedAt: new Date().toISOString(),
+          country: 'TW'
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchChannelInfo()
+  }, [])
+
   const features = [
     {
       icon: Music,
@@ -25,12 +90,13 @@ const About = () => {
     }
   ]
 
-  const stats = [
-    { number: '100+', label: '創作作品' },
-    { number: '50K+', label: '訂閱者' },
-    { number: '1M+', label: '總觀看數' },
-    { number: '3+', label: '年創作經驗' }
-  ]
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <LoadingSpinner size="large" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -38,17 +104,52 @@ const About = () => {
       <div className="bg-gradient-to-br from-primary-600 to-secondary-600 text-white">
         <div className="container-custom py-20">
           <motion.div
+            ref={heroRef}
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={heroInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6 }}
             className="text-center"
           >
+            {/* 頻道頭像 */}
+            {channelInfo?.thumbnails?.high?.url && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={heroInView ? { opacity: 1, scale: 1 } : {}}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="mb-8"
+              >
+                <img
+                  src={channelInfo.thumbnails.high.url}
+                  alt={channelInfo.title}
+                  className="w-32 h-32 rounded-full mx-auto border-4 border-white/20 shadow-2xl"
+                />
+              </motion.div>
+            )}
+
             <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">
-              關於 CRCRC
+              關於 {channelInfo?.title || 'CRCRC'}
             </h1>
-            <p className="text-xl md:text-2xl text-primary-100 max-w-3xl mx-auto">
-              我們是一個專注於空耳音樂創作的團隊，致力於為觀眾帶來歡樂與驚喜
+            <p className="text-xl md:text-2xl text-primary-100 max-w-3xl mx-auto leading-relaxed">
+              {decodeHtmlEntities(channelInfo?.description) || '專業空耳音樂創作頻道，致力於為觀眾帶來歡樂與驚喜'}
             </p>
+
+            {/* YouTube 連結 */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={heroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="mt-8"
+            >
+              <a
+                href={channelInfo?.customUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors duration-300"
+              >
+                <Youtube className="w-5 h-5 mr-2" />
+                訂閱我們的頻道
+              </a>
+            </motion.div>
           </motion.div>
         </div>
       </div>
@@ -89,8 +190,9 @@ const About = () => {
       <div className="bg-white py-16">
         <div className="container-custom">
           <motion.div
+            ref={featuresRef}
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={featuresInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-center mb-12"
           >
@@ -105,7 +207,7 @@ const About = () => {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={featuresInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
                 className="text-center"
               >
@@ -128,34 +230,78 @@ const About = () => {
       <div className="bg-gray-900 text-white py-16">
         <div className="container-custom">
           <motion.div
+            ref={statsRef}
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            animate={statsInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.8 }}
             className="text-center mb-12"
           >
             <h2 className="text-3xl md:text-4xl font-display font-bold mb-6">
-              我們的成就
+              頻道數據
             </h2>
             <div className="w-24 h-1 bg-primary-500 mx-auto"></div>
           </motion.div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 1 + index * 0.1 }}
-                className="text-center"
-              >
-                <div className="text-4xl md:text-5xl font-bold text-primary-400 mb-2">
-                  {stat.number}
-                </div>
-                <div className="text-gray-300 text-lg">
-                  {stat.label}
-                </div>
-              </motion.div>
-            ))}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={statsInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.6, delay: 1 }}
+              className="text-center"
+            >
+              <div className="text-4xl md:text-5xl font-bold text-primary-400 mb-2">
+                {formatNumber(channelInfo?.subscriberCount || 0)}
+              </div>
+              <div className="text-gray-300 text-lg flex items-center justify-center">
+                <Users className="w-5 h-5 mr-2" />
+                訂閱者
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={statsInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.6, delay: 1.1 }}
+              className="text-center"
+            >
+              <div className="text-4xl md:text-5xl font-bold text-primary-400 mb-2">
+                {formatNumber(channelInfo?.videoCount || 0)}
+              </div>
+              <div className="text-gray-300 text-lg flex items-center justify-center">
+                <Video className="w-5 h-5 mr-2" />
+                影片數量
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={statsInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.6, delay: 1.2 }}
+              className="text-center"
+            >
+              <div className="text-4xl md:text-5xl font-bold text-primary-400 mb-2">
+                {formatNumber(channelInfo?.viewCount || 0)}
+              </div>
+              <div className="text-gray-300 text-lg flex items-center justify-center">
+                <Eye className="w-5 h-5 mr-2" />
+                總觀看數
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={statsInView ? { opacity: 1, scale: 1 } : {}}
+              transition={{ duration: 0.6, delay: 1.3 }}
+              className="text-center"
+            >
+              <div className="text-4xl md:text-5xl font-bold text-primary-400 mb-2">
+                {channelInfo?.publishedAt ? new Date().getFullYear() - new Date(channelInfo.publishedAt).getFullYear() : 0}+
+              </div>
+              <div className="text-gray-300 text-lg flex items-center justify-center">
+                <Calendar className="w-5 h-5 mr-2" />
+                創作年數
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>

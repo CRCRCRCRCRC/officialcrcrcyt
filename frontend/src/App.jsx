@@ -6,7 +6,7 @@ import Home from './pages/Home'
 import Videos from './pages/Videos'
 import VideoDetail from './pages/VideoDetail'
 import About from './pages/About'
-import Contact from './pages/Contact'
+
 import AdminLogin from './pages/admin/Login'
 import AdminDashboard from './pages/admin/Dashboard'
 
@@ -25,7 +25,7 @@ function App() {
           <Route path="videos" element={<Videos />} />
           <Route path="videos/:id" element={<VideoDetail />} />
           <Route path="about" element={<About />} />
-          <Route path="contact" element={<Contact />} />
+
         </Route>
 
         {/* 管理員登入頁面 */}
