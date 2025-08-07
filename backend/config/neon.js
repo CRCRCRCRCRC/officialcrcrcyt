@@ -278,12 +278,15 @@ class NeonDatabase {
 
   // 生成 slug
   generateSlug(title) {
-    return title
+    const slug = title
       .toLowerCase()
       .replace(/[^\w\s-]/g, '') // 移除特殊字符
       .replace(/\s+/g, '-') // 空格替換為連字符
       .replace(/-+/g, '-') // 多個連字符合併為一個
       .trim('-'); // 移除首尾連字符
+
+    console.log('🔗 生成 slug:', { title, slug });
+    return slug;
   }
 
   // 確保 slug 唯一

@@ -43,6 +43,7 @@ const AdminAnnouncements = () => {
     try {
       setLoading(true)
       const response = await announcementAPI.getAll() // 獲取所有公告，包括未發布的
+      console.log('📋 管理頁面獲取公告:', response.data.announcements)
       setAnnouncements(response.data.announcements || [])
     } catch (error) {
       console.error('獲取公告失敗:', error)
@@ -97,7 +98,13 @@ const AdminAnnouncements = () => {
       } else {
         console.log('📝 創建公告:', formData)
         const response = await announcementAPI.create(formData)
-        console.log('✅ 創建響應:', response.data)
+        console.log('✅ 創建響應完整:', response)
+        console.log('✅ 創建響應數據:', response.data)
+        console.log('📅 創建響應中的日期:', {
+          created_at: response.data.created_at,
+          updated_at: response.data.updated_at,
+          slug: response.data.slug
+        })
         toast.success('公告已創建')
       }
 
