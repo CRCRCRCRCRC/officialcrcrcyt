@@ -43,8 +43,18 @@ const AdminAnnouncements = () => {
     try {
       setLoading(true)
       const response = await announcementAPI.getAll() // 獲取所有公告，包括未發布的
-      console.log('📋 管理頁面獲取公告:', response.data.announcements)
-      setAnnouncements(response.data.announcements || [])
+      const announcements = response.data.announcements || []
+      console.log('📋 管理頁面獲取公告:', announcements)
+      if (announcements.length > 0) {
+        console.log('📅 第一個公告的日期:', {
+          title: announcements[0].title,
+          created_at: announcements[0].created_at,
+          updated_at: announcements[0].updated_at,
+          created_at_type: typeof announcements[0].created_at,
+          created_at_string: JSON.stringify(announcements[0].created_at)
+        })
+      }
+      setAnnouncements(announcements)
     } catch (error) {
       console.error('獲取公告失敗:', error)
       toast.error('載入公告失敗')
@@ -105,6 +115,10 @@ const AdminAnnouncements = () => {
           updated_at: response.data.updated_at,
           slug: response.data.slug
         })
+        console.log('📅 日期字符串值:',
+          'created_at:', JSON.stringify(response.data.created_at),
+          'updated_at:', JSON.stringify(response.data.updated_at)
+        )
         toast.success('公告已創建')
       }
 
@@ -164,23 +178,33 @@ const AdminAnnouncements = () => {
   )
 
   const formatDate = (dateString) => {
+    console.log('🎯 管理頁面格式化日期:', { dateString, type: typeof dateString })
+
     if (!dateString || dateString === 'null' || dateString === 'undefined') {
+      console.log('❌ 日期為空或無效')
       return '未知日期'
     }
 
     let date = new Date(dateString)
+    console.log('📅 第一次解析:', date, '有效:', !isNaN(date.getTime()))
+
     if (isNaN(date.getTime())) {
       date = new Date(dateString.replace(' ', 'T'))
+      console.log('📅 替換空格後解析:', date, '有效:', !isNaN(date.getTime()))
+
       if (isNaN(date.getTime())) {
+        console.log('❌ 無法解析日期')
         return '日期格式錯誤'
       }
     }
 
-    return date.toLocaleDateString('zh-TW', {
+    const formatted = date.toLocaleDateString('zh-TW', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     })
+    console.log('✅ 格式化結果:', formatted)
+    return formatted
   }
 
   if (loading) {
