@@ -309,8 +309,9 @@ const Home = () => {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.2 }}
-                  className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group"
+                  className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300"
                 >
+                  <Link to={`/announcements/${announcement.id}`} className="block group">
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center text-sm text-gray-500">
@@ -327,21 +328,14 @@ const Home = () => {
                     <div className="text-gray-600 text-sm line-clamp-3">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
-                        className="prose prose-sm max-w-none"
-                        components={{
-                          p: ({ children }) => <p className="mb-1">{children}</p>,
-                          h1: ({ children }) => <span className="font-bold">{children}</span>,
-                          h2: ({ children }) => <span className="font-semibold">{children}</span>,
-                          h3: ({ children }) => <span className="font-medium">{children}</span>,
-                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                          ul: ({ children }) => <span>{children}</span>,
-                          li: ({ children }) => <span>{children} </span>
-                        }}
+                        disallowedElements={['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'code', 'blockquote']}
+                        unwrapDisallowed={true}
                       >
-                        {announcement.content.substring(0, 100) + (announcement.content.length > 100 ? '...' : '')}
+                        {announcement.content.substring(0, 150).replace(/[#*`]/g, '') + (announcement.content.length > 150 ? '...' : '')}
                       </ReactMarkdown>
                     </div>
                   </div>
+                  </Link>
                 </motion.div>
               ))}
             </div>
