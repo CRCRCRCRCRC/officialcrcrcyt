@@ -60,6 +60,7 @@ router.get('/:slug', async (req, res) => {
     const { slug } = req.params;
 
     const announcement = await database.getAnnouncementBySlug(slug);
+    console.log('📋 獲取到的公告數據:', announcement);
 
     if (!announcement) {
       return res.status(404).json({ error: '公告不存在' });
@@ -93,6 +94,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     };
 
     const newAnnouncement = await database.createAnnouncement(announcementData);
+    console.log('📝 創建的公告數據:', newAnnouncement);
 
     res.status(201).json(newAnnouncement);
   } catch (error) {

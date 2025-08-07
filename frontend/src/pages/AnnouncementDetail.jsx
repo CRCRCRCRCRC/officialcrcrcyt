@@ -48,38 +48,34 @@ const AnnouncementDetail = () => {
     }
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString || dateString === 'null' || dateString === 'undefined') {
+  const formatDate = (dateInput) => {
+    console.log('🔍 格式化日期:', { dateInput, type: typeof dateInput })
+
+    if (!dateInput) {
+      console.log('❌ 日期為空')
       return '未知日期'
     }
 
     try {
-      // PostgreSQL 返回的日期格式處理
-      let date = new Date(dateString)
+      // 如果已經是 Date 對象
+      let date = dateInput instanceof Date ? dateInput : new Date(dateInput)
 
-      // 如果直接解析失敗，嘗試其他格式
+      console.log('📅 解析結果:', date, '有效:', !isNaN(date.getTime()))
+
       if (isNaN(date.getTime())) {
-        // 嘗試替換空格為 T
-        date = new Date(dateString.replace(' ', 'T'))
-
-        if (isNaN(date.getTime())) {
-          // 嘗試添加 Z 後綴
-          date = new Date(dateString + 'Z')
-
-          if (isNaN(date.getTime())) {
-            console.error('無法解析日期:', dateString)
-            return '日期格式錯誤'
-          }
-        }
+        console.error('❌ 無法解析日期:', dateInput)
+        return '日期格式錯誤'
       }
 
-      return date.toLocaleDateString('zh-TW', {
+      const formatted = date.toLocaleDateString('zh-TW', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       })
+      console.log('✅ 格式化完成:', formatted)
+      return formatted
     } catch (error) {
-      console.error('日期解析錯誤:', error, '原始值:', dateString)
+      console.error('❌ 日期解析錯誤:', error, '原始值:', dateInput)
       return '日期格式錯誤'
     }
   }

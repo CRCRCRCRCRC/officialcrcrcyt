@@ -317,6 +317,7 @@ class NeonDatabase {
       RETURNING title, slug, content, published, created_at, updated_at
     `, [title, uniqueSlug, content, published]);
 
+    console.log('🗄️ 資料庫返回的公告數據:', result.rows[0]);
     return result.rows[0];
   }
 
