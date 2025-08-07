@@ -30,6 +30,7 @@ const AdminAnnouncements = () => {
 
   const [formData, setFormData] = useState({
     title: '',
+    slug: '',
     content: '',
     published: true
   })
@@ -55,6 +56,7 @@ const AdminAnnouncements = () => {
     setEditingAnnouncement(null)
     setFormData({
       title: '',
+      slug: '',
       content: '',
       published: true
     })
@@ -66,6 +68,7 @@ const AdminAnnouncements = () => {
     setEditingAnnouncement(announcement)
     setFormData({
       title: announcement.title,
+      slug: announcement.slug || '',
       content: announcement.content,
       published: announcement.published
     })
@@ -76,6 +79,11 @@ const AdminAnnouncements = () => {
   const handleSave = async () => {
     if (!formData.title.trim() || !formData.content.trim()) {
       toast.error('標題和內容不能為空')
+      return
+    }
+
+    if (formData.slug && !/^[a-z0-9-]+$/.test(formData.slug)) {
+      toast.error('URL 路徑只能包含小寫字母、數字和連字符')
       return
     }
 
@@ -366,7 +374,26 @@ const AdminAnnouncements = () => {
                       placeholder="輸入公告標題..."
                     />
                   </div>
-                  
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      URL 路徑 (選填)
+                    </label>
+                    <div className="flex items-center">
+                      <span className="text-gray-500 text-sm mr-2">/announcements/</span>
+                      <input
+                        type="text"
+                        value={formData.slug}
+                        onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                        className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                        placeholder="自定義 URL 路徑 (如: welcome-to-crcrc)"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      留空將自動根據標題生成。只能包含小寫字母、數字和連字符。
+                    </p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-semibold text-gray-800 mb-2">
                       內容 (支援 Markdown 格式)

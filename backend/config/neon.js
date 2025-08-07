@@ -74,11 +74,18 @@ class NeonDatabase {
         CREATE TABLE IF NOT EXISTS announcements (
           id SERIAL PRIMARY KEY,
           title VARCHAR(500) NOT NULL,
+          slug VARCHAR(255) UNIQUE NOT NULL,
           content TEXT NOT NULL,
           published BOOLEAN DEFAULT true,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
+      `);
+
+      // 添加 slug 欄位（如果表已存在但沒有 slug 欄位）
+      await this.pool.query(`
+        ALTER TABLE announcements
+        ADD COLUMN IF NOT EXISTS slug VARCHAR(255) UNIQUE
       `);
 
       console.log('✅ PostgreSQL 資料表初始化完成');
@@ -253,15 +260,54 @@ class NeonDatabase {
     return settings;
   }
 
+  // 生成 slug
+  generateSlug(title) {
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // 移除特殊字符
+      .replace(/\s+/g, '-') // 空格替換為連字符
+      .replace(/-+/g, '-') // 多個連字符合併為一個
+      .trim('-'); // 移除首尾連字符
+  }
+
+  // 確保 slug 唯一
+  async ensureUniqueSlug(baseSlug, excludeId = null) {
+    let slug = baseSlug;
+    let counter = 1;
+
+    while (true) {
+      let query = 'SELECT id FROM announcements WHERE slug = $1';
+      let params = [slug];
+
+      if (excludeId) {
+        query += ' AND id != $2';
+        params.push(excludeId);
+      }
+
+      const result = await this.pool.query(query, params);
+
+      if (result.rows.length === 0) {
+        return slug;
+      }
+
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+  }
+
   // 公告相關操作
   async createAnnouncement(announcementData) {
-    const { title, content, published = true } = announcementData;
+    const { title, content, slug: customSlug, published = true } = announcementData;
+
+    // 生成 slug
+    const baseSlug = customSlug || this.generateSlug(title);
+    const uniqueSlug = await this.ensureUniqueSlug(baseSlug);
 
     const result = await this.pool.query(`
-      INSERT INTO announcements (title, content, published)
-      VALUES ($1, $2, $3)
-      RETURNING id, title, content, published, created_at::text as created_at, updated_at::text as updated_at
-    `, [title, content, published]);
+      INSERT INTO announcements (title, slug, content, published)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at
+    `, [title, uniqueSlug, content, published]);
 
     return result.rows[0];
   }
@@ -269,7 +315,7 @@ class NeonDatabase {
   async getAnnouncements(options = {}) {
     const { published, limit } = options;
 
-    let query = 'SELECT id, title, content, published, created_at::text as created_at, updated_at::text as updated_at FROM announcements';
+    let query = 'SELECT id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at FROM announcements';
     let params = [];
     let paramCount = 0;
 
@@ -293,28 +339,56 @@ class NeonDatabase {
 
   async getAnnouncementById(id) {
     const result = await this.pool.query(
-      'SELECT id, title, content, published, created_at::text as created_at, updated_at::text as updated_at FROM announcements WHERE id = $1',
+      'SELECT id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at FROM announcements WHERE id = $1',
       [id]
     );
     return result.rows[0] || null;
   }
 
+  async getAnnouncementBySlug(slug) {
+    const result = await this.pool.query(
+      'SELECT id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at FROM announcements WHERE slug = $1',
+      [slug]
+    );
+    return result.rows[0] || null;
+  }
+
   async updateAnnouncement(id, announcementData) {
-    const { title, content, published } = announcementData;
+    const { title, content, slug: customSlug, published } = announcementData;
 
-    const result = await this.pool.query(`
-      UPDATE announcements
-      SET title = $1, content = $2, published = $3, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $4
-      RETURNING id, title, content, published, created_at::text as created_at, updated_at::text as updated_at
-    `, [title, content, published, id]);
+    // 如果有自定義 slug 或標題改變，重新生成 slug
+    let slug = null;
+    if (customSlug !== undefined || title !== undefined) {
+      const baseSlug = customSlug || this.generateSlug(title);
+      slug = await this.ensureUniqueSlug(baseSlug, id);
+    }
 
+    let query, params;
+    if (slug) {
+      query = `
+        UPDATE announcements
+        SET title = $1, slug = $2, content = $3, published = $4, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $5
+        RETURNING id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at
+      `;
+      params = [title, slug, content, published, id];
+    } else {
+      query = `
+        UPDATE announcements
+        SET title = $1, content = $2, published = $3, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $4
+        RETURNING id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at
+      `;
+      params = [title, content, published, id];
+    }
+
+    const result = await this.pool.query(query, params);
     return result.rows[0];
   }
 
   async deleteAnnouncement(id) {
     const result = await this.pool.query(
-      'DELETE FROM announcements WHERE id = $1 RETURNING id, title, content, published, created_at::text as created_at, updated_at::text as updated_at',
+      'DELETE FROM announcements WHERE id = $1 RETURNING id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at',
       [id]
     );
     return result.rows[0];
@@ -391,9 +465,43 @@ class NeonDatabase {
         }
       }
 
+      // 檢查是否已有公告
+      const announcementCount = await this.pool.query('SELECT COUNT(*) FROM announcements');
+
+      if (parseInt(announcementCount.rows[0].count) === 0) {
+        console.log('📝 創建示例公告數據...');
+
+        const sampleAnnouncements = [
+          {
+            title: '歡迎來到 CRCRC 官方網站！',
+            slug: 'welcome-to-crcrc',
+            content: '# 歡迎！\n\n感謝您訪問我們的官方網站。我們將在這裡發布最新的**空耳音樂作品**和重要公告。\n\n## 最新功能\n- 🎵 線上播放器\n- 📱 響應式設計\n- 🔔 公告系統\n\n敬請期待更多精彩內容！',
+            published: true
+          },
+          {
+            title: '新影片發布通知',
+            slug: 'new-video-release',
+            content: '## 🎉 新作品上線\n\n我們剛剛發布了一首全新的空耳音樂作品！\n\n### 特色\n- 高品質音效\n- 創意歌詞改編\n- 精美視覺效果\n\n快去**影片庫**查看吧！',
+            published: true
+          },
+          {
+            title: '網站功能更新',
+            slug: 'website-update',
+            content: '### 🔧 系統更新\n\n我們對網站進行了以下改進：\n\n1. **播放器優化** - 更流暢的播放體驗\n2. **介面美化** - 全新的視覺設計\n3. **效能提升** - 更快的載入速度\n\n感謝您的支持！',
+            published: true
+          }
+        ];
+
+        for (const announcement of sampleAnnouncements) {
+          await this.createAnnouncement(announcement);
+        }
+
+        console.log('✅ 示例公告數據創建成功');
+      }
+
       // 設置默認網站設置
       const siteTitle = await this.getSiteSetting('site_title');
-      
+
       if (!siteTitle) {
         console.log('📝 創建默認網站設置...');
         await this.setSiteSetting('site_title', 'CRCRC 官方網站');

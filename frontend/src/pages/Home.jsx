@@ -61,6 +61,12 @@ const Home = () => {
           const announcementResponse = await announcementAPI.getAll({ limit: 3, published: true })
           const fetchedAnnouncements = announcementResponse.data.announcements || []
           console.log('首頁：獲取到公告數量:', fetchedAnnouncements.length)
+          console.log('首頁：公告數據:', fetchedAnnouncements.map(a => ({
+            id: a.id,
+            title: a.title,
+            created_at: a.created_at,
+            updated_at: a.updated_at
+          })))
           setAnnouncements(fetchedAnnouncements)
         } catch (error) {
           console.log('首頁：獲取公告失敗，使用空陣列', error)
@@ -311,7 +317,7 @@ const Home = () => {
                   transition={{ duration: 0.6, delay: index * 0.2 }}
                   className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300"
                 >
-                  <Link to={`/announcements/${announcement.id}`} className="block group">
+                  <Link to={`/announcements/${announcement.slug}`} className="block group">
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center text-sm text-gray-500">

@@ -28,7 +28,13 @@ router.get('/', async (req, res) => {
 
     console.log('返回公告:', {
       count: announcements.length,
-      announcements: announcements.map(a => ({ id: a.id, title: a.title, published: a.published }))
+      announcements: announcements.map(a => ({
+        id: a.id,
+        title: a.title,
+        published: a.published,
+        created_at: a.created_at,
+        updated_at: a.updated_at
+      }))
     });
 
     // 設置緩存控制頭，防止瀏覽器緩存
@@ -48,11 +54,20 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 獲取單個公告（公開API）
-router.get('/:id', async (req, res) => {
+// 獲取單個公告（公開API）- 支援 ID 或 slug
+router.get('/:identifier', async (req, res) => {
   try {
-    const { id } = req.params;
-    const announcement = await database.getAnnouncementById(id);
+    const { identifier } = req.params;
+
+    // 嘗試用 slug 查詢，如果失敗則用 ID 查詢
+    let announcement;
+    if (isNaN(identifier)) {
+      // 不是數字，當作 slug 處理
+      announcement = await database.getAnnouncementBySlug(identifier);
+    } else {
+      // 是數字，當作 ID 處理
+      announcement = await database.getAnnouncementById(identifier);
+    }
 
     if (!announcement) {
       return res.status(404).json({ error: '公告不存在' });
@@ -72,7 +87,7 @@ router.get('/:id', async (req, res) => {
 // 創建公告（需要管理員權限）
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { title, content, published = true } = req.body;
+    const { title, content, slug, published = true } = req.body;
 
     if (!title || !content) {
       return res.status(400).json({ error: '標題和內容不能為空' });
@@ -81,6 +96,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     const announcementData = {
       title: title.trim(),
       content: content.trim(),
+      slug: slug ? slug.trim() : undefined,
       published: Boolean(published)
     };
 
@@ -89,7 +105,11 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     res.status(201).json(newAnnouncement);
   } catch (error) {
     console.error('創建公告失敗:', error);
-    res.status(500).json({ error: '無法創建公告' });
+    if (error.message.includes('duplicate key')) {
+      res.status(400).json({ error: 'URL 路徑已存在，請使用不同的路徑' });
+    } else {
+      res.status(500).json({ error: '無法創建公告' });
+    }
   }
 });
 
@@ -97,7 +117,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, content, published } = req.body;
+    const { title, content, slug, published } = req.body;
 
     const existingAnnouncement = await database.getAnnouncementById(id);
     if (!existingAnnouncement) {
@@ -107,6 +127,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     const announcementData = {
       title: title !== undefined ? title.trim() : existingAnnouncement.title,
       content: content !== undefined ? content.trim() : existingAnnouncement.content,
+      slug: slug !== undefined ? (slug ? slug.trim() : undefined) : undefined,
       published: published !== undefined ? Boolean(published) : existingAnnouncement.published
     };
 
@@ -115,7 +136,11 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     res.json(updatedAnnouncement);
   } catch (error) {
     console.error('更新公告失敗:', error);
-    res.status(500).json({ error: '無法更新公告' });
+    if (error.message.includes('duplicate key')) {
+      res.status(400).json({ error: 'URL 路徑已存在，請使用不同的路徑' });
+    } else {
+      res.status(500).json({ error: '無法更新公告' });
+    }
   }
 });
 

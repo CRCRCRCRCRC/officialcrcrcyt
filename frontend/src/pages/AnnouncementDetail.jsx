@@ -18,7 +18,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
 const AnnouncementDetail = () => {
-  const { id } = useParams()
+  const { slug } = useParams()
   const navigate = useNavigate()
   const [announcement, setAnnouncement] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -27,13 +27,13 @@ const AnnouncementDetail = () => {
 
   useEffect(() => {
     fetchAnnouncement()
-  }, [id])
+  }, [slug])
 
   const fetchAnnouncement = async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await announcementAPI.getById(id)
+      const response = await announcementAPI.getById(slug)
       setAnnouncement(response.data)
     } catch (error) {
       console.error('獲取公告失敗:', error)
@@ -48,9 +48,17 @@ const AnnouncementDetail = () => {
   }
 
   const formatDate = (dateString) => {
-    if (!dateString) return '未知日期'
+    if (!dateString || dateString === 'null' || dateString === 'undefined') {
+      console.log('日期為空:', dateString)
+      return '未設定日期'
+    }
+
     const date = new Date(dateString)
-    if (isNaN(date.getTime())) return '無效日期'
+    if (isNaN(date.getTime())) {
+      console.log('無效日期格式:', dateString)
+      return '日期格式錯誤'
+    }
+
     return date.toLocaleDateString('zh-TW', {
       year: 'numeric',
       month: 'long',
@@ -59,9 +67,17 @@ const AnnouncementDetail = () => {
   }
 
   const formatTime = (dateString) => {
-    if (!dateString) return '未知時間'
+    if (!dateString || dateString === 'null' || dateString === 'undefined') {
+      console.log('時間為空:', dateString)
+      return '未設定時間'
+    }
+
     const date = new Date(dateString)
-    if (isNaN(date.getTime())) return '無效時間'
+    if (isNaN(date.getTime())) {
+      console.log('無效時間格式:', dateString)
+      return '時間格式錯誤'
+    }
+
     return date.toLocaleTimeString('zh-TW', {
       hour: '2-digit',
       minute: '2-digit'

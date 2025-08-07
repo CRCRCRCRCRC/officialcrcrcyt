@@ -146,7 +146,7 @@ const Announcements = () => {
                   transition={{ duration: 0.6, delay: 0.6 + index * 0.1 }}
                   className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300"
                 >
-                  <Link to={`/announcements/${announcement.id}`} className="block group">
+                  <Link to={`/announcements/${announcement.slug}`} className="block group">
                   <div className="p-8">
                     <div className="flex items-start justify-between mb-4">
                       <h2 className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-300 flex-1">
