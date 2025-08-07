@@ -77,10 +77,12 @@ async function getChannelStats() {
     throw new Error('YouTube API key must be configured.');
   }
 
+  console.log('🔍 開始獲取頻道統計數據...');
   const CHANNEL_ID = await getChannelId();
   if (!CHANNEL_ID) {
     throw new Error('YouTube Channel ID must be configured.');
   }
+  console.log('✅ 頻道 ID 獲取成功:', CHANNEL_ID);
 
   try {
     const response = await axios.get(`${BASE_URL}/channels`, {
@@ -110,7 +112,11 @@ async function getChannelStats() {
       country: snippet.country || 'TW'
     };
   } catch (error) {
-    console.error('Error fetching channel stats:', error.message);
+    console.error('❌ YouTube API 調用失敗:', error.message);
+    if (error.response) {
+      console.error('API 錯誤響應:', error.response.data);
+      console.error('API 錯誤狀態:', error.response.status);
+    }
     throw error;
   }
 }

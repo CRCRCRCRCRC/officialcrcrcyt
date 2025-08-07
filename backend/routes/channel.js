@@ -214,11 +214,21 @@ router.get('/dashboard', authenticateToken, requireAdmin, async (req, res) => {
 // 獲取公開的頻道數據（首頁使用，無需登入）
 router.get('/public-data', async (req, res) => {
   try {
+    console.log('🔍 開始獲取公開頻道數據...');
+    console.log('API_KEY 存在:', !!process.env.YOUTUBE_API_KEY);
+    console.log('CHANNEL_ID:', process.env.YOUTUBE_CHANNEL_ID);
+
     const dashboardData = await youtubeService.getDashboardData();
+    console.log('✅ 公開頻道數據獲取成功');
     res.json(dashboardData);
   } catch (error) {
-    console.error('獲取公開頻道數據錯誤:', error);
-    res.status(500).json({ error: '無法獲取頻道數據: ' + error.message });
+    console.error('❌ 獲取公開頻道數據錯誤:', error.message);
+    console.error('錯誤堆疊:', error.stack);
+    res.status(500).json({
+      error: '無法獲取頻道數據',
+      message: error.message,
+      details: error.response?.data || null
+    });
   }
 });
 
