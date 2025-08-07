@@ -48,7 +48,9 @@ const Announcements = () => {
   )
 
   const formatDate = (dateString) => {
+    if (!dateString) return '未知日期'
     const date = new Date(dateString)
+    if (isNaN(date.getTime())) return '無效日期'
     return date.toLocaleDateString('zh-TW', {
       year: 'numeric',
       month: 'long',
@@ -57,7 +59,9 @@ const Announcements = () => {
   }
 
   const formatTime = (dateString) => {
+    if (!dateString) return '未知時間'
     const date = new Date(dateString)
+    if (isNaN(date.getTime())) return '無效時間'
     return date.toLocaleTimeString('zh-TW', {
       hour: '2-digit',
       minute: '2-digit'

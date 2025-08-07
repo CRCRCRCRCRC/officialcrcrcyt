@@ -259,7 +259,8 @@ class NeonDatabase {
 
     const result = await this.pool.query(`
       INSERT INTO announcements (title, content, published)
-      VALUES ($1, $2, $3) RETURNING *
+      VALUES ($1, $2, $3)
+      RETURNING id, title, content, published, created_at::text as created_at, updated_at::text as updated_at
     `, [title, content, published]);
 
     return result.rows[0];
@@ -268,7 +269,7 @@ class NeonDatabase {
   async getAnnouncements(options = {}) {
     const { published, limit } = options;
 
-    let query = 'SELECT * FROM announcements';
+    let query = 'SELECT id, title, content, published, created_at::text as created_at, updated_at::text as updated_at FROM announcements';
     let params = [];
     let paramCount = 0;
 
@@ -292,7 +293,7 @@ class NeonDatabase {
 
   async getAnnouncementById(id) {
     const result = await this.pool.query(
-      'SELECT * FROM announcements WHERE id = $1',
+      'SELECT id, title, content, published, created_at::text as created_at, updated_at::text as updated_at FROM announcements WHERE id = $1',
       [id]
     );
     return result.rows[0] || null;
@@ -305,7 +306,7 @@ class NeonDatabase {
       UPDATE announcements
       SET title = $1, content = $2, published = $3, updated_at = CURRENT_TIMESTAMP
       WHERE id = $4
-      RETURNING *
+      RETURNING id, title, content, published, created_at::text as created_at, updated_at::text as updated_at
     `, [title, content, published, id]);
 
     return result.rows[0];
@@ -313,7 +314,7 @@ class NeonDatabase {
 
   async deleteAnnouncement(id) {
     const result = await this.pool.query(
-      'DELETE FROM announcements WHERE id = $1 RETURNING *',
+      'DELETE FROM announcements WHERE id = $1 RETURNING id, title, content, published, created_at::text as created_at, updated_at::text as updated_at',
       [id]
     );
     return result.rows[0];

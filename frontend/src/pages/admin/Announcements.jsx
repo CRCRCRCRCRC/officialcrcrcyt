@@ -145,7 +145,10 @@ const AdminAnnouncements = () => {
   )
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('zh-TW')
+    if (!dateString) return '未知日期'
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return '無效日期'
+    return date.toLocaleString('zh-TW')
   }
 
   if (loading) {
