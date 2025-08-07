@@ -176,6 +176,8 @@ router.post('/reset', authenticateToken, requireAdmin, async (req, res) => {
 
     // 刪除所有公告
     await database.pool.query('DELETE FROM announcements');
+    // 重置序列
+    await database.pool.query('ALTER SEQUENCE announcements_id_seq RESTART WITH 1');
 
     console.log('重置完成：所有公告已清空');
     res.json({ message: '所有公告已清空', count: 0 });

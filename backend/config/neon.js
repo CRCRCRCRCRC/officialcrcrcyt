@@ -322,7 +322,7 @@ class NeonDatabase {
     const result = await this.pool.query(`
       INSERT INTO announcements (title, slug, content, published)
       VALUES ($1, $2, $3, $4)
-      RETURNING id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at
+      RETURNING id, title, slug, content, published, to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at, to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as updated_at
     `, [title, uniqueSlug, content, published]);
 
     return result.rows[0];
@@ -331,7 +331,7 @@ class NeonDatabase {
   async getAnnouncements(options = {}) {
     const { published, limit } = options;
 
-    let query = 'SELECT id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at FROM announcements';
+    let query = 'SELECT id, title, slug, content, published, to_char(created_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as created_at, to_char(updated_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as updated_at FROM announcements';
     let params = [];
     let paramCount = 0;
 
@@ -355,7 +355,7 @@ class NeonDatabase {
 
   async getAnnouncementById(id) {
     const result = await this.pool.query(
-      'SELECT id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at FROM announcements WHERE id = $1',
+      'SELECT id, title, slug, content, published, to_char(created_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as created_at, to_char(updated_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as updated_at FROM announcements WHERE id = $1',
       [id]
     );
     return result.rows[0] || null;
@@ -363,7 +363,7 @@ class NeonDatabase {
 
   async getAnnouncementBySlug(slug) {
     const result = await this.pool.query(
-      'SELECT id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at FROM announcements WHERE slug = $1',
+      'SELECT id, title, slug, content, published, to_char(created_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as created_at, to_char(updated_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as updated_at FROM announcements WHERE slug = $1',
       [slug]
     );
     return result.rows[0] || null;
@@ -385,7 +385,7 @@ class NeonDatabase {
         UPDATE announcements
         SET title = $1, slug = $2, content = $3, published = $4, updated_at = CURRENT_TIMESTAMP
         WHERE id = $5
-        RETURNING id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at
+        RETURNING id, title, slug, content, published, to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at, to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as updated_at
       `;
       params = [title, slug, content, published, id];
     } else {
@@ -393,7 +393,7 @@ class NeonDatabase {
         UPDATE announcements
         SET title = $1, content = $2, published = $3, updated_at = CURRENT_TIMESTAMP
         WHERE id = $4
-        RETURNING id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at
+        RETURNING id, title, slug, content, published, to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at, to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as updated_at
       `;
       params = [title, content, published, id];
     }
@@ -404,7 +404,7 @@ class NeonDatabase {
 
   async deleteAnnouncement(id) {
     const result = await this.pool.query(
-      'DELETE FROM announcements WHERE id = $1 RETURNING id, title, slug, content, published, created_at::text as created_at, updated_at::text as updated_at',
+      'DELETE FROM announcements WHERE id = $1 RETURNING id, title, slug, content, published, to_char(created_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as created_at, to_char(updated_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as updated_at',
       [id]
     );
     return result.rows[0];
@@ -481,39 +481,7 @@ class NeonDatabase {
         }
       }
 
-      // 檢查是否已有公告
-      const announcementCount = await this.pool.query('SELECT COUNT(*) FROM announcements');
-
-      if (parseInt(announcementCount.rows[0].count) === 0) {
-        console.log('📝 創建示例公告數據...');
-
-        const sampleAnnouncements = [
-          {
-            title: '歡迎來到 CRCRC 官方網站！',
-            slug: 'welcome-to-crcrc',
-            content: '# 歡迎！\n\n感謝您訪問我們的官方網站。我們將在這裡發布最新的**空耳音樂作品**和重要公告。\n\n## 最新功能\n- 🎵 線上播放器\n- 📱 響應式設計\n- 🔔 公告系統\n\n敬請期待更多精彩內容！',
-            published: true
-          },
-          {
-            title: '新影片發布通知',
-            slug: 'new-video-release',
-            content: '## 🎉 新作品上線\n\n我們剛剛發布了一首全新的空耳音樂作品！\n\n### 特色\n- 高品質音效\n- 創意歌詞改編\n- 精美視覺效果\n\n快去**影片庫**查看吧！',
-            published: true
-          },
-          {
-            title: '網站功能更新',
-            slug: 'website-update',
-            content: '### 🔧 系統更新\n\n我們對網站進行了以下改進：\n\n1. **播放器優化** - 更流暢的播放體驗\n2. **介面美化** - 全新的視覺設計\n3. **效能提升** - 更快的載入速度\n\n感謝您的支持！',
-            published: true
-          }
-        ];
-
-        for (const announcement of sampleAnnouncements) {
-          await this.createAnnouncement(announcement);
-        }
-
-        console.log('✅ 示例公告數據創建成功');
-      }
+      // 不自動創建示例公告
 
       // 設置默認網站設置
       const siteTitle = await this.getSiteSetting('site_title');

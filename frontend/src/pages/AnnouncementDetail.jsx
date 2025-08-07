@@ -50,29 +50,24 @@ const AnnouncementDetail = () => {
 
   const formatDate = (dateString) => {
     if (!dateString || dateString === 'null' || dateString === 'undefined') {
-      console.log('日期為空:', dateString)
       return '未知日期'
     }
 
-    // 嘗試多種日期格式
-    let date = new Date(dateString)
-
-    // 如果第一次解析失敗，嘗試其他格式
-    if (isNaN(date.getTime())) {
-      // 嘗試 ISO 格式
-      date = new Date(dateString.replace(' ', 'T'))
-
+    try {
+      const date = new Date(dateString)
       if (isNaN(date.getTime())) {
-        console.log('無效日期格式:', dateString)
         return '日期格式錯誤'
       }
-    }
 
-    return date.toLocaleDateString('zh-TW', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+      return date.toLocaleDateString('zh-TW', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    } catch (error) {
+      console.error('日期解析錯誤:', error)
+      return '日期格式錯誤'
+    }
   }
 
 
