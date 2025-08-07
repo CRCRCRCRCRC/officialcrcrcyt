@@ -10,6 +10,7 @@ const Header = () => {
   const navigation = [
     { name: '首頁', href: '/' },
     { name: '影片', href: '/videos' },
+    { name: '公告', href: '/announcements' },
     { name: '關於', href: '/about' },
   ]
 

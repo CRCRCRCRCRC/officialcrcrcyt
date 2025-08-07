@@ -111,6 +111,23 @@ export const settingsAPI = {
     api.get('/settings/featured-video')
 }
 
+export const announcementAPI = {
+  getAll: (params = {}) =>
+    api.get('/announcements', { params }),
+
+  getById: (id) =>
+    api.get(`/announcements/${id}`),
+
+  create: (data) =>
+    api.post('/announcements', data),
+
+  update: (id, data) =>
+    api.put(`/announcements/${id}`, data),
+
+  delete: (id) =>
+    api.delete(`/announcements/${id}`)
+}
+
 
 
 // 通用 API 函數

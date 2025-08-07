@@ -6,11 +6,13 @@ import Home from './pages/Home'
 import Videos from './pages/Videos'
 import VideoDetail from './pages/VideoDetail'
 import About from './pages/About'
+import Announcements from './pages/Announcements'
 
 import AdminLogin from './pages/admin/Login'
 import AdminDashboard from './pages/admin/Dashboard'
 
 import AdminChannel from './pages/admin/Channel'
+import AdminAnnouncements from './pages/admin/Announcements'
 import AdminSettings from './pages/admin/Settings'
 import ProtectedRoute from './components/ProtectedRoute'
 import NotFound from './pages/NotFound'
@@ -25,6 +27,7 @@ function App() {
           <Route path="videos" element={<Videos />} />
           <Route path="videos/:id" element={<VideoDetail />} />
           <Route path="about" element={<About />} />
+          <Route path="announcements" element={<Announcements />} />
 
         </Route>
 
@@ -41,6 +44,7 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
 
           <Route path="channel" element={<AdminChannel />} />
+          <Route path="announcements" element={<AdminAnnouncements />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
 

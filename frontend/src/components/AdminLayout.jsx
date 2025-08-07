@@ -16,7 +16,8 @@ import {
   ChevronDown,
   Sparkles,
   Zap,
-  TrendingUp
+  TrendingUp,
+  Megaphone
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -47,11 +48,17 @@ const AdminLayout = () => {
       gradient: 'from-blue-500 to-purple-600'
     },
 
-    { 
-      name: '頻道設定', 
-      href: '/admin/channel', 
+    {
+      name: '頻道設定',
+      href: '/admin/channel',
       icon: Users,
       gradient: 'from-pink-500 to-red-600'
+    },
+    {
+      name: '公告管理',
+      href: '/admin/announcements',
+      icon: Megaphone,
+      gradient: 'from-orange-500 to-yellow-600'
     },
     {
       name: '系統設定',

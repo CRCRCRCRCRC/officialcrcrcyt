@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 
 const channelRoutes = require('./routes/channel');
 const settingsRoutes = require('./routes/settings');
+const announcementRoutes = require('./routes/announcements');
 const database = require('./config/database');
 
 const app = express();
@@ -48,6 +49,7 @@ app.use('/api/auth', authRoutes);
 
 app.use('/api/channel', channelRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // 健康檢查和初始化
 app.get('/api/health', async (req, res) => {
