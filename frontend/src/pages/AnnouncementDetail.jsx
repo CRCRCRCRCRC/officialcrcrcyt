@@ -34,6 +34,7 @@ const AnnouncementDetail = () => {
       setLoading(true)
       setError(null)
       const response = await announcementAPI.getById(slug)
+      console.log('公告詳情數據:', response.data)
       setAnnouncement(response.data)
     } catch (error) {
       console.error('獲取公告失敗:', error)
@@ -50,13 +51,21 @@ const AnnouncementDetail = () => {
   const formatDate = (dateString) => {
     if (!dateString || dateString === 'null' || dateString === 'undefined') {
       console.log('日期為空:', dateString)
-      return '未設定日期'
+      return '未知日期'
     }
 
-    const date = new Date(dateString)
+    // 嘗試多種日期格式
+    let date = new Date(dateString)
+
+    // 如果第一次解析失敗，嘗試其他格式
     if (isNaN(date.getTime())) {
-      console.log('無效日期格式:', dateString)
-      return '日期格式錯誤'
+      // 嘗試 ISO 格式
+      date = new Date(dateString.replace(' ', 'T'))
+
+      if (isNaN(date.getTime())) {
+        console.log('無效日期格式:', dateString)
+        return '日期格式錯誤'
+      }
     }
 
     return date.toLocaleDateString('zh-TW', {
@@ -66,23 +75,7 @@ const AnnouncementDetail = () => {
     })
   }
 
-  const formatTime = (dateString) => {
-    if (!dateString || dateString === 'null' || dateString === 'undefined') {
-      console.log('時間為空:', dateString)
-      return '未設定時間'
-    }
 
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) {
-      console.log('無效時間格式:', dateString)
-      return '時間格式錯誤'
-    }
-
-    return date.toLocaleTimeString('zh-TW', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
 
   const handleShare = async () => {
     const url = window.location.href
@@ -215,14 +208,11 @@ const AnnouncementDetail = () => {
             <div className="flex items-center space-x-6 text-gray-500 mb-6">
               <div className="flex items-center">
                 <Calendar className="w-5 h-5 mr-2" />
-                {formatDate(announcement.createdAt)}
-              </div>
-              <div className="flex items-center">
-                <Clock className="w-5 h-5 mr-2" />
-                {formatTime(announcement.createdAt)}
+                發布於 {formatDate(announcement.createdAt)}
               </div>
               {announcement.updatedAt !== announcement.createdAt && (
-                <div className="text-sm">
+                <div className="flex items-center">
+                  <Calendar className="w-5 h-5 mr-2" />
                   更新於 {formatDate(announcement.updatedAt)}
                 </div>
               )}
@@ -245,7 +235,7 @@ const AnnouncementDetail = () => {
 
           {/* Footer */}
           <footer className="mt-12 pt-8 border-t border-gray-200">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center">
               <Link
                 to="/announcements"
                 className="flex items-center text-blue-600 hover:text-blue-700 font-medium transition-colors"
@@ -253,10 +243,6 @@ const AnnouncementDetail = () => {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 查看更多公告
               </Link>
-              
-              <div className="text-sm text-gray-500">
-                公告 ID: {announcement.id}
-              </div>
             </div>
           </footer>
         </motion.article>

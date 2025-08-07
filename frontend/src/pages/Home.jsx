@@ -322,13 +322,21 @@ const Home = () => {
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
-                        {announcement.createdAt ?
-                          (isNaN(new Date(announcement.createdAt).getTime()) ?
-                            '無效日期' :
-                            new Date(announcement.createdAt).toLocaleDateString('zh-TW')
-                          ) :
-                          '未知日期'
-                        }
+                        {(() => {
+                          if (!announcement.createdAt || announcement.createdAt === 'null') {
+                            return '未知日期'
+                          }
+
+                          let date = new Date(announcement.createdAt)
+                          if (isNaN(date.getTime())) {
+                            date = new Date(announcement.createdAt.replace(' ', 'T'))
+                            if (isNaN(date.getTime())) {
+                              return '日期格式錯誤'
+                            }
+                          }
+
+                          return date.toLocaleDateString('zh-TW')
+                        })()}
                       </div>
                       <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                     </div>

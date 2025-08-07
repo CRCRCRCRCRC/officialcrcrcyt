@@ -153,10 +153,23 @@ const AdminAnnouncements = () => {
   )
 
   const formatDate = (dateString) => {
-    if (!dateString) return '未知日期'
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return '無效日期'
-    return date.toLocaleString('zh-TW')
+    if (!dateString || dateString === 'null' || dateString === 'undefined') {
+      return '未知日期'
+    }
+
+    let date = new Date(dateString)
+    if (isNaN(date.getTime())) {
+      date = new Date(dateString.replace(' ', 'T'))
+      if (isNaN(date.getTime())) {
+        return '日期格式錯誤'
+      }
+    }
+
+    return date.toLocaleDateString('zh-TW', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
   }
 
   if (loading) {

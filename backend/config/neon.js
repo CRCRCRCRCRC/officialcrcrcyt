@@ -88,6 +88,22 @@ class NeonDatabase {
         ADD COLUMN IF NOT EXISTS slug VARCHAR(255) UNIQUE
       `);
 
+      // 為現有沒有 slug 的公告生成 slug
+      const announcementsWithoutSlug = await this.pool.query(`
+        SELECT id, title FROM announcements WHERE slug IS NULL
+      `);
+
+      for (const announcement of announcementsWithoutSlug.rows) {
+        const baseSlug = this.generateSlug(announcement.title);
+        const uniqueSlug = await this.ensureUniqueSlug(baseSlug, announcement.id);
+
+        await this.pool.query(`
+          UPDATE announcements SET slug = $1 WHERE id = $2
+        `, [uniqueSlug, announcement.id]);
+
+        console.log(`為公告 "${announcement.title}" 生成 slug: ${uniqueSlug}`);
+      }
+
       console.log('✅ PostgreSQL 資料表初始化完成');
     } catch (error) {
       console.error('❌ PostgreSQL 資料表初始化失敗:', error);
