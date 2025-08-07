@@ -25,19 +25,25 @@ const AnnouncementDetail = () => {
   const [error, setError] = useState(null)
   const [copied, setCopied] = useState(false)
 
+  console.log('🎬 AnnouncementDetail 組件載入，slug:', slug)
+
   useEffect(() => {
     fetchAnnouncement()
   }, [slug])
 
   const fetchAnnouncement = async () => {
+    console.log('🚀 開始獲取公告，slug:', slug)
     try {
       setLoading(true)
       setError(null)
       const response = await announcementAPI.getById(slug)
-      console.log('公告詳情數據:', response.data)
+      console.log('📋 API 響應:', response)
+      console.log('📋 公告詳情數據:', response.data)
+      console.log('📅 創建時間原始值:', response.data.created_at)
+      console.log('📅 更新時間原始值:', response.data.updated_at)
       setAnnouncement(response.data)
     } catch (error) {
-      console.error('獲取公告失敗:', error)
+      console.error('❌ 獲取公告失敗:', error)
       if (error.response?.status === 404) {
         setError('公告不存在')
       } else {
@@ -112,7 +118,10 @@ const AnnouncementDetail = () => {
     }
   }
 
+  console.log('🔄 組件狀態:', { loading, error, announcement: !!announcement })
+
   if (loading) {
+    console.log('⏳ 顯示載入中...')
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <LoadingSpinner size="large" />
@@ -121,6 +130,7 @@ const AnnouncementDetail = () => {
   }
 
   if (error) {
+    console.log('❌ 顯示錯誤:', error)
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -213,12 +223,16 @@ const AnnouncementDetail = () => {
             <div className="flex items-center space-x-6 text-gray-500 mb-6">
               <div className="flex items-center">
                 <Calendar className="w-5 h-5 mr-2" />
-                發布於 {formatDate(announcement.createdAt)}
+                發布於 {(() => {
+                  console.log('🎯 渲染創建日期，announcement:', announcement)
+                  console.log('🎯 createdAt 值:', announcement?.createdAt)
+                  return formatDate(announcement?.createdAt)
+                })()}
               </div>
-              {announcement.updatedAt !== announcement.createdAt && (
+              {announcement?.updatedAt !== announcement?.createdAt && (
                 <div className="flex items-center">
                   <Calendar className="w-5 h-5 mr-2" />
-                  更新於 {formatDate(announcement.updatedAt)}
+                  更新於 {formatDate(announcement?.updatedAt)}
                 </div>
               )}
             </div>

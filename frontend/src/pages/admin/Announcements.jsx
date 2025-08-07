@@ -90,17 +90,21 @@ const AdminAnnouncements = () => {
     setSaving(true)
     try {
       if (editingAnnouncement) {
-        await announcementAPI.update(editingAnnouncement.slug, formData)
+        console.log('📝 更新公告:', editingAnnouncement.slug, formData)
+        const response = await announcementAPI.update(editingAnnouncement.slug, formData)
+        console.log('✅ 更新響應:', response.data)
         toast.success('公告已更新')
       } else {
-        await announcementAPI.create(formData)
+        console.log('📝 創建公告:', formData)
+        const response = await announcementAPI.create(formData)
+        console.log('✅ 創建響應:', response.data)
         toast.success('公告已創建')
       }
 
       setShowModal(false)
       fetchAnnouncements()
     } catch (error) {
-      console.error('保存公告失敗:', error)
+      console.error('❌ 保存公告失敗:', error)
       toast.error('保存失敗')
     } finally {
       setSaving(false)
