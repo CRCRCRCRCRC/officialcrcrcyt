@@ -70,9 +70,14 @@ const Home = () => {
 
         // 設置熱門影片：優先使用設定的，否則使用第一個影片
         if (featuredVideo) {
+          console.log('使用設定的熱門影片:', featuredVideo.title)
           setFeaturedVideos([featuredVideo])
+        } else if (data.latestVideos && data.latestVideos.length > 0) {
+          console.log('使用最新影片作為熱門影片:', data.latestVideos[0].title)
+          setFeaturedVideos([data.latestVideos[0]])
         } else {
-          setFeaturedVideos(data.latestVideos ? [data.latestVideos[0]] : [])
+          console.log('沒有可用的影片')
+          setFeaturedVideos([])
         }
 
         console.log('YouTube 數據獲取成功:', data)

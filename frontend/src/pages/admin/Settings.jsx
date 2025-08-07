@@ -66,7 +66,9 @@ const Settings = () => {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       )
-      toast.success('熱門影片設定已更新')
+      toast.success('熱門影片設定已更新！\n注意：要持久化此設定，請在 Vercel 環境變數中設置 FEATURED_VIDEO_ID', {
+        duration: 6000
+      })
     } catch (error) {
       console.error('更新熱門影片設定失敗:', error)
       toast.error('更新設定失敗')
@@ -172,6 +174,15 @@ const Settings = () => {
               <label className="block text-sm font-semibold text-gray-800 mb-4">
                 選擇首頁熱門影片
               </label>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <p className="text-yellow-800 text-sm">
+                  <strong>重要提示：</strong> 此設定在重新部署後會重置。要持久化保存，請在 Vercel 環境變數中設置：
+                </p>
+                <ul className="text-yellow-700 text-xs mt-2 ml-4 list-disc">
+                  <li><code>FEATURED_VIDEO_ID</code> = 選中的影片ID</li>
+                  <li><code>THUMBNAIL_QUALITY</code> = 選中的縮圖品質</li>
+                </ul>
+              </div>
               <p className="text-gray-600 text-sm mb-6">
                 從你的 YouTube 頻道中選擇一個影片作為首頁的熱門影片展示
               </p>
