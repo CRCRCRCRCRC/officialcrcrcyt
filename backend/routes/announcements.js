@@ -37,9 +37,14 @@ router.get('/', async (req, res) => {
   try {
     const { limit, published } = req.query;
     
-    let filteredAnnouncements = announcements.filter(announcement => 
-      published === 'false' ? true : announcement.published
-    );
+    let filteredAnnouncements = announcements.filter(announcement => {
+      // 如果沒有指定 published 參數，返回所有公告（管理員視圖）
+      if (published === undefined) return true;
+      // 如果 published='false'，返回所有公告
+      if (published === 'false') return true;
+      // 如果 published='true'，只返回已發布的公告
+      return announcement.published;
+    });
     
     // 按創建時間倒序排列
     filteredAnnouncements.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

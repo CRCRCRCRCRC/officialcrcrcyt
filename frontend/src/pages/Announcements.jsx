@@ -175,6 +175,15 @@ const Announcements = () => {
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         className="prose prose-sm max-w-none"
+                        components={{
+                          p: ({ children }) => <p className="mb-2">{children}</p>,
+                          h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-base font-semibold mb-2">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-sm font-medium mb-1">{children}</h3>,
+                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                          ul: ({ children }) => <ul className="list-disc list-inside mb-2">{children}</ul>,
+                          li: ({ children }) => <li className="mb-1">{children}</li>
+                        }}
                       >
                         {announcement.content.substring(0, 200) + (announcement.content.length > 200 ? '...' : '')}
                       </ReactMarkdown>

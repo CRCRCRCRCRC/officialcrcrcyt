@@ -7,6 +7,8 @@ import { videoAPI, channelAPI, settingsAPI, announcementAPI } from '../services/
 // import youtubeService from '../services/youtube' // 不再使用前端 YouTube 服務
 import LoadingSpinner from '../components/LoadingSpinner'
 import YouTubePlayer from '../components/YouTubePlayer'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { formatDuration, formatNumber, decodeHtmlEntities, getThumbnailUrl } from '../utils/formatters'
 
 const Home = () => {
@@ -273,6 +275,91 @@ const Home = () => {
           </svg>
         </div>
       </section>
+
+      {/* Announcements Section */}
+      {announcements.length > 0 && (
+        <section className="py-24 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+          <div className="container-custom">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-center mb-16"
+            >
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <Megaphone className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-display font-bold text-gradient mb-4">
+                最新公告
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                掌握 CRCRC 的最新動態與重要資訊
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+              {announcements.map((announcement, index) => (
+                <motion.div
+                  key={announcement.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.2 }}
+                  className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group"
+                >
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        {new Date(announcement.createdAt).toLocaleDateString('zh-TW')}
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                    </div>
+
+                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                      {decodeHtmlEntities(announcement.title)}
+                    </h3>
+
+                    <div className="text-gray-600 text-sm line-clamp-3">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        className="prose prose-sm max-w-none"
+                        components={{
+                          p: ({ children }) => <p className="mb-1">{children}</p>,
+                          h1: ({ children }) => <span className="font-bold">{children}</span>,
+                          h2: ({ children }) => <span className="font-semibold">{children}</span>,
+                          h3: ({ children }) => <span className="font-medium">{children}</span>,
+                          strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                          ul: ({ children }) => <span>{children}</span>,
+                          li: ({ children }) => <span>{children} </span>
+                        }}
+                      >
+                        {announcement.content.substring(0, 100) + (announcement.content.length > 100 ? '...' : '')}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              className="text-center"
+            >
+              <Link
+                to="/announcements"
+                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+              >
+                查看所有公告
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Link>
+            </motion.div>
+          </div>
+        </section>
+      )}
 
       {/* Stats Section */}
       <section ref={statsRef} className="py-24 relative">
@@ -651,76 +738,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Announcements Section */}
-      {announcements.length > 0 && (
-        <section className="py-24 bg-gradient-to-br from-blue-50 via-white to-purple-50">
-          <div className="container-custom">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-center mb-16"
-            >
-              <div className="flex items-center justify-center mb-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <Megaphone className="w-6 h-6 text-white" />
-                </div>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-display font-bold text-gradient mb-4">
-                最新公告
-              </h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                掌握 CRCRC 的最新動態與重要資訊
-              </p>
-            </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-              {announcements.map((announcement, index) => (
-                <motion.div
-                  key={announcement.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.2 }}
-                  className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group"
-                >
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {new Date(announcement.createdAt).toLocaleDateString('zh-TW')}
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                    </div>
-
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
-                      {decodeHtmlEntities(announcement.title)}
-                    </h3>
-
-                    <p className="text-gray-600 text-sm line-clamp-3">
-                      {announcement.content.replace(/[#*`]/g, '').substring(0, 100)}...
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="text-center"
-            >
-              <Link
-                to="/announcements"
-                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-              >
-                查看所有公告
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Link>
-            </motion.div>
-          </div>
-        </section>
-      )}
 
       {/* YouTube 播放器 */}
       <YouTubePlayer
