@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
     console.log('返回公告:', {
       count: announcements.length,
       announcements: announcements.map(a => ({
-        id: a.id,
+        slug: a.slug,
         title: a.title,
         published: a.published,
         created_at: a.created_at,
@@ -54,20 +54,12 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 獲取單個公告（公開API）- 支援 ID 或 slug
-router.get('/:identifier', async (req, res) => {
+// 獲取單個公告（公開API）- 只支援 slug
+router.get('/:slug', async (req, res) => {
   try {
-    const { identifier } = req.params;
+    const { slug } = req.params;
 
-    // 嘗試用 slug 查詢，如果失敗則用 ID 查詢
-    let announcement;
-    if (isNaN(identifier)) {
-      // 不是數字，當作 slug 處理
-      announcement = await database.getAnnouncementBySlug(identifier);
-    } else {
-      // 是數字，當作 ID 處理
-      announcement = await database.getAnnouncementById(identifier);
-    }
+    const announcement = await database.getAnnouncementBySlug(slug);
 
     if (!announcement) {
       return res.status(404).json({ error: '公告不存在' });
@@ -114,12 +106,12 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // 更新公告（需要管理員權限）
-router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/:slug', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { slug: originalSlug } = req.params;
     const { title, content, slug, published } = req.body;
 
-    const existingAnnouncement = await database.getAnnouncementById(id);
+    const existingAnnouncement = await database.getAnnouncementBySlug(originalSlug);
     if (!existingAnnouncement) {
       return res.status(404).json({ error: '公告不存在' });
     }
@@ -131,7 +123,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
       published: published !== undefined ? Boolean(published) : existingAnnouncement.published
     };
 
-    const updatedAnnouncement = await database.updateAnnouncement(id, announcementData);
+    const updatedAnnouncement = await database.updateAnnouncementBySlug(originalSlug, announcementData);
 
     res.json(updatedAnnouncement);
   } catch (error) {
@@ -145,20 +137,20 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // 刪除公告（需要管理員權限）
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/:slug', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { id } = req.params;
-    console.log('刪除公告請求:', { id });
+    const { slug } = req.params;
+    console.log('刪除公告請求:', { slug });
 
-    const deletedAnnouncement = await database.deleteAnnouncement(id);
+    const deletedAnnouncement = await database.deleteAnnouncementBySlug(slug);
 
     if (!deletedAnnouncement) {
-      console.log('公告不存在:', id);
+      console.log('公告不存在:', slug);
       return res.status(404).json({ error: '公告不存在' });
     }
 
     console.log('公告已刪除:', {
-      deletedId: id,
+      deletedSlug: slug,
       deletedTitle: deletedAnnouncement.title
     });
 

@@ -54,9 +54,23 @@ const AnnouncementDetail = () => {
     }
 
     try {
-      const date = new Date(dateString)
+      // PostgreSQL 返回的日期格式處理
+      let date = new Date(dateString)
+
+      // 如果直接解析失敗，嘗試其他格式
       if (isNaN(date.getTime())) {
-        return '日期格式錯誤'
+        // 嘗試替換空格為 T
+        date = new Date(dateString.replace(' ', 'T'))
+
+        if (isNaN(date.getTime())) {
+          // 嘗試添加 Z 後綴
+          date = new Date(dateString + 'Z')
+
+          if (isNaN(date.getTime())) {
+            console.error('無法解析日期:', dateString)
+            return '日期格式錯誤'
+          }
+        }
       }
 
       return date.toLocaleDateString('zh-TW', {
@@ -65,7 +79,7 @@ const AnnouncementDetail = () => {
         day: 'numeric'
       })
     } catch (error) {
-      console.error('日期解析錯誤:', error)
+      console.error('日期解析錯誤:', error, '原始值:', dateString)
       return '日期格式錯誤'
     }
   }

@@ -90,13 +90,13 @@ const AdminAnnouncements = () => {
     setSaving(true)
     try {
       if (editingAnnouncement) {
-        await announcementAPI.update(editingAnnouncement.id, formData)
+        await announcementAPI.update(editingAnnouncement.slug, formData)
         toast.success('公告已更新')
       } else {
         await announcementAPI.create(formData)
         toast.success('公告已創建')
       }
-      
+
       setShowModal(false)
       fetchAnnouncements()
     } catch (error) {
@@ -107,11 +107,11 @@ const AdminAnnouncements = () => {
     }
   }
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (slug) => {
     if (!confirm('確定要刪除這個公告嗎？')) return
 
     try {
-      await announcementAPI.delete(id)
+      await announcementAPI.delete(slug)
       toast.success('公告已刪除')
       fetchAnnouncements()
     } catch (error) {
@@ -135,7 +135,7 @@ const AdminAnnouncements = () => {
 
   const togglePublished = async (announcement) => {
     try {
-      await announcementAPI.update(announcement.id, {
+      await announcementAPI.update(announcement.slug, {
         ...announcement,
         published: !announcement.published
       })
@@ -294,7 +294,7 @@ const AdminAnnouncements = () => {
                       <Edit className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => handleDelete(announcement.id)}
+                      onClick={() => handleDelete(announcement.slug)}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="刪除公告"
                     >

@@ -115,17 +115,17 @@ export const announcementAPI = {
   getAll: (params = {}) =>
     api.get('/announcements', { params }),
 
-  getById: (id) =>
-    api.get(`/announcements/${id}`),
+  getById: (slug) =>
+    api.get(`/announcements/${slug}`),
 
   create: (data) =>
     api.post('/announcements', data),
 
-  update: (id, data) =>
-    api.put(`/announcements/${id}`, data),
+  update: (slug, data) =>
+    api.put(`/announcements/${slug}`, data),
 
-  delete: (id) =>
-    api.delete(`/announcements/${id}`),
+  delete: (slug) =>
+    api.delete(`/announcements/${slug}`),
 
   reset: () =>
     api.post('/announcements/reset')

@@ -95,7 +95,7 @@ class NeonDatabase {
 
       for (const announcement of announcementsWithoutSlug.rows) {
         const baseSlug = this.generateSlug(announcement.title);
-        const uniqueSlug = await this.ensureUniqueSlug(baseSlug, announcement.id);
+        const uniqueSlug = await this.ensureUniqueSlug(baseSlug);
 
         await this.pool.query(`
           UPDATE announcements SET slug = $1 WHERE id = $2
@@ -287,20 +287,12 @@ class NeonDatabase {
   }
 
   // 確保 slug 唯一
-  async ensureUniqueSlug(baseSlug, excludeId = null) {
+  async ensureUniqueSlug(baseSlug) {
     let slug = baseSlug;
     let counter = 1;
 
     while (true) {
-      let query = 'SELECT id FROM announcements WHERE slug = $1';
-      let params = [slug];
-
-      if (excludeId) {
-        query += ' AND id != $2';
-        params.push(excludeId);
-      }
-
-      const result = await this.pool.query(query, params);
+      const result = await this.pool.query('SELECT slug FROM announcements WHERE slug = $1', [slug]);
 
       if (result.rows.length === 0) {
         return slug;
@@ -322,7 +314,7 @@ class NeonDatabase {
     const result = await this.pool.query(`
       INSERT INTO announcements (title, slug, content, published)
       VALUES ($1, $2, $3, $4)
-      RETURNING id, title, slug, content, published, to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at, to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as updated_at
+      RETURNING title, slug, content, published, created_at, updated_at
     `, [title, uniqueSlug, content, published]);
 
     return result.rows[0];
@@ -331,7 +323,7 @@ class NeonDatabase {
   async getAnnouncements(options = {}) {
     const { published, limit } = options;
 
-    let query = 'SELECT id, title, slug, content, published, to_char(created_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as created_at, to_char(updated_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as updated_at FROM announcements';
+    let query = 'SELECT title, slug, content, published, created_at, updated_at FROM announcements';
     let params = [];
     let paramCount = 0;
 
@@ -353,59 +345,71 @@ class NeonDatabase {
     return result.rows;
   }
 
-  async getAnnouncementById(id) {
-    const result = await this.pool.query(
-      'SELECT id, title, slug, content, published, to_char(created_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as created_at, to_char(updated_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as updated_at FROM announcements WHERE id = $1',
-      [id]
-    );
-    return result.rows[0] || null;
-  }
-
   async getAnnouncementBySlug(slug) {
     const result = await this.pool.query(
-      'SELECT id, title, slug, content, published, to_char(created_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as created_at, to_char(updated_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as updated_at FROM announcements WHERE slug = $1',
+      'SELECT title, slug, content, published, created_at, updated_at FROM announcements WHERE slug = $1',
       [slug]
     );
     return result.rows[0] || null;
   }
 
-  async updateAnnouncement(id, announcementData) {
+  async updateAnnouncementBySlug(originalSlug, announcementData) {
     const { title, content, slug: customSlug, published } = announcementData;
 
     // 如果有自定義 slug 或標題改變，重新生成 slug
-    let slug = null;
+    let newSlug = null;
     if (customSlug !== undefined || title !== undefined) {
       const baseSlug = customSlug || this.generateSlug(title);
-      slug = await this.ensureUniqueSlug(baseSlug, id);
+      newSlug = await this.ensureUniqueSlugExcluding(baseSlug, originalSlug);
     }
 
     let query, params;
-    if (slug) {
+    if (newSlug) {
       query = `
         UPDATE announcements
         SET title = $1, slug = $2, content = $3, published = $4, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $5
-        RETURNING id, title, slug, content, published, to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at, to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as updated_at
+        WHERE slug = $5
+        RETURNING title, slug, content, published, created_at, updated_at
       `;
-      params = [title, slug, content, published, id];
+      params = [title, newSlug, content, published, originalSlug];
     } else {
       query = `
         UPDATE announcements
         SET title = $1, content = $2, published = $3, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $4
-        RETURNING id, title, slug, content, published, to_char(created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at, to_char(updated_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as updated_at
+        WHERE slug = $4
+        RETURNING title, slug, content, published, created_at, updated_at
       `;
-      params = [title, content, published, id];
+      params = [title, content, published, originalSlug];
     }
 
     const result = await this.pool.query(query, params);
     return result.rows[0];
   }
 
-  async deleteAnnouncement(id) {
+  // 確保 slug 唯一（排除特定 slug）
+  async ensureUniqueSlugExcluding(baseSlug, excludeSlug) {
+    let slug = baseSlug;
+    let counter = 1;
+
+    while (true) {
+      let query = 'SELECT slug FROM announcements WHERE slug = $1 AND slug != $2';
+      let params = [slug, excludeSlug];
+
+      const result = await this.pool.query(query, params);
+
+      if (result.rows.length === 0) {
+        return slug;
+      }
+
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+  }
+
+  async deleteAnnouncementBySlug(slug) {
     const result = await this.pool.query(
-      'DELETE FROM announcements WHERE id = $1 RETURNING id, title, slug, content, published, to_char(created_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as created_at, to_char(updated_at, \'YYYY-MM-DD"T"HH24:MI:SS"Z"\') as updated_at',
-      [id]
+      'DELETE FROM announcements WHERE slug = $1 RETURNING title, slug, content, published, created_at, updated_at',
+      [slug]
     );
     return result.rows[0];
   }
@@ -481,7 +485,7 @@ class NeonDatabase {
         }
       }
 
-      // 不自動創建示例公告
+      // 公告已清空，不再需要自動清理
 
       // 設置默認網站設置
       const siteTitle = await this.getSiteSetting('site_title');
