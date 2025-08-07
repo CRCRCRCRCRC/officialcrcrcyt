@@ -318,13 +318,13 @@ const Home = () => {
                       <div className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-2" />
                         {(() => {
-                          if (!announcement.createdAt || announcement.createdAt === 'null') {
+                          if (!announcement.created_at || announcement.created_at === 'null') {
                             return '未知日期'
                           }
 
-                          let date = new Date(announcement.createdAt)
+                          let date = new Date(announcement.created_at)
                           if (isNaN(date.getTime())) {
-                            date = new Date(announcement.createdAt.replace(' ', 'T'))
+                            date = new Date(announcement.created_at.replace(' ', 'T'))
                             if (isNaN(date.getTime())) {
                               return '日期格式錯誤'
                             }

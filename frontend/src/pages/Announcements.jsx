@@ -158,11 +158,7 @@ const Announcements = () => {
                     <div className="flex items-center space-x-6 text-sm text-gray-500 mb-4">
                       <div className="flex items-center">
                         <Calendar className="w-4 h-4 mr-2" />
-                        {formatDate(announcement.createdAt)}
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="w-4 h-4 mr-2" />
-                        {formatTime(announcement.createdAt)}
+                        {formatDate(announcement.created_at)}
                       </div>
                     </div>
                     

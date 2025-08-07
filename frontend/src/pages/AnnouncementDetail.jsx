@@ -55,33 +55,23 @@ const AnnouncementDetail = () => {
   }
 
   const formatDate = (dateInput) => {
-    console.log('🔍 格式化日期:', { dateInput, type: typeof dateInput })
-
     if (!dateInput) {
-      console.log('❌ 日期為空')
       return '未知日期'
     }
 
     try {
-      // 如果已經是 Date 對象
       let date = dateInput instanceof Date ? dateInput : new Date(dateInput)
 
-      console.log('📅 解析結果:', date, '有效:', !isNaN(date.getTime()))
-
       if (isNaN(date.getTime())) {
-        console.error('❌ 無法解析日期:', dateInput)
         return '日期格式錯誤'
       }
 
-      const formatted = date.toLocaleDateString('zh-TW', {
+      return date.toLocaleDateString('zh-TW', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       })
-      console.log('✅ 格式化完成:', formatted)
-      return formatted
     } catch (error) {
-      console.error('❌ 日期解析錯誤:', error, '原始值:', dateInput)
       return '日期格式錯誤'
     }
   }
@@ -225,14 +215,14 @@ const AnnouncementDetail = () => {
                 <Calendar className="w-5 h-5 mr-2" />
                 發布於 {(() => {
                   console.log('🎯 渲染創建日期，announcement:', announcement)
-                  console.log('🎯 createdAt 值:', announcement?.createdAt)
-                  return formatDate(announcement?.createdAt)
+                  console.log('🎯 created_at 值:', announcement?.created_at)
+                  return formatDate(announcement?.created_at)
                 })()}
               </div>
-              {announcement?.updatedAt !== announcement?.createdAt && (
+              {announcement?.updated_at !== announcement?.created_at && (
                 <div className="flex items-center">
                   <Calendar className="w-5 h-5 mr-2" />
-                  更新於 {formatDate(announcement?.updatedAt)}
+                  更新於 {formatDate(announcement?.updated_at)}
                 </div>
               )}
             </div>

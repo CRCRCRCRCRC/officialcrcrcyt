@@ -178,33 +178,25 @@ const AdminAnnouncements = () => {
   )
 
   const formatDate = (dateString) => {
-    console.log('🎯 管理頁面格式化日期:', { dateString, type: typeof dateString })
-
     if (!dateString || dateString === 'null' || dateString === 'undefined') {
-      console.log('❌ 日期為空或無效')
       return '未知日期'
     }
 
     let date = new Date(dateString)
-    console.log('📅 第一次解析:', date, '有效:', !isNaN(date.getTime()))
 
     if (isNaN(date.getTime())) {
       date = new Date(dateString.replace(' ', 'T'))
-      console.log('📅 替換空格後解析:', date, '有效:', !isNaN(date.getTime()))
 
       if (isNaN(date.getTime())) {
-        console.log('❌ 無法解析日期')
         return '日期格式錯誤'
       }
     }
 
-    const formatted = date.toLocaleDateString('zh-TW', {
+    return date.toLocaleDateString('zh-TW', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     })
-    console.log('✅ 格式化結果:', formatted)
-    return formatted
   }
 
   if (loading) {
@@ -300,10 +292,10 @@ const AdminAnnouncements = () => {
                     </div>
                     <div className="flex items-center text-sm text-gray-500 mb-3">
                       <Calendar className="w-4 h-4 mr-2" />
-                      創建：{formatDate(announcement.createdAt)}
-                      {announcement.updatedAt !== announcement.createdAt && (
+                      創建：{formatDate(announcement.created_at)}
+                      {announcement.updated_at !== announcement.created_at && (
                         <span className="ml-4">
-                          更新：{formatDate(announcement.updatedAt)}
+                          更新：{formatDate(announcement.updated_at)}
                         </span>
                       )}
                     </div>
