@@ -125,7 +125,10 @@ export const announcementAPI = {
     api.put(`/announcements/${id}`, data),
 
   delete: (id) =>
-    api.delete(`/announcements/${id}`)
+    api.delete(`/announcements/${id}`),
+
+  reset: () =>
+    api.post('/announcements/reset')
 }
 
 

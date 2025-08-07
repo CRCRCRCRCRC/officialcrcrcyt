@@ -112,6 +112,19 @@ const AdminAnnouncements = () => {
     }
   }
 
+  const handleReset = async () => {
+    if (!confirm('確定要清空所有公告嗎？這個操作無法撤銷！')) return
+
+    try {
+      await announcementAPI.reset()
+      toast.success('所有公告已清空')
+      fetchAnnouncements()
+    } catch (error) {
+      console.error('重置公告失敗:', error)
+      toast.error('重置失敗')
+    }
+  }
+
   const togglePublished = async (announcement) => {
     try {
       await announcementAPI.update(announcement.id, {
@@ -162,15 +175,25 @@ const AdminAnnouncements = () => {
                 管理網站公告與重要資訊
               </p>
             </div>
-            <motion.button
-              onClick={handleCreate}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              新增公告
-            </motion.button>
+            <div className="flex items-center space-x-4">
+              <motion.button
+                onClick={handleReset}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-4 py-2 bg-red-500 text-white font-medium rounded-lg shadow hover:shadow-lg transition-all duration-300 text-sm"
+              >
+                清空所有
+              </motion.button>
+              <motion.button
+                onClick={handleCreate}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                新增公告
+              </motion.button>
+            </div>
           </div>
         </div>
       </div>

@@ -57,10 +57,13 @@ const Home = () => {
 
         // 獲取最新公告
         try {
+          console.log('首頁：開始獲取公告...')
           const announcementResponse = await announcementAPI.getAll({ limit: 3, published: true })
-          setAnnouncements(announcementResponse.data.announcements || [])
+          const fetchedAnnouncements = announcementResponse.data.announcements || []
+          console.log('首頁：獲取到公告數量:', fetchedAnnouncements.length)
+          setAnnouncements(fetchedAnnouncements)
         } catch (error) {
-          console.log('獲取公告失敗，使用空陣列')
+          console.log('首頁：獲取公告失敗，使用空陣列', error)
           setAnnouncements([])
         }
 
