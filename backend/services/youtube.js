@@ -116,6 +116,10 @@ async function getChannelStats() {
     if (error.response) {
       console.error('API 錯誤響應:', error.response.data);
       console.error('API 錯誤狀態:', error.response.status);
+
+      if (error.response.status === 403 && error.response.data?.error?.message?.includes('quota')) {
+        throw new Error('YouTube API 配額已用完，請等待明天重置或增加配額限制');
+      }
     }
     throw error;
   }
@@ -174,6 +178,9 @@ async function getChannelVideos(maxResults = 10) {
     });
   } catch (error) {
     console.error('Error fetching channel videos:', error.message);
+    if (error.response?.status === 403 && error.response.data?.error?.message?.includes('quota')) {
+      throw new Error('YouTube API 配額已用完，請等待明天重置或增加配額限制');
+    }
     throw error;
   }
 }
