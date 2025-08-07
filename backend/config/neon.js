@@ -69,6 +69,18 @@ class NeonDatabase {
         )
       `);
 
+      // 創建公告表
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS announcements (
+          id SERIAL PRIMARY KEY,
+          title VARCHAR(500) NOT NULL,
+          content TEXT NOT NULL,
+          published BOOLEAN DEFAULT true,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       console.log('✅ PostgreSQL 資料表初始化完成');
     } catch (error) {
       console.error('❌ PostgreSQL 資料表初始化失敗:', error);
@@ -241,13 +253,79 @@ class NeonDatabase {
     return settings;
   }
 
+  // 公告相關操作
+  async createAnnouncement(announcementData) {
+    const { title, content, published = true } = announcementData;
+
+    const result = await this.pool.query(`
+      INSERT INTO announcements (title, content, published)
+      VALUES ($1, $2, $3) RETURNING *
+    `, [title, content, published]);
+
+    return result.rows[0];
+  }
+
+  async getAnnouncements(options = {}) {
+    const { published, limit } = options;
+
+    let query = 'SELECT * FROM announcements';
+    let params = [];
+    let paramCount = 0;
+
+    if (published !== undefined) {
+      paramCount++;
+      query += ` WHERE published = $${paramCount}`;
+      params.push(published);
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    if (limit) {
+      paramCount++;
+      query += ` LIMIT $${paramCount}`;
+      params.push(parseInt(limit));
+    }
+
+    const result = await this.pool.query(query, params);
+    return result.rows;
+  }
+
+  async getAnnouncementById(id) {
+    const result = await this.pool.query(
+      'SELECT * FROM announcements WHERE id = $1',
+      [id]
+    );
+    return result.rows[0] || null;
+  }
+
+  async updateAnnouncement(id, announcementData) {
+    const { title, content, published } = announcementData;
+
+    const result = await this.pool.query(`
+      UPDATE announcements
+      SET title = $1, content = $2, published = $3, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $4
+      RETURNING *
+    `, [title, content, published, id]);
+
+    return result.rows[0];
+  }
+
+  async deleteAnnouncement(id) {
+    const result = await this.pool.query(
+      'DELETE FROM announcements WHERE id = $1 RETURNING *',
+      [id]
+    );
+    return result.rows[0];
+  }
+
   // 統計數據
   async getStats() {
     const videoCount = await this.pool.query('SELECT COUNT(*) FROM videos');
     const featuredCount = await this.pool.query('SELECT COUNT(*) FROM videos WHERE is_featured = true');
     const viewsSum = await this.pool.query('SELECT SUM(view_count) FROM videos');
     const channelInfo = await this.getChannelInfo();
-    
+
     return {
       total_videos: parseInt(videoCount.rows[0].count),
       featured_videos: parseInt(featuredCount.rows[0].count),

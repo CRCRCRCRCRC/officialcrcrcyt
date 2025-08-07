@@ -199,7 +199,8 @@ async function getDashboardData() {
       country: channelStats.country
     };
   } catch (error) {
-    console.error('Error fetching dashboard data:', error.message);
+    console.error('❌ YouTube API 錯誤:', error.message);
+    console.error('錯誤詳情:', error.response?.data || error);
     throw error;
   }
 }
