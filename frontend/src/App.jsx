@@ -11,7 +11,6 @@ import AnnouncementDetail from './pages/AnnouncementDetail'
 import AdminLogin from './pages/admin/Login'
 import AdminDashboard from './pages/admin/Dashboard'
 
-import AdminChannel from './pages/admin/Channel'
 import AdminAnnouncements from './pages/admin/Announcements'
 import AdminSettings from './pages/admin/Settings'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -43,7 +42,6 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="dashboard" element={<AdminDashboard />} />
 
-          <Route path="channel" element={<AdminChannel />} />
           <Route path="announcements" element={<AdminAnnouncements />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>

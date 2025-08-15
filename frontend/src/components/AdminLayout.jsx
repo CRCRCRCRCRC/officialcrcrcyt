@@ -49,12 +49,6 @@ const AdminLayout = () => {
     },
 
     {
-      name: '頻道設定',
-      href: '/admin/channel',
-      icon: Users,
-      gradient: 'from-pink-500 to-red-600'
-    },
-    {
       name: '公告管理',
       href: '/admin/announcements',
       icon: Megaphone,
