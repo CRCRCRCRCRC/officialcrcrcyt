@@ -226,7 +226,7 @@ const Home = () => {
               {[
                 { icon: Heart, text: "創意無限", color: "from-pink-400 to-red-400" },
                 { icon: TrendingUp, text: "熱門推薦", color: "from-green-400 to-blue-400" },
-                { icon: Award, text: "品質保證", color: "from-yellow-400 to-orange-400" },
+                { icon: Star, text: "品質保證", color: "from-yellow-400 to-orange-400" },
               ].map((item, index) => (
                 <motion.div
                   key={index}
