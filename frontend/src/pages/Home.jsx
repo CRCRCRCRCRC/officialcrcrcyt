@@ -275,8 +275,8 @@ const Home = () => {
       {/* Announcements Section */}
       {announcements.length > 0 && (
         <section className="py-24 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-white/40 to-purple-500/10" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.5),transparent_60%)]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-white/20 to-purple-500/10" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.25),transparent_60%)]" />
           <div className="container-custom">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -304,7 +304,7 @@ const Home = () => {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.2 }}
-                  className="card-glass overflow-hidden hover:shadow-[0_10px_60px_rgba(59,130,246,0.25)] transition-all duration-500"
+                  className="card-gradient overflow-hidden hover:shadow-[0_10px_40px_rgba(59,130,246,0.18)] transition-all duration-500"
                 >
                   <Link to={`/announcements/${announcement.slug}`} className="block group">
                   <div className="p-6">
