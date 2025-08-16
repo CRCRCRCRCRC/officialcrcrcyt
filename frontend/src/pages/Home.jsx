@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
-import { Play, Youtube, Users, Eye, Star, Sparkles, Music, Heart, TrendingUp, Award, Zap, Megaphone, Calendar, ChevronRight, ArrowRight } from 'lucide-react'
+import { Play, Youtube, Eye, Star, Sparkles, Music, Heart, TrendingUp, Megaphone, Calendar, ChevronRight, ArrowRight } from 'lucide-react'
 import { videoAPI, channelAPI, settingsAPI, announcementAPI } from '../services/api'
 // import youtubeService from '../services/youtube' // 不再使用前端 YouTube 服務
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -34,7 +34,7 @@ const Home = () => {
   const [heroRef, heroInView] = useInView({ threshold: 0.1, triggerOnce: true })
   const [statsRef, statsInView] = useInView({ threshold: 0.1, triggerOnce: true })
   const [videosRef, videosInView] = useInView({ threshold: 0.1, triggerOnce: true })
-  const [ctaRef, ctaInView] = useInView({ threshold: 0.1, triggerOnce: true })
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -629,132 +629,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section ref={ctaRef} className="py-24 relative overflow-hidden">
-        {/* 動態背景 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-        
-        {/* 動畫背景元素 */}
-        <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-xl animate-float"></div>
-        <div className="absolute top-32 right-20 w-24 h-24 bg-yellow-300/20 rounded-full blur-lg animate-float" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-20 left-1/4 w-40 h-40 bg-pink-300/15 rounded-full blur-2xl animate-float" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-32 right-1/3 w-28 h-28 bg-blue-300/20 rounded-full blur-xl animate-float" style={{ animationDelay: '0.5s' }}></div>
-        
-        {/* 粒子效果 */}
-        <div className="absolute inset-0">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-2 h-2 bg-white/30 rounded-full animate-float"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
-                animationDuration: `${3 + Math.random() * 2}s`
-              }}
-            ></div>
-          ))}
-        </div>
-        
-        <div className="relative container-custom">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={ctaInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 1 }}
-            className="text-center"
-          >
-            {/* 標題裝飾 */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={ctaInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="inline-flex items-center space-x-2 bg-white/20 backdrop-blur-md rounded-full px-6 py-3 text-white font-medium mb-8 border border-white/30"
-            >
-              <Zap className="w-5 h-5 animate-pulse" />
-              <span>立即加入</span>
-              <Heart className="w-5 h-5 animate-bounce" />
-            </motion.div>
-            
-            {/* 主標題 */}
-            <motion.h2
-              initial={{ opacity: 0, y: 30 }}
-              animate={ctaInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-white mb-6 leading-tight"
-            >
-              準備好體驗
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-300 to-blue-300 animate-shimmer">
-                空耳音樂
-              </span>
-              <br />
-              的魅力了嗎？
-            </motion.h2>
-            
-            {/* 副標題 */}
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={ctaInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-xl md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto leading-relaxed"
-            >
-              加入我們的社群，一起探索音樂的無限可能
-              <br />
-              <span className="text-yellow-300 font-semibold">讓每一個音符都充滿驚喜</span>
-            </motion.p>
-            
-            {/* CTA 按鈕組 */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={ctaInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.5 }}
-              className="flex flex-col sm:flex-row gap-6 justify-center items-center"
-            >
-              <a
-                href="https://youtube.com/@officialcrcrcyt"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative overflow-hidden bg-white text-primary-600 w-48 h-14 rounded-xl font-bold text-base hover:bg-gray-50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 border border-gray-200 hover:border-gray-300 flex items-center justify-center"
-              >
-                <span className="relative">觀看影片</span>
-              </a>
-
-              <a
-                href="https://youtube.com/@officialcrcrcyt"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative overflow-hidden bg-red-600 text-white w-48 h-14 rounded-xl font-bold text-base hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 border border-red-600 hover:border-red-700 flex items-center justify-center"
-              >
-                <span className="relative">訂閱頻道</span>
-              </a>
-            </motion.div>
-
-            {/* 底部裝飾 */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={ctaInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ duration: 1, delay: 0.8 }}
-              className="mt-16 flex justify-center items-center space-x-8"
-            >
-              <div className="flex items-center space-x-2 text-white/70">
-                <Users className="w-5 h-5" />
-                <span className="text-sm">10,000+ 訂閱者</span>
-              </div>
-              <div className="w-px h-6 bg-white/30"></div>
-              <div className="flex items-center space-x-2 text-white/70">
-                <Award className="w-5 h-5" />
-                <span className="text-sm">100+ 精選作品</span>
-              </div>
-              <div className="w-px h-6 bg-white/30"></div>
-              <div className="flex items-center space-x-2 text-white/70">
-                <Heart className="w-5 h-5" />
-                <span className="text-sm">無限創意</span>
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
 
 
 
