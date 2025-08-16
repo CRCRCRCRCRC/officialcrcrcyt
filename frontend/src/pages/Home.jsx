@@ -274,7 +274,9 @@ const Home = () => {
 
       {/* Announcements Section */}
       {announcements.length > 0 && (
-        <section className="py-24 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <section className="py-24 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-white/40 to-purple-500/10" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.5),transparent_60%)]" />
           <div className="container-custom">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -366,8 +368,9 @@ const Home = () => {
       )}
 
       {/* Stats Section */}
-      <section ref={statsRef} className="py-24 relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-primary-50"></div>
+      <section ref={statsRef} className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-white/40 to-pink-500/10"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.6),transparent_60%)]"></div>
         <div className="relative container-custom">
           {/* 標題 */}
           <motion.div
@@ -470,7 +473,8 @@ const Home = () => {
       {/* Featured Videos Section */}
       <section ref={videosRef} className="py-24 relative overflow-hidden">
         {/* 背景裝飾 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-secondary-50 via-white to-primary-50"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-white/35 to-blue-500/10"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.55),transparent_60%)]"></div>
         <div className="absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-blue-200/30 to-purple-200/30 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 right-20 w-80 h-80 bg-gradient-to-r from-pink-200/30 to-yellow-200/30 rounded-full blur-3xl"></div>
 
