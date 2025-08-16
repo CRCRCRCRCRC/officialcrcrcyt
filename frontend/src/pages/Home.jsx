@@ -173,7 +173,7 @@ const Home = () => {
             initial={{ opacity: 0, y: 50 }}
             animate={heroInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 1, ease: "easeOut" }}
-            className="max-w-5xl mx-auto"
+            className="max-w-5xl mx-auto bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/20 p-8 lg:p-12 shadow-[0_10px_60px_rgba(255,255,255,0.08)]"
           >
             {/* 標題上方的裝飾 */}
             <motion.div
@@ -304,7 +304,7 @@ const Home = () => {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.2 }}
-                  className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300"
+                  className="card-glass overflow-hidden hover:shadow-[0_10px_60px_rgba(59,130,246,0.25)] transition-all duration-500"
                 >
                   <Link to={`/announcements/${announcement.slug}`} className="block group">
                   <div className="p-6">
@@ -422,7 +422,7 @@ const Home = () => {
                 transition={{ duration: 0.8, delay: stat.delay }}
                 className="group"
               >
-                <div className={`card-gradient bg-gradient-to-br ${stat.bgColor} p-8 text-center card-hover group-hover:shadow-glow`}>
+                <div className={`card-gradient bg-gradient-to-br ${stat.bgColor} p-8 text-center card-hover group-hover:shadow-[0_10px_60px_rgba(16,185,129,0.25)]`}>
                   {/* 圖標 */}
                   <motion.div
                     className={`w-20 h-20 bg-gradient-to-r ${stat.color} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300`}
@@ -517,7 +517,7 @@ const Home = () => {
                     transition={{ duration: 0.8, delay: index * 0.15 }}
                     className="group"
                   >
-                    <div className="card-gradient p-2 card-hover group-hover:shadow-glow">
+                    <div className="card-gradient p-2 card-hover group-hover:shadow-[0_10px_60px_rgba(236,72,153,0.25)]">
                       {/* 影片縮圖 */}
                       <div className="relative overflow-hidden rounded-2xl aspect-video">
                         <img
