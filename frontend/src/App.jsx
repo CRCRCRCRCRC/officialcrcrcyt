@@ -4,7 +4,7 @@ import Layout from './components/Layout'
 import AdminLayout from './components/AdminLayout'
 import Home from './pages/Home'
 import VideoDetail from './pages/VideoDetail'
-import About from './pages/About'
+// import About from './pages/About'
 import Announcements from './pages/Announcements'
 import AnnouncementDetail from './pages/AnnouncementDetail'
 
@@ -24,7 +24,8 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="videos/:id" element={<VideoDetail />} />
-          <Route path="about" element={<About />} />
+          {/* 關於頁面已移除 */}
+          {/* <Route path="about" element={<About />} /> */}
           <Route path="announcements" element={<Announcements />} />
           <Route path="announcements/:slug" element={<AnnouncementDetail />} />
 

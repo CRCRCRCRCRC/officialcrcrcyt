@@ -56,11 +56,7 @@ const Footer = () => {
                   影片
                 </a>
               </li>
-              <li>
-                <Link to="/about" className="text-gray-300 hover:text-white transition-colors duration-200">
-                  關於我們
-                </Link>
-              </li>
+
               <li>
                 <Link to="/contact" className="text-gray-300 hover:text-white transition-colors duration-200">
                   聯絡我們
