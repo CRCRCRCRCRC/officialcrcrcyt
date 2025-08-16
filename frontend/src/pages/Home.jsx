@@ -173,7 +173,7 @@ const Home = () => {
             initial={{ opacity: 0, y: 50 }}
             animate={heroInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 1, ease: "easeOut" }}
-            className="max-w-5xl mx-auto bg-white/5 backdrop-blur-2xl rounded-3xl border border-white/20 p-8 lg:p-12 shadow-[0_10px_60px_rgba(255,255,255,0.08)]"
+            className="max-w-5xl mx-auto hero-horizontal-frame p-8 lg:p-12"
           >
             {/* 標題上方的裝飾 */}
             <motion.div
