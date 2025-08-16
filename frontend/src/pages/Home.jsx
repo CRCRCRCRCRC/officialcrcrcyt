@@ -138,7 +138,7 @@ const Home = () => {
         {/* 動態背景 */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600"></div>
         <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 via-transparent to-yellow-400/30"></div>
-        
+
         {/* 動態粒子效果 */}
         <div className="absolute inset-0">
           {[...Array(20)].map((_, i) => (
@@ -162,12 +162,12 @@ const Home = () => {
             />
           ))}
         </div>
-        
+
         {/* 漸變光暈 */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-pink-400/30 to-purple-600/30 rounded-full blur-3xl animate-pulse-slow"></div>
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-400/30 to-cyan-600/30 rounded-full blur-3xl animate-float"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-yellow-400/20 to-orange-600/20 rounded-full blur-3xl animate-glow"></div>
-        
+
         <div className="relative container-custom py-20 lg:py-32 text-center">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -188,7 +188,7 @@ const Home = () => {
                 <Music className="w-5 h-5 text-pink-300 animate-bounce" />
               </div>
             </motion.div>
-            
+
             {/* 主標題 */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
@@ -202,7 +202,7 @@ const Home = () => {
                 CRCRC
               </span>
             </motion.h1>
-            
+
             {/* 副標題 */}
             <motion.p
               initial={{ opacity: 0, y: 30 }}
@@ -215,7 +215,7 @@ const Home = () => {
               <br />
               帶給你前所未有的音樂體驗
             </motion.p>
-            
+
             {/* 特色標籤 */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -240,7 +240,7 @@ const Home = () => {
                 </motion.div>
               ))}
             </motion.div>
-            
+
             {/* CTA 按鈕 */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
@@ -256,7 +256,7 @@ const Home = () => {
               >
                 <span className="text-lg font-bold">訂閱頻道</span>
               </a>
-              
+
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -273,7 +273,7 @@ const Home = () => {
             </motion.div>
           </motion.div>
         </div>
-        
+
         {/* 底部波浪效果 */}
         <div className="absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 120" className="w-full h-20 fill-white">
@@ -393,7 +393,7 @@ const Home = () => {
               用數字見證我們的創作熱情與觀眾的喜愛
             </p>
           </motion.div>
-          
+
           {/* 統計卡片 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
@@ -438,7 +438,7 @@ const Home = () => {
                   >
                     <stat.icon className="w-10 h-10 text-white" />
                   </motion.div>
-                  
+
                   {/* 數值 */}
                   <motion.h3
                     className="text-4xl md:text-5xl font-display font-black text-gray-900 mb-3"
@@ -448,19 +448,19 @@ const Home = () => {
                   >
                     {stat.value}
                   </motion.h3>
-                  
+
                   {/* 標籤 */}
                   <p className="text-lg font-semibold text-gray-700 group-hover:text-gray-900 transition-colors duration-300">
                     {stat.label}
                   </p>
-                  
+
                   {/* 裝飾線條 */}
                   <div className={`h-1 bg-gradient-to-r ${stat.color} rounded-full mx-auto mt-4 w-12 group-hover:w-20 transition-all duration-300`}></div>
                 </div>
               </motion.div>
             ))}
           </div>
-          
+
           {/* 底部裝飾 */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -483,7 +483,7 @@ const Home = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-secondary-50 via-white to-primary-50"></div>
         <div className="absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-blue-200/30 to-purple-200/30 rounded-full blur-3xl"></div>
         <div className="absolute bottom-20 right-20 w-80 h-80 bg-gradient-to-r from-pink-200/30 to-yellow-200/30 rounded-full blur-3xl"></div>
-        
+
         <div className="relative container-custom">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -502,7 +502,7 @@ const Home = () => {
                 <span>精選作品</span>
                 <Sparkles className="w-5 h-5 animate-bounce" />
               </motion.div>
-              
+
               <h2 className="text-4xl md:text-6xl font-display font-black text-gradient mb-6">
                 熱門影片
               </h2>
@@ -538,7 +538,7 @@ const Home = () => {
                             }
                           }}
                         />
-                        
+
                         {/* 播放覆蓋層 */}
                         <div
                           className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"
@@ -552,21 +552,21 @@ const Home = () => {
                             <Play className="w-8 h-8 text-white ml-1" />
                           </motion.div>
                         </div>
-                        
+
                         {/* 時長標籤 */}
                         {video.duration && (
                           <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full font-medium">
                             {formatDuration(video.duration)}
                           </div>
                         )}
-                        
+
                         {/* 熱門標籤 */}
                         <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-3 py-1 rounded-full font-bold flex items-center space-x-1">
                           <TrendingUp className="w-3 h-3" />
                           <span>熱門</span>
                         </div>
                       </div>
-                      
+
                       {/* 內容區塊 */}
                       <div className="p-6">
                         <h3 className="font-bold text-gray-900 mb-3 line-clamp-2 text-lg group-hover:text-primary-600 transition-colors duration-300">
@@ -575,7 +575,7 @@ const Home = () => {
                         <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed">
                           {decodeHtmlEntities(video.description) || '暫無描述'}
                         </p>
-                        
+
                         {/* 底部資訊 */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2 text-sm text-gray-500">
@@ -628,8 +628,6 @@ const Home = () => {
           </motion.div>
         </div>
       </section>
-
-
 
 
       {/* YouTube 播放器 */}
