@@ -204,17 +204,7 @@ const Home = () => {
             </motion.h1>
 
             {/* 副標題 */}
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={heroInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 1, delay: 0.5 }}
-              className="text-xl md:text-2xl lg:text-3xl text-white/90 mb-12 max-w-3xl mx-auto leading-relaxed font-light"
-            >
-              將流行歌曲重新詮釋成
-              <span className="text-gradient-warm font-semibold"> 有趣的空耳版本</span>
-              <br />
-              帶給你前所未有的音樂體驗
-            </motion.p>
+
 
             {/* 特色標籤 */}
             <motion.div
