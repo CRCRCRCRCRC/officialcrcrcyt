@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
-import { Play, Youtube, Eye, Star, Sparkles, Music, Heart, TrendingUp, Megaphone, Calendar, ChevronRight, ArrowRight } from 'lucide-react'
+import { Play, Youtube, Eye, Star, Sparkles, Music, Heart, TrendingUp, Megaphone, Calendar, ChevronRight, ArrowRight, Users } from 'lucide-react'
 import { videoAPI, channelAPI, settingsAPI, announcementAPI } from '../services/api'
 // import youtubeService from '../services/youtube' // 不再使用前端 YouTube 服務
 import LoadingSpinner from '../components/LoadingSpinner'
