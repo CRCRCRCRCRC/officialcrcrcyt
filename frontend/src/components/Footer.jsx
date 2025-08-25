@@ -17,8 +17,7 @@ const Footer = () => {
               <span className="text-xl font-display font-bold">CRCRC</span>
             </Link>
             <p className="text-gray-300 mb-6 max-w-md">
-              專業製作空耳音樂影片的 YouTube 頻道，將流行歌曲重新詮釋成有趣的空耳版本。
-              歡迎訂閱我們的頻道，一起享受音樂的樂趣！
+              創作空耳與荒野亂鬥內容的頻道，歡迎訂閱，一起玩音樂玩遊戲！
             </p>
             <div className="flex items-center space-x-4">
               <a
