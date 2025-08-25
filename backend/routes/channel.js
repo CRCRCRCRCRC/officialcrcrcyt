@@ -56,7 +56,7 @@ router.get('/info', async (req, res) => {
       viewCount: channelInfo.total_views || 0,
       videoCount: 0,
       title: channelInfo.channel_name || 'CRCRC',
-      description: channelInfo.description || '專業製作空耳音樂影片的 YouTube 頻道',
+      description: channelInfo.description || '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱，一起玩音樂玩遊戲！',
       thumbnails: {}
     });
   } catch (error) {

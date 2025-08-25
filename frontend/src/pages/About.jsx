@@ -35,7 +35,7 @@ const About = () => {
 
         setChannelInfo({
           title: data.channelTitle || 'CRCRC',
-          description: data.channelDescription || '專業空耳音樂創作頻道',
+          description: data.channelDescription || '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱，一起玩音樂玩遊戲！',
           customUrl: data.customUrl || 'https://youtube.com/@officialcrcrcyt',
           thumbnails: data.channelThumbnails || {},
           subscriberCount: parseInt(data.subscriberCount) || 0,
@@ -50,7 +50,7 @@ const About = () => {
         // 設置預設資訊
         setChannelInfo({
           title: 'CRCRC',
-          description: '專業空耳音樂創作頻道，致力於為觀眾帶來高質量的音樂內容。',
+          description: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱，一起玩音樂玩遊戲！',
           customUrl: 'https://youtube.com/@officialcrcrcyt',
           thumbnails: {},
           subscriberCount: 0,

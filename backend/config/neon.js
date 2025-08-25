@@ -460,7 +460,7 @@ class NeonDatabase {
         console.log('📝 創建默認頻道資訊...');
         await this.updateChannelInfo({
           channel_name: 'CRCRC',
-          description: '專業製作空耳音樂影片的 YouTube 頻道，將流行歌曲重新詮釋成有趣的空耳版本。',
+          description: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱，一起玩音樂玩遊戲！',
           youtube_url: 'https://youtube.com/@officialcrcrcyt',
           discord_url: 'https://discord.gg/FyrNaF6Nbj',
           minecraft_discord_url: 'https://discord.gg/9jBCTheX3Y',
@@ -497,7 +497,7 @@ class NeonDatabase {
       if (!siteTitle) {
         console.log('📝 創建默認網站設置...');
         await this.setSiteSetting('site_title', 'CRCRC 官方網站');
-        await this.setSiteSetting('site_description', '專業製作空耳音樂影片的 YouTube 頻道');
+        await this.setSiteSetting('site_description', '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱，一起玩音樂玩遊戲！');
         await this.setSiteSetting('contact_email', 'contact@crcrc.com');
         await this.setSiteSetting('featured_video_count', '6');
         console.log('✅ 默認網站設置創建成功');
