@@ -71,7 +71,7 @@ const Home = () => {
         // 設置 YouTube 數據
         setChannelInfo({
           name: data.channelTitle || 'CRCRC',
-          description: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱，一起玩音樂玩遊戲！',
+          description: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！',
           subscriber_count: parseInt(data.subscriberCount) || 0,
           video_count: parseInt(data.totalVideos) || 0,
           view_count: parseInt(data.totalViews) || 0
@@ -103,7 +103,7 @@ const Home = () => {
         // 設置空數據
         setChannelInfo({
           name: 'CRCRC',
-          description: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱，一起玩音樂玩遊戲！',
+          description: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！',
           subscriber_count: 0,
           video_count: 0,
           view_count: 0

@@ -42,7 +42,7 @@ async function initDatabase() {
         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           'CRCRC',
-'創作空耳與荒野亂鬥內容的頻道，歡迎訂閱，一起玩音樂玩遊戲！',
+'創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！',
           'https://youtube.com/@officialcrcrcyt',
           'https://discord.gg/FyrNaF6Nbj',
           'https://discord.gg/9jBCTheX3Y',
@@ -73,7 +73,7 @@ async function initDatabase() {
       
       const defaultSettings = [
         { key: 'site_title', value: 'CRCRC 官方網站', description: '網站標題' },
-        { key: 'site_description', value: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱，一起玩音樂玩遊戲！', description: '網站描述' },
+        { key: 'site_description', value: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！', description: '網站描述' },
         { key: 'contact_email', value: 'contact@crcrc.com', description: '聯絡信箱' },
         { key: 'featured_video_count', value: '6', description: '首頁精選影片數量' },
         { key: 'youtube_channel_id', value: 'UCLG-31GRtc0JQ7o1GZDofHA', description: 'YouTube 頻道 ID' }

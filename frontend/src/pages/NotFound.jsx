@@ -77,12 +77,6 @@ const NotFound = () => {
               影片庫
             </a>
             <Link
-              to="/about"
-              className="text-primary-600 hover:text-primary-700 underline"
-            >
-              關於我們
-            </Link>
-            <Link
               to="/contact"
               className="text-primary-600 hover:text-primary-700 underline"
             >

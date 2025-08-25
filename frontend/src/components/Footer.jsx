@@ -17,7 +17,7 @@ const Footer = () => {
               <span className="text-xl font-display font-bold">CRCRC</span>
             </Link>
             <p className="text-gray-300 mb-6 max-w-md">
-              創作空耳與荒野亂鬥內容的頻道，歡迎訂閱，一起玩音樂玩遊戲！
+              創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！
             </p>
             <div className="flex items-center space-x-4">
               <a
