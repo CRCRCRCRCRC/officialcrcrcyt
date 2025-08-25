@@ -487,9 +487,7 @@ const Home = () => {
                 熱門影片
               </h2>
               <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                探索我們最受歡迎的空耳音樂作品
-                <br />
-                <span className="text-gradient-warm font-semibold">每一部都是精心製作的藝術品</span>
+                探索我們最受歡迎的作品
               </p>
             </div>
 
