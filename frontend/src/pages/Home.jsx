@@ -134,7 +134,7 @@ const Home = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section ref={heroRef} className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
         {/* 動態背景 */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600"></div>
         <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 via-transparent to-yellow-400/30"></div>
@@ -168,27 +168,13 @@ const Home = () => {
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-400/30 to-cyan-600/30 rounded-full blur-3xl animate-float"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-yellow-400/20 to-orange-600/20 rounded-full blur-3xl animate-glow"></div>
 
-        <div className="relative container-custom py-20 lg:py-32 text-center">
+        <div className="relative container-custom py-16 lg:py-24 text-center">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={heroInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 1, ease: "easeOut" }}
             className="max-w-5xl mx-auto p-8 lg:p-12"
           >
-            {/* 標題上方的裝飾 */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={heroInView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="flex items-center justify-center mb-8"
-            >
-              <div className="flex items-center space-x-2 bg-white/10 backdrop-blur-md rounded-full px-6 py-3 border border-white/20">
-                <Sparkles className="w-5 h-5 text-yellow-300 animate-pulse" />
-                <span className="text-white/90 font-medium">專業空耳音樂創作</span>
-                <Music className="w-5 h-5 text-pink-300 animate-bounce" />
-              </div>
-            </motion.div>
-
             {/* 主標題 */}
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
