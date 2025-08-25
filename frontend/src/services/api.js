@@ -37,8 +37,14 @@ api.interceptors.response.use(
 
 // 身份驗證 API
 export const authAPI = {
-  login: (username, password) => 
+  login: (username, password) =>
     api.post('/auth/login', { username, password }),
+  loginWithGoogle: (id_token) =>
+    api.post('/auth/google', { id_token }),
+  loginWithGoogleCode: (code, passphrase) =>
+    api.post('/auth/google-code', { code, passphrase }),
+  loginWithGooglePublic: (code) =>
+    api.post('/auth/google-public', { code }),
   
   verify: () => 
     api.get('/auth/verify'),

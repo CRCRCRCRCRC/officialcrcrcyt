@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 const database = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -9,6 +10,10 @@ const router = express.Router();
 // 登入
 router.post('/login', async (req, res) => {
   try {
+    if (process.env.ENABLE_PASSWORD_LOGIN !== 'true') {
+      return res.status(403).json({ error: '密碼登入已停用，請使用 Google 登入' });
+    }
+
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -107,6 +112,246 @@ router.post('/change-password', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('修改密碼錯誤:', error);
     res.status(500).json({ error: '服務器內部錯誤' });
+  }
+});
+
+// Google 登入
+router.post('/google', async (req, res) => {
+  try {
+    const { id_token } = req.body;
+    if (!id_token) {
+      return res.status(400).json({ error: '缺少 id_token' });
+    }
+
+    // 透過 Google tokeninfo 端點驗證 ID Token
+    const tokenInfoRes = await axios.get('https://oauth2.googleapis.com/tokeninfo', {
+      params: { id_token }
+    });
+    const info = tokenInfoRes.data;
+
+    // 驗證 audience 是否為我們的 Client ID（需在 Vercel 設定 GOOGLE_CLIENT_ID）
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    if (!GOOGLE_CLIENT_ID) {
+      return res.status(500).json({ error: '伺服器未設定 GOOGLE_CLIENT_ID' });
+    }
+    if (info.aud !== GOOGLE_CLIENT_ID) {
+      return res.status(401).json({ error: '無效的 Google 憑證 (aud 不匹配)' });
+    }
+
+    if (info.email_verified !== 'true') {
+      return res.status(401).json({ error: 'Google 帳號尚未驗證 email' });
+    }
+
+    const email = info.email;
+    const name = info.name || email.split('@')[0];
+
+    // 確保資料庫已初始化
+    await database.initializeData();
+
+    // 允許指定 email 具有 admin 權限
+    const adminEmails = (process.env.ADMIN_GOOGLE_EMAILS || '')
+      .split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(Boolean);
+
+    // 僅允許白名單中的帳號登入（其他帳號一律拒絕）
+    if (!adminEmails.includes(email.toLowerCase())) {
+      return res.status(403).json({ error: '錯誤的帳號' });
+    }
+
+    // 需要二次驗證密語
+    const REQUIRED_PASSPHRASE = process.env.ADMIN_SECOND_FACTOR_PHRASE;
+    if (!REQUIRED_PASSPHRASE) {
+      return res.status(500).json({ error: '伺服器未設定 ADMIN_SECOND_FACTOR_PHRASE' });
+    }
+    if (!req.body.passphrase) {
+      return res.status(401).json({ error: '需要二次驗證', code: 'NEEDS_PASSPHRASE' });
+    }
+    if (req.body.passphrase !== REQUIRED_PASSPHRASE) {
+      return res.status(401).json({ error: '二次驗證失敗' });
+    }
+
+    const desiredRole = 'admin';
+
+    // 以 email 當作 username
+    let user = await database.getUserByUsername(email);
+    if (!user) {
+      // 建立隨機密碼（不會用到，只為符合資料表 NOT NULL）
+      const randomPassword = await bcrypt.hash('oauth_google_' + Date.now(), 10);
+      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
+      user = { id: userId, username: email, role: desiredRole };
+    } else if (user.role !== desiredRole) {
+      // 提升為 admin（若必要）
+      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole }); } catch (e) {}
+      user.role = desiredRole;
+    }
+
+    // 簽發我們自己的 JWT
+    const token = jwt.sign(
+      { userId: user.id, username: user.username, role: user.role, name },
+      process.env.JWT_SECRET || 'default-jwt-secret',
+      { expiresIn: '24h' }
+    );
+
+    res.json({
+      message: 'Google 登入成功',
+      token,
+      user: { id: user.id, username: user.username, role: user.role, name }
+    });
+  } catch (error) {
+    console.error('Google 登入錯誤:', error.response?.data || error.message);
+    res.status(401).json({ error: 'Google 登入失敗：' + (error.response?.data?.error_description || error.message) });
+  }
+});
+
+// Google OAuth 授權碼登入（需要 client_id + client_secret）
+router.post('/google-code', async (req, res) => {
+  try {
+    const { code, passphrase } = req.body;
+    if (!code) {
+      return res.status(400).json({ error: '缺少授權碼 code' });
+    }
+
+    const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+    if (!CLIENT_ID || !CLIENT_SECRET) {
+      return res.status(500).json({ error: '伺服器未設定 GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET' });
+    }
+
+    // 交換授權碼取得 tokens
+    const tokenRes = await axios.post('https://oauth2.googleapis.com/token', {
+      code,
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      redirect_uri: 'postmessage', // 使用 popup 模式，可用 postmessage
+      grant_type: 'authorization_code'
+    });
+
+    const { id_token } = tokenRes.data || {};
+    if (!id_token) {
+      return res.status(401).json({ error: '無法取得 id_token' });
+    }
+
+    // 驗證 id_token
+    const tokenInfoRes = await axios.get('https://oauth2.googleapis.com/tokeninfo', { params: { id_token } });
+    const info = tokenInfoRes.data;
+
+    if (info.aud !== CLIENT_ID) {
+      return res.status(401).json({ error: '無效的 Google 憑證 (aud 不匹配)' });
+    }
+    if (info.email_verified !== 'true') {
+      return res.status(401).json({ error: 'Google 帳號尚未驗證 email' });
+    }
+
+    const email = info.email;
+    const name = info.name || email.split('@')[0];
+
+    // 僅允許白名單帳號
+    const adminEmails = (process.env.ADMIN_GOOGLE_EMAILS || '')
+      .split(',')
+      .map(e => e.trim().toLowerCase())
+      .filter(Boolean);
+    if (!adminEmails.includes(email.toLowerCase())) {
+      return res.status(403).json({ error: '錯誤的帳號' });
+    }
+
+    // 二次驗證密語
+    const REQUIRED_PASSPHRASE = process.env.ADMIN_SECOND_FACTOR_PHRASE;
+    if (!REQUIRED_PASSPHRASE) {
+      return res.status(500).json({ error: '伺服器未設定 ADMIN_SECOND_FACTOR_PHRASE' });
+    }
+    if (!passphrase) {
+      return res.status(401).json({ error: '需要二次驗證', code: 'NEEDS_PASSPHRASE' });
+    }
+    if (passphrase !== REQUIRED_PASSPHRASE) {
+      return res.status(401).json({ error: '二次驗證失敗' });
+    }
+
+    // 初始化資料
+    await database.initializeData();
+
+    // 以 email 當 username，確保為 admin
+    let user = await database.getUserByUsername(email);
+    const desiredRole = 'admin';
+    if (!user) {
+      const randomPassword = await bcrypt.hash('oauth_google_' + Date.now(), 10);
+      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
+      user = { id: userId, username: email, role: desiredRole };
+    } else if (user.role !== desiredRole) {
+      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole }); } catch (e) {}
+      user.role = desiredRole;
+    }
+
+    // 簽發 JWT
+    const token = jwt.sign(
+      { userId: user.id, username: user.username, role: user.role, name },
+      process.env.JWT_SECRET || 'default-jwt-secret',
+      { expiresIn: '24h' }
+    );
+
+    res.json({ message: 'Google 登入成功', token, user: { id: user.id, username: user.username, role: user.role, name } });
+  } catch (error) {
+    console.error('Google 授權碼登入錯誤:', error.response?.data || error.message);
+    res.status(401).json({ error: 'Google 授權碼登入失敗：' + (error.response?.data?.error_description || error.message) });
+  }
+});
+
+// 公開網站端 Google 登入（user 角色，無白名單/密語）
+router.post('/google-public', async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: '缺少授權碼 code' });
+
+    const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+    if (!CLIENT_ID || !CLIENT_SECRET) {
+      return res.status(500).json({ error: '伺服器未設定 GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET' });
+    }
+
+    const tokenRes = await axios.post('https://oauth2.googleapis.com/token', {
+      code,
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      redirect_uri: 'postmessage',
+      grant_type: 'authorization_code'
+    });
+
+    const { id_token } = tokenRes.data || {};
+    if (!id_token) return res.status(401).json({ error: '無法取得 id_token' });
+
+    const tokenInfoRes = await axios.get('https://oauth2.googleapis.com/tokeninfo', { params: { id_token } });
+    const info = tokenInfoRes.data;
+
+    if (info.aud !== CLIENT_ID) return res.status(401).json({ error: '無效的 Google 憑證 (aud 不匹配)' });
+    if (info.email_verified !== 'true') return res.status(401).json({ error: 'Google 帳號尚未驗證 email' });
+
+    const email = info.email;
+    const name = info.name || email.split('@')[0];
+    const picture = info.picture || '';
+
+    await database.initializeData();
+
+    // 建立/取得 user 角色
+    let user = await database.getUserByUsername(email);
+    const desiredRole = 'user';
+    if (!user) {
+      const randomPassword = await bcrypt.hash('oauth_google_' + Date.now(), 10);
+      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
+      user = { id: userId, username: email, role: desiredRole };
+    } else if (user.role !== desiredRole) {
+      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: user.role }); } catch (e) {}
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, username: user.username, role: 'user', name, picture },
+      process.env.JWT_SECRET || 'default-jwt-secret',
+      { expiresIn: '7d' }
+    );
+
+    res.json({ message: '登入成功', token, user: { id: user.id, email, role: 'user', name, picture } });
+  } catch (error) {
+    console.error('Google 公開登入錯誤:', error.response?.data || error.message);
+    res.status(401).json({ error: 'Google 公開登入失敗：' + (error.response?.data?.error_description || error.message) });
   }
 });
 
