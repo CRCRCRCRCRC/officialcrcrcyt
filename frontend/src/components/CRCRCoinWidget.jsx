@@ -11,6 +11,7 @@ import CoinIcon from '../../CRCRCoin-icon.svg'
  */
 const CRCRCoinWidget = ({ compact = false }) => {
   const {
+    isLoggedIn,
     balance,
     history,
     claimDaily,
@@ -142,17 +143,22 @@ const CRCRCoinWidget = ({ compact = false }) => {
                 <button
                   type="button"
                   onClick={onDaily}
-                  disabled={!canClaimNow}
+                  disabled={!isLoggedIn || !canClaimNow}
                   className={[
                     'px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-all',
-                    canClaimNow
-                      ? 'bg-gradient-to-r from-primary-500 to-pink-500 hover:from-primary-600 hover:to-pink-600 shadow'
-                      : 'bg-gray-300 cursor-not-allowed'
+                    (!isLoggedIn || !canClaimNow)
+                      ? 'bg-gray-300 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-primary-500 to-pink-500 hover:from-primary-600 hover:to-pink-600 shadow'
                   ].join(' ')}
                 >
-                  {canClaimNow ? '領取' : `等待 ${fmtTime(leftMs)}`}
+                  {!isLoggedIn ? '請先登入' : (canClaimNow ? '領取' : `等待 ${fmtTime(leftMs)}`)}
                 </button>
               </div>
+              {!isLoggedIn && (
+                <div className="text-[11px] text-gray-500 mt-1">
+                  登入後可簽到領取每日獎勵
+                </div>
+              )}
             </div>
 
             {/* History */}

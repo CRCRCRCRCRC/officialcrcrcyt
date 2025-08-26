@@ -50,6 +50,7 @@ function saveWallet(storageKey, wallet) {
 
 export const CoinProvider = ({ children }) => {
   const { user } = useWebsiteAuth()
+  const isLoggedIn = !!user
   const storageKey = useMemo(() => keyForUser(user), [user])
 
   const [wallet, setWallet] = useState(() => loadWallet(storageKey))
@@ -95,6 +96,9 @@ export const CoinProvider = ({ children }) => {
 
   // API：每日簽到
   const claimDaily = () => {
+    if (!isLoggedIn) {
+      return { success: false, error: '請先登入才能簽到' }
+    }
     const now = Date.now()
     const last = wallet.lastClaimAt ? new Date(wallet.lastClaimAt).getTime() : 0
     const passed = now - last
@@ -117,10 +121,11 @@ export const CoinProvider = ({ children }) => {
 
   const lastClaimTime = wallet.lastClaimAt ? new Date(wallet.lastClaimAt).getTime() : 0
   const msSinceLastClaim = Date.now() - lastClaimTime
-  const canClaimNow = !wallet.lastClaimAt || msSinceLastClaim >= DAILY_COOLDOWN_MS
-  const nextClaimInMs = canClaimNow ? 0 : Math.max(0, DAILY_COOLDOWN_MS - msSinceLastClaim)
+  const canClaimNow = isLoggedIn && (!wallet.lastClaimAt || msSinceLastClaim >= DAILY_COOLDOWN_MS)
+  const nextClaimInMs = isLoggedIn ? (canClaimNow ? 0 : Math.max(0, DAILY_COOLDOWN_MS - msSinceLastClaim)) : 0
 
   const value = {
+    isLoggedIn,
     balance: wallet.balance || 0,
     lastClaimAt: wallet.lastClaimAt,
     history: wallet.history || [],
