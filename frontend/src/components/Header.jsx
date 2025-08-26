@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 import GoogleLoginButtonPublic from './GoogleLoginButtonPublic'
+import CRCRCoinWidget from './CRCRCoinWidget'
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -83,6 +84,7 @@ const Header = () => {
                 <MessageCircle className="w-5 h-5" />
               </a>
 
+              <CRCRCoinWidget compact />
               {user ? (
                 <div className="relative" ref={userMenuRef}>
                   <button
@@ -152,6 +154,7 @@ const Header = () => {
                 
                 {/* Mobile Social Links */}
                 <div className="flex items-center space-x-4 px-4 pt-4 border-t border-gray-200">
+                  <CRCRCoinWidget />
                   <a
                     href="https://youtube.com/@officialcrcrcyt"
                     target="_blank"
