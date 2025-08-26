@@ -1,14 +1,28 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 import GoogleLoginButtonPublic from './GoogleLoginButtonPublic'
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const location = useLocation()
   const { user, logout } = useWebsiteAuth()
+  const userMenuRef = useRef(null)
+
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (!userMenuRef.current) return
+      if (!userMenuRef.current.contains(e.target)) {
+        setIsUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [])
 
   const navigation = [
     { name: '首頁', href: '/' },
@@ -70,18 +84,29 @@ const Header = () => {
               </a>
 
               {user ? (
-                <div className="relative">
-                  <button className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100">
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100"
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  >
                     <img src={user.picture || 'https://i.pravatar.cc/40'} alt={user.name || user.email} className="w-8 h-8 rounded-full" />
                     <span className="text-sm font-medium text-gray-700">{user.name || user.email}</span>
                     <ChevronDown className="w-4 h-4 text-gray-500" />
                   </button>
-                  <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg p-2">
-                    <button className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-50" onClick={logout}>
-                      <LogOut className="w-4 h-4" />
-                      登出
-                    </button>
-                  </div>
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg p-2 z-50">
+                      <button
+                        className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-50 rounded"
+                        onClick={() => {
+                          logout()
+                          setIsUserMenuOpen(false)
+                        }}
+                      >
+                        <LogOut className="w-4 h-4" />
+                        登出
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <GoogleLoginButtonPublic />
