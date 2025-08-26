@@ -36,7 +36,7 @@ const GoogleLoginButton = ({ onSuccess }) => {
             return
           }
 
-          const res = await authAPI.api.post('/auth/google-code', { code, passphrase })
+          const res = await authAPI.loginWithGoogleCode(code, passphrase)
           onSuccess?.(res.data)
           toast.success('登入成功')
         } catch (err) {
