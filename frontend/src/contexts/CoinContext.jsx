@@ -2,9 +2,10 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useWebsiteAuth } from './WebsiteAuthContext'
 
 /**
- * CRCRCoin 前端錢包（純前端，與後端無關）
- * - 以 localStorage 持久化，每個使用者（email）或訪客（guest）各自一份
- * - 提供加幣、扣幣、每日簽到等 API
+ * CRCRCoin 前端錢包（純前端）
+ * - 以 localStorage 持久化
+ * - 每個已登入使用者以 email 分隔錢包
+ * - 取消「訪客錢包」，未登入時不再讀寫 guest 錢包，並清除舊資料
  */
 
 const CoinContext = createContext(null)
@@ -16,16 +17,18 @@ const DEFAULT_WALLET = {
 }
 
 const STORAGE_KEY_PREFIX = 'crcrcoin_wallet_'
+const ENABLE_GUEST_WALLET = false // 關閉訪客錢包，未登入不顯示/不持久化
 const DAILY_REWARD_AMOUNT = 50
 const DAILY_COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24h
 
 function keyForUser(user) {
-  // 以 email 作為 key，無登入則為 guest
+  // 以 email 作為 key，無登入則預設 guest（但可被 ENABLE_GUEST_WALLET 控制是否實際使用）
   const id = (user?.email || 'guest').toLowerCase()
   return STORAGE_KEY_PREFIX + id
 }
 
 function loadWallet(storageKey) {
+  if (!storageKey) return { ...DEFAULT_WALLET }
   try {
     const raw = localStorage.getItem(storageKey)
     if (!raw) return { ...DEFAULT_WALLET }
@@ -41,6 +44,7 @@ function loadWallet(storageKey) {
 }
 
 function saveWallet(storageKey, wallet) {
+  if (!storageKey) return
   try {
     localStorage.setItem(storageKey, JSON.stringify(wallet))
   } catch {
@@ -51,19 +55,31 @@ function saveWallet(storageKey, wallet) {
 export const CoinProvider = ({ children }) => {
   const { user } = useWebsiteAuth()
   const isLoggedIn = !!user
-  const storageKey = useMemo(() => keyForUser(user), [user])
 
-  const [wallet, setWallet] = useState(() => loadWallet(storageKey))
+  // 未登入時若關閉訪客錢包，storageKey 為 null（不讀寫 localStorage）
+  const storageKey = useMemo(
+    () => (isLoggedIn ? keyForUser(user) : (ENABLE_GUEST_WALLET ? keyForUser(null) : null)),
+    [user, isLoggedIn]
+  )
 
-  // 切換使用者時重新讀取
+  const [wallet, setWallet] = useState(() => (storageKey ? loadWallet(storageKey) : { ...DEFAULT_WALLET }))
+
+  // 切換使用者或登入狀態時重新讀取（未登入則為 0、無紀錄）
   useEffect(() => {
-    setWallet(loadWallet(storageKey))
+    setWallet(storageKey ? loadWallet(storageKey) : { ...DEFAULT_WALLET })
   }, [storageKey])
 
-  // 持久化
+  // 持久化（未登入/無 storageKey 時不持久化）
   useEffect(() => {
-    saveWallet(storageKey, wallet)
+    if (storageKey) saveWallet(storageKey, wallet)
   }, [storageKey, wallet])
+
+  // 移除舊有的 guest 錢包，避免未登入時殘留顯示舊數據
+  useEffect(() => {
+    if (!isLoggedIn && !ENABLE_GUEST_WALLET) {
+      try { localStorage.removeItem(STORAGE_KEY_PREFIX + 'guest') } catch {}
+    }
+  }, [isLoggedIn])
 
   // 工具：新增交易紀錄
   const pushHistory = (entry) => {
@@ -71,21 +87,24 @@ export const CoinProvider = ({ children }) => {
       ...w,
       history: [
         { ...entry, at: new Date().toISOString() },
-        ...w.history
+        ...(w.history || [])
       ].slice(0, 200) // 保留最近 200 筆
     }))
   }
 
-  // API：加幣
+  // API：加幣（需登入）
   const addCoins = (amount, reason = '任務獎勵') => {
+    if (!isLoggedIn) return { success: false, error: '請先登入' }
     const value = Math.max(0, Math.floor(Number(amount) || 0))
-    if (value <= 0) return
+    if (value <= 0) return { success: false, error: '金額無效' }
     setWallet((w) => ({ ...w, balance: Math.max(0, (w.balance || 0) + value) }))
     pushHistory({ type: 'earn', amount: value, reason })
+    return { success: true }
   }
 
-  // API：扣幣
+  // API：扣幣（需登入）
   const spendCoins = (amount, reason = '消費') => {
+    if (!isLoggedIn) return { success: false, error: '請先登入' }
     const value = Math.max(0, Math.floor(Number(amount) || 0))
     if (value <= 0) return { success: false, error: '金額無效' }
     if ((wallet.balance || 0) < value) return { success: false, error: '餘額不足' }
@@ -94,7 +113,7 @@ export const CoinProvider = ({ children }) => {
     return { success: true }
   }
 
-  // API：每日簽到
+  // API：每日簽到（需登入）
   const claimDaily = () => {
     if (!isLoggedIn) {
       return { success: false, error: '請先登入才能簽到' }
@@ -119,6 +138,7 @@ export const CoinProvider = ({ children }) => {
     return { success: true, amount: reward }
   }
 
+  // 狀態：是否可簽到與剩餘時間（未登入則不可簽到）
   const lastClaimTime = wallet.lastClaimAt ? new Date(wallet.lastClaimAt).getTime() : 0
   const msSinceLastClaim = Date.now() - lastClaimTime
   const canClaimNow = isLoggedIn && (!wallet.lastClaimAt || msSinceLastClaim >= DAILY_COOLDOWN_MS)
