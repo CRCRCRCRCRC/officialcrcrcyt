@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import axios from 'axios'
 import toast from 'react-hot-toast'
+import { coinAPI } from '../../services/api'
 
 // 解碼 HTML 實體
 const decodeHtmlEntities = (text) => {
@@ -74,6 +75,16 @@ const Settings = () => {
       toast.error('更新設定失敗')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleResetAllCoins = async () => {
+    try {
+      if (!window.confirm('確定要將所有用戶的 CRCRCoin 歸零？此動作無法復原')) return
+      await coinAPI.adminReset()
+      toast.success('已觸發重置，使用者下次重新載入即歸零')
+    } catch (error) {
+      toast.error(error.response?.data?.error || '重置失敗')
     }
   }
 
@@ -263,6 +274,31 @@ const Settings = () => {
               </motion.button>
             </div>
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="bg-white bg-opacity-80 backdrop-blur-xl rounded-2xl border border-white border-opacity-20 shadow-xl p-8 mt-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-rose-500 to-red-600 rounded-lg flex items-center justify-center">
+                <span className="text-white text-sm font-bold">COIN</span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">CRCRCoin 管理</h2>
+            </div>
+            <button
+              onClick={handleResetAllCoins}
+              className="px-4 py-2 rounded-lg bg-gradient-to-r from-rose-500 to-red-600 text-white font-semibold hover:from-rose-600 hover:to-red-700 transition-colors"
+            >
+              一鍵重置全部餘額
+            </button>
+          </div>
+          <p className="text-sm text-gray-600">
+            觸發後，所有使用者在下次載入網站時將自動清空本地 CRCRCoin 錢包（localStorage）。
+          </p>
         </motion.div>
       </div>
     </div>

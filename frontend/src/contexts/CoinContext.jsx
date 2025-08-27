@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useWebsiteAuth } from './WebsiteAuthContext'
+import { coinAPI } from '../services/api'
 
 /**
  * CRCRCoin 前端錢包（純前端）
@@ -20,6 +21,38 @@ const STORAGE_KEY_PREFIX = 'crcrcoin_wallet_'
 const ENABLE_GUEST_WALLET = false // 關閉訪客錢包，未登入不顯示/不持久化
 const DAILY_REWARD_AMOUNT = 50
 const DAILY_COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24h
+
+// 從伺服器取得的重置版本標記
+const RESET_MARKER_KEY = 'crcrcoin_reset_version'
+
+// 清除所有 CRCRCoin 的 localStorage 錢包
+function clearAllCoinWallets() {
+  try {
+    const keysToRemove = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k && k.startsWith(STORAGE_KEY_PREFIX)) keysToRemove.push(k)
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k))
+  } catch {
+    // ignore
+  }
+}
+
+// 與伺服器版本比對，若版本不同則清空所有錢包並寫入新版本
+async function ensureRemoteReset() {
+  try {
+    const res = await coinAPI.getResetVersion()
+    const remote = String(res.data?.version || '0')
+    const current = localStorage.getItem(RESET_MARKER_KEY)
+    if (remote !== current) {
+      clearAllCoinWallets()
+      localStorage.setItem(RESET_MARKER_KEY, remote)
+    }
+  } catch {
+    // ignore server errors; do not block UI
+  }
+}
 
 function keyForUser(user) {
   // 以 email 作為 key，無登入則預設 guest（但可被 ENABLE_GUEST_WALLET 控制是否實際使用）
@@ -64,9 +97,16 @@ export const CoinProvider = ({ children }) => {
 
   const [wallet, setWallet] = useState(() => (storageKey ? loadWallet(storageKey) : { ...DEFAULT_WALLET }))
 
-  // 切換使用者或登入狀態時重新讀取（未登入則為 0、無紀錄）
+  // 切換使用者或登入狀態時：先與伺服器同步重置版本，再讀取錢包
   useEffect(() => {
-    setWallet(storageKey ? loadWallet(storageKey) : { ...DEFAULT_WALLET })
+    let mounted = true
+    ;(async () => {
+      await ensureRemoteReset()
+      if (mounted) {
+        setWallet(storageKey ? loadWallet(storageKey) : { ...DEFAULT_WALLET })
+      }
+    })()
+    return () => { mounted = false }
   }, [storageKey])
 
   // 持久化（未登入/無 storageKey 時不持久化）

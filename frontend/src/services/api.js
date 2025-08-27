@@ -117,6 +117,13 @@ export const settingsAPI = {
     api.get('/settings/featured-video')
 }
 
+// CRCRCoin API
+export const coinAPI = {
+  // 取得目前的重置版本（公開）
+  getResetVersion: () => api.get('/coin/reset-version'),
+  // 管理員一鍵重置（需要 admin token）
+  adminReset: () => api.post('/coin/reset')
+}
 export const announcementAPI = {
   getAll: (params = {}) =>
     api.get('/announcements', { params }),
