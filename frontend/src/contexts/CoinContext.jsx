@@ -5,8 +5,8 @@ import { coinAPI } from '../services/api'
 /**
  * CRCRCoin 前端錢包（純前端）
  * - 以 localStorage 持久化
- * - 每個已登入使用者以 email（優先）或 id 分隔錢包
- * - 未登入不使用 guest 錢包（ENABLE_GUEST_WALLET=false）
+ * - 使用者錢包 key 優先採用 email，無 email 才回退 id
+ * - 未登入不使用 guest 錢包（避免資料混亂）
  */
 
 const CoinContext = createContext(null)
@@ -116,96 +116,81 @@ export const CoinProvider = ({ children }) => {
   const [wallet, setWallet] = useState(() => (storageKey ? loadWallet(storageKey) : { ...DEFAULT_WALLET }))
   const [hydrated, setHydrated] = useState(false)
 
-  // 切換使用者或登入狀態時：先與伺服器同步重置版本，再讀取錢包
+  // 主要載入流程：遠端重置比對 + 從候選鍵挑選最佳資料 + 寫入當前 key
   useEffect(() => {
     let mounted = true
     setHydrated(false)
     ;(async () => {
       await ensureRemoteReset()
-      if (mounted) {
-        setWallet(storageKey ? loadWallet(storageKey) : { ...DEFAULT_WALLET })
-        setHydrated(true)
+
+      // 未登入或無 storageKey：使用預設
+      if (!storageKey) {
+        if (mounted) {
+          setWallet({ ...DEFAULT_WALLET })
+          setHydrated(true)
+        }
+        return
       }
-    })()
-    return () => { mounted = false }
-  }, [storageKey])
 
-  // 在完成載入後嘗試遷移舊版 key（id: 或舊 email 鍵、guest）至目前策略（email 優先）
-  useEffect(() => {
-    if (!isLoggedIn || !storageKey || !hydrated) return
+      // 準備候選鍵（優先順序：目前 key -> 舊 email 鍵 -> 舊 email: 鍵 -> 舊 id: 鍵 -> guest -> 其他所有舊鍵）
+      const seen = new Set()
+      const candidates = []
+      const push = (k) => { if (k && !seen.has(k)) { seen.add(k); candidates.push(k) } }
 
-    try {
-      // 若目前錢包為空，再嘗試遷移
-      const currentRaw = localStorage.getItem(storageKey)
-      const currentParsed = currentRaw ? JSON.parse(currentRaw) : null
-      const isCurrentEmpty =
-        !currentParsed ||
-        ((Number(currentParsed.balance) || 0) === 0 &&
-          (!Array.isArray(currentParsed.history) || currentParsed.history.length === 0))
-
-      if (!isCurrentEmpty) return
+      push(storageKey)
 
       const email = (user?.email || '').toLowerCase()
       const idVal = (user?.id !== undefined && user?.id !== null) ? String(user.id) : null
-
-      const candidateKeys = []
-      if (idVal) candidateKeys.push(`${STORAGE_KEY_PREFIX}id:${idVal}`)
       if (email) {
-        candidateKeys.push(`${STORAGE_KEY_PREFIX}${email}`) // 舊版無前綴
-        candidateKeys.push(`${STORAGE_KEY_PREFIX}email:${email}`) // 舊版 email: 前綴
+        push(`${STORAGE_KEY_PREFIX}${email}`)          // 舊版（無前綴）的 email key
+        push(`${STORAGE_KEY_PREFIX}email:${email}`)   // 舊版 email: 前綴
       }
-      candidateKeys.push(`${STORAGE_KEY_PREFIX}guest`)
+      if (idVal) {
+        push(`${STORAGE_KEY_PREFIX}id:${idVal}`)      // 舊版 id: 前綴
+      }
+      push(`${STORAGE_KEY_PREFIX}guest`)              // 舊版 guest
 
-      let migrated = false
-      for (const k of candidateKeys) {
-        if (!k || k === storageKey) continue
+      // 其他所有舊鍵
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)
+        if (k && k.startsWith(STORAGE_KEY_PREFIX)) push(k)
+      }
+
+      // 從候選中挑選最佳（最近簽到時間 + 餘額 + 紀錄數）
+      let bestRaw = null
+      let bestScore = -1
+      for (const k of candidates) {
         const raw = localStorage.getItem(k)
         if (!raw) continue
         try {
           const obj = JSON.parse(raw)
           const bal = Number(obj?.balance) || 0
+          const ts = obj?.lastClaimAt ? new Date(obj.lastClaimAt).getTime() : 0
           const hist = Array.isArray(obj?.history) ? obj.history.length : 0
-          if (bal === 0 && hist === 0) continue
-          localStorage.setItem(storageKey, raw)
-          setWallet(loadWallet(storageKey))
-          migrated = true
-          break
+          const empty = (bal === 0 && hist === 0)
+          if (empty) continue
+          const score = ts + bal * 1000 + hist
+          if (score > bestScore) {
+            bestScore = score
+            bestRaw = raw
+          }
         } catch {}
       }
 
-      // 最後手段：從所有舊錢包中挑一個最合理的（最近簽到時間 + 餘額 + 紀錄數）
-      if (!migrated) {
-        const keys = []
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i)
-          if (k && k.startsWith(STORAGE_KEY_PREFIX) && k !== storageKey) keys.push(k)
-        }
-        let bestRaw = null
-        let bestScore = -1
-        for (const k of keys) {
-          const r = localStorage.getItem(k)
-          if (!r) continue
-          try {
-            const obj = JSON.parse(r)
-            const bal = Number(obj?.balance) || 0
-            const ts = obj?.lastClaimAt ? new Date(obj.lastClaimAt).getTime() : 0
-            const hist = Array.isArray(obj?.history) ? obj.history.length : 0
-            const empty = (bal === 0 && hist === 0)
-            if (empty) continue
-            const score = ts + bal * 1000 + hist
-            if (score > bestScore) {
-              bestScore = score
-              bestRaw = r
-            }
-          } catch {}
-        }
+      if (mounted) {
         if (bestRaw) {
+          // 將最佳資料寫到目前使用者的正式 key
           localStorage.setItem(storageKey, bestRaw)
           setWallet(loadWallet(storageKey))
+        } else {
+          // 沒有可用舊資料，照目前 key 讀取（若不存在則為預設）
+          setWallet(loadWallet(storageKey))
         }
+        setHydrated(true)
       }
-    } catch {}
-  }, [isLoggedIn, storageKey, hydrated, user])
+    })()
+    return () => { mounted = false }
+  }, [storageKey, user])
 
   // 持久化（未登入/無 storageKey 時不持久化；避免在尚未完成載入時覆寫）
   useEffect(() => {
@@ -223,9 +208,10 @@ export const CoinProvider = ({ children }) => {
     }))
   }
 
-  // API：加幣（需登入）
+  // API：加幣（需登入且需已同步）
   const addCoins = (amount, reason = '任務獎勵') => {
     if (!isLoggedIn) return { success: false, error: '請先登入' }
+    if (!hydrated) return { success: false, error: '資料同步中，請稍候' }
     const value = Math.max(0, Math.floor(Number(amount) || 0))
     if (value <= 0) return { success: false, error: '金額無效' }
     setWallet((w) => ({ ...w, balance: Math.max(0, (w.balance || 0) + value) }))
@@ -233,9 +219,10 @@ export const CoinProvider = ({ children }) => {
     return { success: true }
   }
 
-  // API：扣幣（需登入）
+  // API：扣幣（需登入且需已同步）
   const spendCoins = (amount, reason = '消費') => {
     if (!isLoggedIn) return { success: false, error: '請先登入' }
+    if (!hydrated) return { success: false, error: '資料同步中，請稍候' }
     const value = Math.max(0, Math.floor(Number(amount) || 0))
     if (value <= 0) return { success: false, error: '金額無效' }
     if ((wallet.balance || 0) < value) return { success: false, error: '餘額不足' }
@@ -244,11 +231,12 @@ export const CoinProvider = ({ children }) => {
     return { success: true }
   }
 
-  // API：每日簽到（需登入）
+  // API：每日簽到（需登入且需已同步）
   const claimDaily = () => {
     if (!isLoggedIn) {
       return { success: false, error: '請先登入才能簽到' }
     }
+    if (!hydrated) return { success: false, error: '資料同步中，請稍候' }
     const now = Date.now()
     const last = wallet.lastClaimAt ? new Date(wallet.lastClaimAt).getTime() : 0
     const passed = now - last
@@ -269,14 +257,15 @@ export const CoinProvider = ({ children }) => {
     return { success: true, amount: reward }
   }
 
-  // 狀態：是否可簽到與剩餘時間（未登入則不可簽到）
+  // 狀態：是否可簽到與剩餘時間（未登入或未同步則不可簽到）
   const lastClaimTime = wallet.lastClaimAt ? new Date(wallet.lastClaimAt).getTime() : 0
   const msSinceLastClaim = Date.now() - lastClaimTime
-  const canClaimNow = isLoggedIn && (!wallet.lastClaimAt || msSinceLastClaim >= DAILY_COOLDOWN_MS)
+  const canClaimNow = isLoggedIn && hydrated && (!wallet.lastClaimAt || msSinceLastClaim >= DAILY_COOLDOWN_MS)
   const nextClaimInMs = isLoggedIn ? (canClaimNow ? 0 : Math.max(0, DAILY_COOLDOWN_MS - msSinceLastClaim)) : 0
 
   const value = {
     isLoggedIn,
+    hydrated,
     balance: wallet.balance || 0,
     lastClaimAt: wallet.lastClaimAt,
     history: wallet.history || [],
