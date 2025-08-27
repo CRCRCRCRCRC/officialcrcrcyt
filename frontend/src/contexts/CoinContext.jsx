@@ -40,24 +40,42 @@ function clearAllCoinWallets() {
 }
 
 // 與伺服器版本比對，若版本不同則清空所有錢包並寫入新版本
+// 注意：當伺服器回傳 '0' 或空值時，代表「未設定重置」，不得清空
 async function ensureRemoteReset() {
   try {
     const res = await coinAPI.getResetVersion()
     const remote = String(res.data?.version || '0')
-    const current = localStorage.getItem(RESET_MARKER_KEY)
-    if (remote !== current) {
-      clearAllCoinWallets()
-      localStorage.setItem(RESET_MARKER_KEY, remote)
+
+    // '0' 代表未設定全域重置，不觸發清空；僅在本地無標記時對齊為 '0'
+    if (remote === '0') {
+      if (!localStorage.getItem(RESET_MARKER_KEY)) {
+        localStorage.setItem(RESET_MARKER_KEY, '0')
+      }
+      return
     }
+
+    const current = localStorage.getItem(RESET_MARKER_KEY) || '0'
+    if (remote === current) return
+
+    clearAllCoinWallets()
+    localStorage.setItem(RESET_MARKER_KEY, remote)
   } catch {
     // ignore server errors; do not block UI
   }
 }
 
-function keyForUser(user) {
-  // 以 email 作為 key，無登入則預設 guest（但可被 ENABLE_GUEST_WALLET 控制是否實際使用）
-  const id = (user?.email || 'guest').toLowerCase()
-  return STORAGE_KEY_PREFIX + id
+function storageKeyForUser(user) {
+  // 優先使用 email（跨資料庫最穩定），若無 email 再回退 id；未登入且允許訪客時回傳 guest。
+  if (!user) {
+    return ENABLE_GUEST_WALLET ? STORAGE_KEY_PREFIX + 'guest' : null
+  }
+  if (user.email) {
+    return STORAGE_KEY_PREFIX + `email:${String(user.email).toLowerCase()}`
+  }
+  if (user.id !== undefined && user.id !== null) {
+    return STORAGE_KEY_PREFIX + `id:${String(user.id)}`
+  }
+  return ENABLE_GUEST_WALLET ? STORAGE_KEY_PREFIX + 'guest' : null
 }
 
 function loadWallet(storageKey) {
@@ -91,7 +109,7 @@ export const CoinProvider = ({ children }) => {
 
   // 未登入時若關閉訪客錢包，storageKey 為 null（不讀寫 localStorage）
   const storageKey = useMemo(
-    () => (isLoggedIn ? keyForUser(user) : (ENABLE_GUEST_WALLET ? keyForUser(null) : null)),
+    () => (isLoggedIn ? storageKeyForUser(user) : (ENABLE_GUEST_WALLET ? storageKeyForUser(null) : null)),
     [user, isLoggedIn]
   )
 
@@ -112,17 +130,54 @@ export const CoinProvider = ({ children }) => {
     return () => { mounted = false }
   }, [storageKey])
 
+  // 在完成載入後嘗試遷移舊版 key（id: 或舊 email 鍵）至目前策略（email 優先）
+  useEffect(() => {
+    if (!isLoggedIn || !storageKey || !hydrated) return
+
+    try {
+      // 若目前錢包為空，再嘗試遷移
+      const currentRaw = localStorage.getItem(storageKey)
+      const currentParsed = currentRaw ? JSON.parse(currentRaw) : null
+      const isCurrentEmpty =
+        !currentParsed ||
+        ((Number(currentParsed.balance) || 0) === 0 &&
+          (!Array.isArray(currentParsed.history) || currentParsed.history.length === 0))
+
+      if (!isCurrentEmpty) return
+
+      const email = (user?.email || '').toLowerCase()
+      const idVal = (user?.id !== undefined && user?.id !== null) ? String(user.id) : null
+
+      const legacyEmailKey = email ? (STORAGE_KEY_PREFIX + email) : null // 舊版（無前綴）的 email key
+      const legacyNsEmailKey = email ? (STORAGE_KEY_PREFIX + `email:${email}`) : null // 舊版 email: 前綴
+      const legacyIdKey = idVal ? (STORAGE_KEY_PREFIX + `id:${idVal}`) : null // 舊版 id: 前綴
+      const guestKey = STORAGE_KEY_PREFIX + 'guest'
+
+      const tryKeys = [legacyIdKey, legacyNsEmailKey, legacyEmailKey, guestKey].filter(Boolean)
+
+      for (const k of tryKeys) {
+        if (!k || k === storageKey) continue
+        const raw = localStorage.getItem(k)
+        if (!raw) continue
+        try {
+          // 若成功解析，直接遷移到新 key（email 優先策略）
+          JSON.parse(raw)
+          localStorage.setItem(storageKey, raw)
+          // 可選：保留舊 key；若確定不需保留，解除下一行註解即可刪除
+          // localStorage.removeItem(k)
+          setWallet(loadWallet(storageKey))
+          break
+        } catch {}
+      }
+    } catch {}
+  }, [isLoggedIn, storageKey, hydrated, user])
+
   // 持久化（未登入/無 storageKey 時不持久化；避免在尚未完成載入時覆寫）
   useEffect(() => {
     if (storageKey && hydrated) saveWallet(storageKey, wallet)
   }, [storageKey, wallet, hydrated])
 
-  // 移除舊有的 guest 錢包，避免未登入時殘留顯示舊數據
-  useEffect(() => {
-    if (!isLoggedIn && !ENABLE_GUEST_WALLET) {
-      try { localStorage.removeItem(STORAGE_KEY_PREFIX + 'guest') } catch {}
-    }
-  }, [isLoggedIn])
+  // 取消自動刪除 guest 錢包，避免登出後需要從 guest 遷移資料時資料被提前清空
 
   // 工具：新增交易紀錄
   const pushHistory = (entry) => {
