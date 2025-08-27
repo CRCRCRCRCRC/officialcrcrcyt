@@ -96,23 +96,26 @@ export const CoinProvider = ({ children }) => {
   )
 
   const [wallet, setWallet] = useState(() => (storageKey ? loadWallet(storageKey) : { ...DEFAULT_WALLET }))
+  const [hydrated, setHydrated] = useState(false)
 
   // 切換使用者或登入狀態時：先與伺服器同步重置版本，再讀取錢包
   useEffect(() => {
     let mounted = true
+    setHydrated(false)
     ;(async () => {
       await ensureRemoteReset()
       if (mounted) {
         setWallet(storageKey ? loadWallet(storageKey) : { ...DEFAULT_WALLET })
+        setHydrated(true)
       }
     })()
     return () => { mounted = false }
   }, [storageKey])
 
-  // 持久化（未登入/無 storageKey 時不持久化）
+  // 持久化（未登入/無 storageKey 時不持久化；避免在尚未完成載入時覆寫）
   useEffect(() => {
-    if (storageKey) saveWallet(storageKey, wallet)
-  }, [storageKey, wallet])
+    if (storageKey && hydrated) saveWallet(storageKey, wallet)
+  }, [storageKey, wallet, hydrated])
 
   // 移除舊有的 guest 錢包，避免未登入時殘留顯示舊數據
   useEffect(() => {
