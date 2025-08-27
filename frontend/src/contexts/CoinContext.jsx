@@ -5,8 +5,8 @@ import { coinAPI } from '../services/api'
 /**
  * CRCRCoin 前端錢包（純前端）
  * - 以 localStorage 持久化
- * - 每個已登入使用者以 email 分隔錢包
- * - 取消「訪客錢包」，未登入時不再讀寫 guest 錢包，並清除舊資料
+ * - 每個已登入使用者以 email（優先）或 id 分隔錢包
+ * - 未登入不使用 guest 錢包（ENABLE_GUEST_WALLET=false）
  */
 
 const CoinContext = createContext(null)
@@ -18,7 +18,7 @@ const DEFAULT_WALLET = {
 }
 
 const STORAGE_KEY_PREFIX = 'crcrcoin_wallet_'
-const ENABLE_GUEST_WALLET = false // 關閉訪客錢包，未登入不顯示/不持久化
+const ENABLE_GUEST_WALLET = false
 const DAILY_REWARD_AMOUNT = 50
 const DAILY_COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24h
 
@@ -130,7 +130,7 @@ export const CoinProvider = ({ children }) => {
     return () => { mounted = false }
   }, [storageKey])
 
-  // 在完成載入後嘗試遷移舊版 key（id: 或舊 email 鍵）至目前策略（email 優先）
+  // 在完成載入後嘗試遷移舊版 key（id: 或舊 email 鍵、guest）至目前策略（email 優先）
   useEffect(() => {
     if (!isLoggedIn || !storageKey || !hydrated) return
 
@@ -148,26 +148,61 @@ export const CoinProvider = ({ children }) => {
       const email = (user?.email || '').toLowerCase()
       const idVal = (user?.id !== undefined && user?.id !== null) ? String(user.id) : null
 
-      const legacyEmailKey = email ? (STORAGE_KEY_PREFIX + email) : null // 舊版（無前綴）的 email key
-      const legacyNsEmailKey = email ? (STORAGE_KEY_PREFIX + `email:${email}`) : null // 舊版 email: 前綴
-      const legacyIdKey = idVal ? (STORAGE_KEY_PREFIX + `id:${idVal}`) : null // 舊版 id: 前綴
-      const guestKey = STORAGE_KEY_PREFIX + 'guest'
+      const candidateKeys = []
+      if (idVal) candidateKeys.push(`${STORAGE_KEY_PREFIX}id:${idVal}`)
+      if (email) {
+        candidateKeys.push(`${STORAGE_KEY_PREFIX}${email}`) // 舊版無前綴
+        candidateKeys.push(`${STORAGE_KEY_PREFIX}email:${email}`) // 舊版 email: 前綴
+      }
+      candidateKeys.push(`${STORAGE_KEY_PREFIX}guest`)
 
-      const tryKeys = [legacyIdKey, legacyNsEmailKey, legacyEmailKey, guestKey].filter(Boolean)
-
-      for (const k of tryKeys) {
+      let migrated = false
+      for (const k of candidateKeys) {
         if (!k || k === storageKey) continue
         const raw = localStorage.getItem(k)
         if (!raw) continue
         try {
-          // 若成功解析，直接遷移到新 key（email 優先策略）
-          JSON.parse(raw)
+          const obj = JSON.parse(raw)
+          const bal = Number(obj?.balance) || 0
+          const hist = Array.isArray(obj?.history) ? obj.history.length : 0
+          if (bal === 0 && hist === 0) continue
           localStorage.setItem(storageKey, raw)
-          // 可選：保留舊 key；若確定不需保留，解除下一行註解即可刪除
-          // localStorage.removeItem(k)
           setWallet(loadWallet(storageKey))
+          migrated = true
           break
         } catch {}
+      }
+
+      // 最後手段：從所有舊錢包中挑一個最合理的（最近簽到時間 + 餘額 + 紀錄數）
+      if (!migrated) {
+        const keys = []
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i)
+          if (k && k.startsWith(STORAGE_KEY_PREFIX) && k !== storageKey) keys.push(k)
+        }
+        let bestRaw = null
+        let bestScore = -1
+        for (const k of keys) {
+          const r = localStorage.getItem(k)
+          if (!r) continue
+          try {
+            const obj = JSON.parse(r)
+            const bal = Number(obj?.balance) || 0
+            const ts = obj?.lastClaimAt ? new Date(obj.lastClaimAt).getTime() : 0
+            const hist = Array.isArray(obj?.history) ? obj.history.length : 0
+            const empty = (bal === 0 && hist === 0)
+            if (empty) continue
+            const score = ts + bal * 1000 + hist
+            if (score > bestScore) {
+              bestScore = score
+              bestRaw = r
+            }
+          } catch {}
+        }
+        if (bestRaw) {
+          localStorage.setItem(storageKey, bestRaw)
+          setWallet(loadWallet(storageKey))
+        }
       }
     } catch {}
   }, [isLoggedIn, storageKey, hydrated, user])
@@ -176,8 +211,6 @@ export const CoinProvider = ({ children }) => {
   useEffect(() => {
     if (storageKey && hydrated) saveWallet(storageKey, wallet)
   }, [storageKey, wallet, hydrated])
-
-  // 取消自動刪除 guest 錢包，避免登出後需要從 guest 遷移資料時資料被提前清空
 
   // 工具：新增交易紀錄
   const pushHistory = (entry) => {
