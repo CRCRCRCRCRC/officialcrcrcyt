@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useWebsiteAuth } from './WebsiteAuthContext'
 import { coinAPI } from '../services/api'
 
@@ -106,6 +106,7 @@ function saveWallet(storageKey, wallet) {
 export const CoinProvider = ({ children }) => {
   const { user } = useWebsiteAuth()
   const isLoggedIn = !!user
+  const initInProgressRef = useRef(false)
 
   // 未登入時若關閉訪客錢包，storageKey 為 null（不讀寫 localStorage）
   const storageKey = useMemo(
@@ -120,6 +121,7 @@ export const CoinProvider = ({ children }) => {
   useEffect(() => {
     let mounted = true
     setHydrated(false)
+    initInProgressRef.current = true
     ;(async () => {
       await ensureRemoteReset()
 
@@ -187,6 +189,7 @@ export const CoinProvider = ({ children }) => {
           setWallet(loadWallet(storageKey))
         }
         setHydrated(true)
+        initInProgressRef.current = false
       }
     })()
     return () => { mounted = false }
@@ -194,7 +197,7 @@ export const CoinProvider = ({ children }) => {
 
   // 持久化（未登入/無 storageKey 時不持久化；避免在尚未完成載入時覆寫）
   useEffect(() => {
-    if (storageKey && hydrated) saveWallet(storageKey, wallet)
+    if (storageKey && hydrated && !initInProgressRef.current) saveWallet(storageKey, wallet)
   }, [storageKey, wallet, hydrated])
 
   // 工具：新增交易紀錄
