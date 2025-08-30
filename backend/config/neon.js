@@ -104,6 +104,26 @@ class NeonDatabase {
         console.log(`為公告 "${announcement.title}" 生成 slug: ${uniqueSlug}`);
       }
 
+      // CRCRCoin 資料表
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS coin_wallets (
+          user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+          balance INTEGER NOT NULL DEFAULT 0,
+          last_claim_at TIMESTAMP NULL,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS coin_transactions (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          type VARCHAR(20) NOT NULL,
+          amount INTEGER NOT NULL,
+          reason TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       console.log('✅ PostgreSQL 資料表初始化完成');
     } catch (error) {
       console.error('❌ PostgreSQL 資料表初始化失敗:', error);
@@ -274,6 +294,155 @@ class NeonDatabase {
       settings[row.setting_key] = row.setting_value;
     });
     return settings;
+  }
+
+  // CRCRCoin - methods
+  async ensureCoinWallet(userId) {
+    await this.pool.query(
+      `INSERT INTO coin_wallets (user_id, balance) VALUES ($1, 0)
+       ON CONFLICT (user_id) DO NOTHING`,
+      [userId]
+    );
+  }
+
+  async getCoinWallet(userId) {
+    await this.ensureCoinWallet(userId);
+    const res = await this.pool.query(
+      `SELECT user_id, balance, last_claim_at FROM coin_wallets WHERE user_id = $1`,
+      [userId]
+    );
+    const row = res.rows[0];
+    return row || { user_id: userId, balance: 0, last_claim_at: null };
+  }
+
+  async addCoins(userId, amount, reason = '任務獎勵') {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(
+        `INSERT INTO coin_wallets (user_id, balance) VALUES ($1, 0)
+         ON CONFLICT (user_id) DO NOTHING`,
+        [userId]
+      );
+      const up = await client.query(
+        `UPDATE coin_wallets
+         SET balance = balance + $2, updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = $1
+         RETURNING balance, last_claim_at`,
+        [userId, amount]
+      );
+      await client.query(
+        `INSERT INTO coin_transactions (user_id, type, amount, reason)
+         VALUES ($1, 'earn', $2, $3)`,
+        [userId, amount, reason]
+      );
+      await client.query('COMMIT');
+      return { success: true, wallet: { user_id: userId, balance: up.rows[0].balance, last_claim_at: up.rows[0].last_claim_at } };
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
+  async spendCoins(userId, amount, reason = '消費') {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const cur = await client.query(
+        `SELECT balance FROM coin_wallets WHERE user_id = $1 FOR UPDATE`,
+        [userId]
+      );
+      const balance = cur.rows[0]?.balance ?? 0;
+      if (balance < amount) {
+        await client.query('ROLLBACK');
+        return { success: false, error: '餘額不足' };
+      }
+      const up = await client.query(
+        `UPDATE coin_wallets
+         SET balance = balance - $2, updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = $1
+         RETURNING balance, last_claim_at`,
+        [userId, amount]
+      );
+      await client.query(
+        `INSERT INTO coin_transactions (user_id, type, amount, reason)
+         VALUES ($1, 'spend', $2, $3)`,
+        [userId, amount, reason]
+      );
+      await client.query('COMMIT');
+      return { success: true, wallet: { user_id: userId, balance: up.rows[0].balance, last_claim_at: up.rows[0].last_claim_at } };
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
+  async claimDaily(userId, reward = 50, cooldownMs = 24 * 60 * 60 * 1000) {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query(
+        `INSERT INTO coin_wallets (user_id, balance) VALUES ($1, 0)
+         ON CONFLICT (user_id) DO NOTHING`,
+        [userId]
+      );
+      const cur = await client.query(
+        `SELECT balance, last_claim_at FROM coin_wallets WHERE user_id = $1 FOR UPDATE`,
+        [userId]
+      );
+      const row = cur.rows[0] || { balance: 0, last_claim_at: null };
+      const now = Date.now();
+      const last = row.last_claim_at ? new Date(row.last_claim_at).getTime() : 0;
+      const passed = now - last;
+
+      if (row.last_claim_at && passed < cooldownMs) {
+        const retryInMs = cooldownMs - passed;
+        await client.query('ROLLBACK');
+        return { success: false, nextClaimInMs: retryInMs };
+      }
+
+      const up = await client.query(
+        `UPDATE coin_wallets
+         SET balance = balance + $2, last_claim_at = NOW(), updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = $1
+         RETURNING balance, last_claim_at`,
+        [userId, reward]
+      );
+      await client.query(
+        `INSERT INTO coin_transactions (user_id, type, amount, reason)
+         VALUES ($1, 'claim', $2, '每日簽到')`,
+        [userId, reward]
+      );
+      await client.query('COMMIT');
+      return { success: true, amount: reward, wallet: { user_id: userId, balance: up.rows[0].balance, last_claim_at: up.rows[0].last_claim_at } };
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getCoinHistory(userId, limit = 50) {
+    const res = await this.pool.query(
+      `SELECT type, amount, reason, created_at
+       FROM coin_transactions
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT $2`,
+      [userId, Math.max(1, Math.min(200, parseInt(limit) || 50))]
+    );
+    return res.rows;
+  }
+
+  async resetAllCoins() {
+    await this.pool.query(`UPDATE coin_wallets SET balance = 0, last_claim_at = NULL, updated_at = CURRENT_TIMESTAMP`);
+    await this.pool.query(`DELETE FROM coin_transactions`);
+    return true;
   }
 
   // 生成 slug

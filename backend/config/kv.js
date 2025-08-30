@@ -243,6 +243,142 @@ class KVDatabase {
       throw error;
     }
   }
+// ===== CRCRCoin - helpers =====
+  walletKey(userId) {
+    return `coin_wallet:${userId}`;
+  }
+
+  txKey(userId) {
+    return `coin_tx:${userId}`;
+  }
+
+  // ===== CRCRCoin - methods =====
+  async ensureCoinWallet(userId) {
+    const key = this.walletKey(userId);
+    const existing = await this.kv.hgetall(key);
+    if (!existing || Object.keys(existing).length === 0) {
+      await this.kv.hset(key, {
+        balance: 0,
+        last_claim_at: null,
+        updated_at: new Date().toISOString()
+      });
+    }
+  }
+
+  async getCoinWallet(userId) {
+    const key = this.walletKey(userId);
+    await this.ensureCoinWallet(userId);
+    const w = await this.kv.hgetall(key);
+    if (!w || Object.keys(w).length === 0) {
+      return { user_id: userId, balance: 0, last_claim_at: null };
+    }
+    return {
+      user_id: userId,
+      balance: parseInt(w.balance) || 0,
+      last_claim_at: w.last_claim_at || null
+    };
+  }
+
+  async addCoins(userId, amount, reason = '任務獎勵') {
+    const key = this.walletKey(userId);
+    await this.ensureCoinWallet(userId);
+    const w = await this.kv.hgetall(key);
+    const newBal = Math.max(0, (parseInt(w.balance) || 0) + Math.max(0, parseInt(amount) || 0));
+    await this.kv.hset(key, {
+      balance: newBal,
+      // 保留 last_claim_at
+      last_claim_at: w.last_claim_at || null,
+      updated_at: new Date().toISOString()
+    });
+    const txKey = this.txKey(userId);
+    await this.kv.sadd(txKey, JSON.stringify({
+      type: 'earn',
+      amount: Math.max(0, parseInt(amount) || 0),
+      reason,
+      created_at: new Date().toISOString()
+    }));
+    return { success: true, wallet: { user_id: userId, balance: newBal, last_claim_at: w.last_claim_at || null } };
+  }
+
+  async spendCoins(userId, amount, reason = '消費') {
+    const key = this.walletKey(userId);
+    await this.ensureCoinWallet(userId);
+    const w = await this.kv.hgetall(key);
+    const bal = parseInt(w.balance) || 0;
+    const val = Math.max(0, parseInt(amount) || 0);
+    if (bal < val) {
+      return { success: false, error: '餘額不足' };
+    }
+    const newBal = Math.max(0, bal - val);
+    await this.kv.hset(key, {
+      balance: newBal,
+      last_claim_at: w.last_claim_at || null,
+      updated_at: new Date().toISOString()
+    });
+    const txKey = this.txKey(userId);
+    await this.kv.sadd(txKey, JSON.stringify({
+      type: 'spend',
+      amount: val,
+      reason,
+      created_at: new Date().toISOString()
+    }));
+    return { success: true, wallet: { user_id: userId, balance: newBal, last_claim_at: w.last_claim_at || null } };
+  }
+
+  async claimDaily(userId, reward = 50, cooldownMs = 24 * 60 * 60 * 1000) {
+    const key = this.walletKey(userId);
+    await this.ensureCoinWallet(userId);
+    const w = await this.kv.hgetall(key);
+    const now = Date.now();
+    const last = w.last_claim_at ? new Date(w.last_claim_at).getTime() : 0;
+    const passed = now - last;
+
+    if (w.last_claim_at && passed < cooldownMs) {
+      return { success: false, nextClaimInMs: cooldownMs - passed };
+    }
+
+    const newBal = (parseInt(w.balance) || 0) + Math.max(0, parseInt(reward) || 0);
+    const lastClaimISO = new Date().toISOString();
+    await this.kv.hset(key, {
+      balance: newBal,
+      last_claim_at: lastClaimISO,
+      updated_at: lastClaimISO
+    });
+    const txKey = this.txKey(userId);
+    await this.kv.sadd(txKey, JSON.stringify({
+      type: 'claim',
+      amount: Math.max(0, parseInt(reward) || 0),
+      reason: '每日簽到',
+      created_at: lastClaimISO
+    }));
+    return { success: true, amount: Math.max(0, parseInt(reward) || 0), wallet: { user_id: userId, balance: newBal, last_claim_at: lastClaimISO } };
+  }
+
+  async getCoinHistory(userId, limit = 50) {
+    const txKey = this.txKey(userId);
+    const items = await this.kv.smembers(txKey);
+    // Set 迭代為插入順序，轉換後按 created_at 排序保險
+    const list = (items || []).map(s => {
+      try { return JSON.parse(s); } catch { return null; }
+    }).filter(Boolean).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const n = Math.max(1, Math.min(200, parseInt(limit) || 50));
+    return list.slice(0, n);
+  }
+
+  async resetAllCoins() {
+    // 依據現有 users 集合清理
+    const userIds = await this.kv.smembers('users');
+    for (const uid of userIds) {
+      await this.kv.hset(this.walletKey(uid), {
+        balance: 0,
+        last_claim_at: null,
+        updated_at: new Date().toISOString()
+      });
+      // 清空交易
+      await this.kv.del(this.txKey(uid));
+    }
+    return true;
+  }
 }
 
 module.exports = new KVDatabase();

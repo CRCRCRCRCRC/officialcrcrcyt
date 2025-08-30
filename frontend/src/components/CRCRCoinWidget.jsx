@@ -12,6 +12,7 @@ import CoinIcon from '../../CRCRCoin-icon.svg'
 const CRCRCoinWidget = ({ compact = false }) => {
   const {
     isLoggedIn,
+    hydrated,
     balance,
     history,
     claimDaily,
@@ -97,7 +98,7 @@ const CRCRCoinWidget = ({ compact = false }) => {
         title="CRCRCoin 錢包"
       >
         <img src={CoinIcon} className="w-4 h-4" alt="CRCRCoin" />
-        <span className="font-semibold tabular-nums">{fmtCoin(balance)}</span>
+        <span className="font-semibold tabular-nums">{hydrated ? fmtCoin(balance) : '...'}</span>
       </button>
 
       {/* Dropdown panel (glassmorphism) */}
@@ -143,7 +144,7 @@ const CRCRCoinWidget = ({ compact = false }) => {
                 <button
                   type="button"
                   onClick={onDaily}
-                  disabled={!isLoggedIn || !canClaimNow}
+                  disabled={!isLoggedIn || !hydrated || !canClaimNow}
                   className={[
                     'px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-all',
                     (!isLoggedIn || !canClaimNow)
@@ -151,7 +152,7 @@ const CRCRCoinWidget = ({ compact = false }) => {
                       : 'bg-gradient-to-r from-primary-500 to-pink-500 hover:from-primary-600 hover:to-pink-600 shadow'
                   ].join(' ')}
                 >
-                  {!isLoggedIn ? '請先登入' : (canClaimNow ? '領取' : `等待 ${fmtTime(leftMs)}`)}
+                  {!isLoggedIn ? '請先登入' : (!hydrated ? '同步中...' : (canClaimNow ? '領取' : `等待 ${fmtTime(leftMs)}`))}
                 </button>
               </div>
               {!isLoggedIn && (
