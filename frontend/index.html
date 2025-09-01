@@ -34,6 +34,16 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Ko-fi overlay widget -->
+    <script src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"></script>
+    <script>
+      kofiWidgetOverlay.draw('crcrcyt', {
+        'type': 'floating-chat',
+        'floating-chat.donateButton.text': 'Donate',
+        'floating-chat.donateButton.background-color': '#5bc0de',
+        'floating-chat.donateButton.text-color': '#323842'
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
