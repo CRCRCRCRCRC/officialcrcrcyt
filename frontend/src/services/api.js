@@ -7,13 +7,20 @@ const api = axios.create({
 })
 
 // 請求攔截器 - 添加 token（同時支援管理端 token 與網站端 website_token）
+// 規則：
+// - /coin 相關 API 優先使用 website_token（公開網站用戶）
+// - 其它 API 仍以管理端 token 為優先（後台）
 api.interceptors.request.use(
   (config) => {
     const adminToken = localStorage.getItem('token')
     const websiteToken = localStorage.getItem('website_token')
-    const token = adminToken || websiteToken
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    const url = String(config.url || '')
+    const isCoinApi = url.includes('/coin/')
+    const picked = isCoinApi
+      ? (websiteToken || adminToken)
+      : (adminToken || websiteToken)
+    if (picked) {
+      config.headers.Authorization = `Bearer ${picked}`
     }
     return config
   },
@@ -45,6 +52,18 @@ api.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+ 
+// 幫 /coin 系列 API 強制附帶 Authorization（優先 website_token，其次 admin token）
+const authHeaderForCoin = () => {
+  try {
+    const websiteToken = localStorage.getItem('website_token')
+    const adminToken = localStorage.getItem('token')
+    const token = websiteToken || adminToken
+    return token ? { Authorization: `Bearer ${token}` } : {}
+  } catch {
+    return {}
+  }
+}
 
 // 身份驗證 API
 export const authAPI = {
@@ -133,17 +152,17 @@ export const coinAPI = {
   // 取得目前的重置版本（公開，用於舊版 localStorage 清空同步）
   getResetVersion: () => api.get('/coin/reset-version'),
   // 管理員一鍵重置（需要 admin token）
-  adminReset: () => api.post('/coin/reset'),
+  adminReset: () => api.post('/coin/reset', undefined, { headers: authHeaderForCoin() }),
   // 取得目前用戶的伺服器錢包（需登入）
-  getWallet: () => api.get('/coin/wallet'),
+  getWallet: () => api.get('/coin/wallet', { headers: authHeaderForCoin() }),
   // 取得交易紀錄（需登入）
-  getHistory: (limit = 50) => api.get('/coin/history', { params: { limit } }),
+  getHistory: (limit = 50) => api.get('/coin/history', { params: { limit }, headers: authHeaderForCoin() }),
   // 每日簽到（需登入）
-  claimDaily: () => api.post('/coin/claim-daily'),
+  claimDaily: () => api.post('/coin/claim-daily', undefined, { headers: authHeaderForCoin() }),
   // 消費（扣幣，需登入）
-  spend: (amount, reason = '消費') => api.post('/coin/spend', { amount, reason }),
+  spend: (amount, reason = '消費') => api.post('/coin/spend', { amount, reason }, { headers: authHeaderForCoin() }),
   // 加幣（管理員）
-  earn: (amount, reason = '任務獎勵') => api.post('/coin/earn', { amount, reason })
+  earn: (amount, reason = '任務獎勵') => api.post('/coin/earn', { amount, reason }, { headers: authHeaderForCoin() })
 }
 export const announcementAPI = {
   getAll: (params = {}) =>
