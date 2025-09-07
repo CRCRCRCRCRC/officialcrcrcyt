@@ -69,6 +69,7 @@ export const CoinProvider = ({ children }) => {
   const bcRef = useRef(null)
   const refreshingRef = useRef(false)
   const [overrideNextClaimUntil, setOverrideNextClaimUntil] = useState(null)
+  const [serverNextUntil, setServerNextUntil] = useState(null)
 
   // 封裝：以伺服器回傳值更新狀態/快取/廣播
   const setFromServer = (serverWallet, history) => {
@@ -105,14 +106,15 @@ export const CoinProvider = ({ children }) => {
       {
         const serverMs = Number(wRes?.data?.nextClaimInMs) || 0
         if (serverMs > 0) {
-          setOverrideNextClaimUntil(Date.now() + serverMs)
+          const until = Date.now() + serverMs
+          setOverrideNextClaimUntil(until)
+          setServerNextUntil(until)
         } else {
           setOverrideNextClaimUntil(null)
+          setServerNextUntil(null)
         }
       }
-      // 一旦以伺服器資料對齊，清掉臨時冷卻覆蓋
-      setOverrideNextClaimUntil(null)
-    } catch {
+    } catch (e) {
       // 失敗則保留快取，不阻塞 UI
     } finally {
       setHydrated(true)
@@ -201,10 +203,21 @@ export const CoinProvider = ({ children }) => {
     }
   }
 
-  // 動作：每日簽到
+  // 動作：每日簽到（先以伺服器冷卻判斷一次，再送出簽到，避免本機時鐘誤差）
   const claimDaily = async () => {
     if (!isLoggedIn) return { success: false, error: '請先登入才能簽到' }
     try {
+      // 先向伺服器確認冷卻
+      const wRes = await coinAPI.getWallet()
+      const preMs = Number(wRes?.data?.nextClaimInMs) || 0
+      if (preMs > 0) {
+        const until = Date.now() + preMs
+        setOverrideNextClaimUntil(until)
+        setServerNextUntil(until)
+        return { success: false, error: '尚未到下次簽到時間', nextClaimInMs: preMs }
+      }
+
+      // 再進行簽到
       const res = await coinAPI.claimDaily()
       const newWallet = res?.data?.wallet
       const amount = Number(res?.data?.amount) || 0
@@ -214,13 +227,18 @@ export const CoinProvider = ({ children }) => {
           ...(wallet.history || [])
         ].slice(0, 50)
         setFromServer(newWallet, newHist)
+        // 成功後立即套用 24h 冷卻，避免短暫「可按」狀態
+        const until = Date.now() + DAILY_COOLDOWN_MS
+        setOverrideNextClaimUntil(until)
+        setServerNextUntil(until)
       }
       return { success: true, amount }
     } catch (e) {
-      const nextClaimInMs = e?.response?.data?.nextClaimInMs
-      // 若伺服器回傳冷卻剩餘時間，立即在前端套用覆蓋，避免顯示可按卻被拒
-      if (typeof nextClaimInMs === 'number' && nextClaimInMs > 0) {
-        setOverrideNextClaimUntil(Date.now() + nextClaimInMs)
+      const nextClaimInMs = Number(e?.response?.data?.nextClaimInMs) || 0
+      if (nextClaimInMs > 0) {
+        const until = Date.now() + nextClaimInMs
+        setOverrideNextClaimUntil(until)
+        setServerNextUntil(until)
       }
       return {
         success: false,
@@ -231,10 +249,28 @@ export const CoinProvider = ({ children }) => {
   }
 
   // 狀態：是否可簽到與剩餘時間（以伺服器時間為準，若伺服器回傳冷卻則臨時覆蓋）
+  // 取 wallet.lastClaimAt 與歷史中最近一次 claim 的最大時間，以避免某些情況只更新其中一處造成誤判
+  const claimHistMax = (() => {
+    const list = Array.isArray(wallet.history) ? wallet.history : []
+    const ts = list
+      .filter(h => h?.type === 'claim' && h?.at)
+      .map(h => new Date(h.at).getTime())
+      .filter(n => !Number.isNaN(n))
+    return ts.length ? Math.max(...ts) : 0
+  })()
   const lastClaimTime = wallet.lastClaimAt ? new Date(wallet.lastClaimAt).getTime() : 0
-  const baseNext = wallet.lastClaimAt ? (lastClaimTime + DAILY_COOLDOWN_MS - Date.now()) : 0
+  const lastEffective = Math.max(lastClaimTime || 0, claimHistMax || 0)
+  const baseNext = lastEffective ? (lastEffective + DAILY_COOLDOWN_MS - Date.now()) : 0
   const overrideLeft = overrideNextClaimUntil ? (overrideNextClaimUntil - Date.now()) : null
-  const effectiveNext = overrideLeft !== null ? Math.max(0, overrideLeft) : Math.max(0, baseNext)
+  const serverLeft = serverNextUntil ? (serverNextUntil - Date.now()) : null
+  const effectiveNext = Math.max(
+    0,
+    Math.max(
+      baseNext,
+      overrideLeft !== null ? overrideLeft : 0,
+      serverLeft !== null ? serverLeft : 0
+    )
+  )
   const canClaimNow = isLoggedIn && hydrated && effectiveNext <= 0
   const nextClaimInMs = isLoggedIn ? effectiveNext : 0
 

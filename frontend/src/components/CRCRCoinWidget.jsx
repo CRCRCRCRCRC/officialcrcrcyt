@@ -22,6 +22,7 @@ const CRCRCoinWidget = ({ compact = false }) => {
 
   const [open, setOpen] = useState(false)
   const [leftMs, setLeftMs] = useState(nextClaimInMs)
+  const [claiming, setClaiming] = useState(false)
   const wrapperRef = useRef(null)
 
   // Countdown for next claim
@@ -70,13 +71,19 @@ const CRCRCoinWidget = ({ compact = false }) => {
     return `${pad(h)}:${pad(m)}:${pad(sec)}`
   }
 
-  const onDaily = () => {
-    const res = claimDaily()
-    if (res?.success) {
-      toast.success(`簽到成功！獲得 ${res.amount} CRCRCoin`)
-    } else {
-      const msg = res?.error || '尚未到下次簽到時間'
-      toast.error(msg)
+  const onDaily = async () => {
+    if (claiming) return
+    setClaiming(true)
+    try {
+      const res = await claimDaily()
+      if (res?.success) {
+        toast.success(`簽到成功！獲得 ${res.amount} CRCRCoin`)
+      } else {
+        const msg = res?.error || '尚未到下次簽到時間'
+        toast.error(msg)
+      }
+    } finally {
+      setClaiming(false)
     }
   }
 
@@ -144,15 +151,22 @@ const CRCRCoinWidget = ({ compact = false }) => {
                 <button
                   type="button"
                   onClick={onDaily}
-                  disabled={!isLoggedIn || !hydrated || !canClaimNow}
+                  aria-disabled={!isLoggedIn || !hydrated || !canClaimNow || claiming}
+                  disabled={!isLoggedIn || !hydrated || !canClaimNow || claiming}
                   className={[
                     'px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-all',
-                    (!isLoggedIn || !canClaimNow)
-                      ? 'bg-gray-300 cursor-not-allowed'
+                    (!isLoggedIn || !hydrated || !canClaimNow || claiming)
+                      ? 'bg-gray-300 cursor-not-allowed pointer-events-none'
                       : 'bg-gradient-to-r from-primary-500 to-pink-500 hover:from-primary-600 hover:to-pink-600 shadow'
                   ].join(' ')}
                 >
-                  {!isLoggedIn ? '請先登入' : (!hydrated ? '同步中...' : (canClaimNow ? '領取' : `等待 ${fmtTime(leftMs)}`))}
+                  {!isLoggedIn
+                    ? '請先登入'
+                    : (!hydrated
+                        ? '同步中...'
+                        : (claiming
+                            ? '處理中...'
+                            : (canClaimNow ? '領取' : `等待 ${fmtTime(leftMs)}`)))}
                 </button>
               </div>
               {!isLoggedIn && (
