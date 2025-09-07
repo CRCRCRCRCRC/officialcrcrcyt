@@ -34,20 +34,42 @@ router.post('/reset', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// 將資料庫回傳的欄位統一成前端所需格式
+// 將資料庫回傳的欄位統一成前端所需格式（統一輸出 UTC ISO，避免時區誤差）
+function toISO(v) {
+  try {
+    if (!v) return null;
+    const d = new Date(v);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString();
+  } catch {
+    return null;
+  }
+}
+
 function mapWallet(w) {
   if (!w) return { balance: 0, lastClaimAt: null };
+  const lastRaw = w.lastClaimAt ?? w.last_claim_at ?? null;
   return {
     balance: Number(w.balance) || 0,
-    lastClaimAt: w.lastClaimAt || w.last_claim_at || null
+    lastClaimAt: toISO(lastRaw)
   };
 }
 
 // 取得目前用戶的伺服器錢包（需要登入）
+// 併回傳伺服器端計算的 nextClaimInMs，避免因客戶端時鐘誤差導致按鈕狀態判斷錯誤
 router.get('/wallet', authenticateToken, async (req, res) => {
   try {
     const wallet = await database.getCoinWallet(req.user.id);
-    res.json({ wallet: mapWallet(wallet) });
+    const COOLDOWN_MS = 24 * 60 * 60 * 1000;
+    const raw = wallet?.last_claim_at ?? wallet?.lastClaimAt ?? null;
+    const iso = toISO(raw);
+    let nextClaimInMs = 0;
+    if (iso) {
+      const last = new Date(iso).getTime();
+      const diff = (last + COOLDOWN_MS) - Date.now();
+      if (diff > 0) nextClaimInMs = diff;
+    }
+    res.json({ wallet: mapWallet(wallet), nextClaimInMs });
   } catch (error) {
     console.error('取得錢包失敗:', error);
     res.status(500).json({ error: '無法取得錢包' });
@@ -60,12 +82,17 @@ router.get('/history', authenticateToken, async (req, res) => {
     const limit = Math.max(1, Math.min(200, parseInt(req.query.limit) || 50));
     const list = await database.getCoinHistory(req.user.id, limit);
     // 統一欄位名稱
-    const history = (list || []).map((r) => ({
-      type: r.type,
-      amount: Number(r.amount) || 0,
-      reason: r.reason || '',
-      at: r.created_at || r.at || null
-    }));
+    const history = (list || []).map((r) => {
+      const atRaw = r.at ?? r.created_at ?? null;
+      let at = null;
+      try { at = atRaw ? new Date(atRaw).toISOString() : null; } catch { at = null; }
+      return {
+        type: r.type,
+        amount: Number(r.amount) || 0,
+        reason: r.reason || '',
+        at
+      };
+    });
     res.json({ history });
   } catch (error) {
     console.error('取得交易紀錄失敗:', error);

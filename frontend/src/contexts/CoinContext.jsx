@@ -68,6 +68,7 @@ export const CoinProvider = ({ children }) => {
 
   const bcRef = useRef(null)
   const refreshingRef = useRef(false)
+  const [overrideNextClaimUntil, setOverrideNextClaimUntil] = useState(null)
 
   // 封裝：以伺服器回傳值更新狀態/快取/廣播
   const setFromServer = (serverWallet, history) => {
@@ -100,6 +101,17 @@ export const CoinProvider = ({ children }) => {
       const w = wRes?.data?.wallet
       const h = hRes?.data?.history || []
       setFromServer(w, h)
+      // 將伺服器計算的冷卻時間帶入，避免本機時鐘誤差造成「可按但被拒」
+      {
+        const serverMs = Number(wRes?.data?.nextClaimInMs) || 0
+        if (serverMs > 0) {
+          setOverrideNextClaimUntil(Date.now() + serverMs)
+        } else {
+          setOverrideNextClaimUntil(null)
+        }
+      }
+      // 一旦以伺服器資料對齊，清掉臨時冷卻覆蓋
+      setOverrideNextClaimUntil(null)
     } catch {
       // 失敗則保留快取，不阻塞 UI
     } finally {
@@ -206,6 +218,10 @@ export const CoinProvider = ({ children }) => {
       return { success: true, amount }
     } catch (e) {
       const nextClaimInMs = e?.response?.data?.nextClaimInMs
+      // 若伺服器回傳冷卻剩餘時間，立即在前端套用覆蓋，避免顯示可按卻被拒
+      if (typeof nextClaimInMs === 'number' && nextClaimInMs > 0) {
+        setOverrideNextClaimUntil(Date.now() + nextClaimInMs)
+      }
       return {
         success: false,
         error: e?.response?.data?.error || '尚未到下次簽到時間',
@@ -214,11 +230,13 @@ export const CoinProvider = ({ children }) => {
     }
   }
 
-  // 狀態：是否可簽到與剩餘時間（以目前本地狀態計算；實際仍以伺服器為準）
+  // 狀態：是否可簽到與剩餘時間（以伺服器時間為準，若伺服器回傳冷卻則臨時覆蓋）
   const lastClaimTime = wallet.lastClaimAt ? new Date(wallet.lastClaimAt).getTime() : 0
-  const msSinceLastClaim = Date.now() - lastClaimTime
-  const canClaimNow = isLoggedIn && hydrated && (!wallet.lastClaimAt || msSinceLastClaim >= DAILY_COOLDOWN_MS)
-  const nextClaimInMs = isLoggedIn ? (canClaimNow ? 0 : Math.max(0, DAILY_COOLDOWN_MS - msSinceLastClaim)) : 0
+  const baseNext = wallet.lastClaimAt ? (lastClaimTime + DAILY_COOLDOWN_MS - Date.now()) : 0
+  const overrideLeft = overrideNextClaimUntil ? (overrideNextClaimUntil - Date.now()) : null
+  const effectiveNext = overrideLeft !== null ? Math.max(0, overrideLeft) : Math.max(0, baseNext)
+  const canClaimNow = isLoggedIn && hydrated && effectiveNext <= 0
+  const nextClaimInMs = isLoggedIn ? effectiveNext : 0
 
   const value = {
     isLoggedIn,
