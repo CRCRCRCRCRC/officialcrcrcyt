@@ -15,6 +15,7 @@ const CoinContext = createContext(null)
 const DEFAULT_WALLET = {
   balance: 0,
   lastClaimAt: null, // ISO string
+  streak: 0,
   history: [] // { type: 'earn' | 'spend' | 'claim', amount, reason, at }
 }
 
@@ -37,6 +38,7 @@ function loadCache(cacheKey) {
     return {
       balance: Number(obj?.balance) || 0,
       lastClaimAt: obj?.lastClaimAt || null,
+      streak: Number(obj?.streak) || 0,
       history: Array.isArray(obj?.history) ? obj.history : []
     }
   } catch {
@@ -50,6 +52,7 @@ function saveCache(cacheKey, wallet) {
     const toSave = {
       balance: Number(wallet?.balance) || 0,
       lastClaimAt: wallet?.lastClaimAt || null,
+      streak: Number(wallet?.streak) || 0,
       history: Array.isArray(wallet?.history) ? wallet.history.slice(0, 50) : []
     }
     localStorage.setItem(cacheKey, JSON.stringify(toSave))
@@ -76,6 +79,7 @@ export const CoinProvider = ({ children }) => {
     const merged = {
       balance: Number(serverWallet?.balance) || 0,
       lastClaimAt: serverWallet?.lastClaimAt || null,
+      streak: Number(serverWallet?.streak) || 0,
       history: Array.isArray(history) ? history : (wallet.history || [])
     }
     setWallet(merged)
@@ -279,6 +283,7 @@ export const CoinProvider = ({ children }) => {
     hydrated,
     balance: wallet.balance || 0,
     lastClaimAt: wallet.lastClaimAt,
+    streak: Number(wallet.streak) || 0,
     history: wallet.history || [],
     addCoins,
     spendCoins,

@@ -113,6 +113,11 @@ class NeonDatabase {
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      // 連續簽到：新增 streak_count 欄位（若不存在）
+      await this.pool.query(`
+        ALTER TABLE coin_wallets
+        ADD COLUMN IF NOT EXISTS streak_count INTEGER DEFAULT 0
+      `);
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS coin_transactions (
           id SERIAL PRIMARY KEY,
@@ -308,11 +313,11 @@ class NeonDatabase {
   async getCoinWallet(userId) {
     await this.ensureCoinWallet(userId);
     const res = await this.pool.query(
-      `SELECT user_id, balance, last_claim_at FROM coin_wallets WHERE user_id = $1`,
+      `SELECT user_id, balance, last_claim_at, streak_count FROM coin_wallets WHERE user_id = $1`,
       [userId]
     );
     const row = res.rows[0];
-    return row || { user_id: userId, balance: 0, last_claim_at: null };
+    return row || { user_id: userId, balance: 0, last_claim_at: null, streak_count: 0 };
   }
 
   async addCoins(userId, amount, reason = '任務獎勵') {
@@ -391,10 +396,10 @@ class NeonDatabase {
         [userId]
       );
       const cur = await client.query(
-        `SELECT balance, last_claim_at FROM coin_wallets WHERE user_id = $1 FOR UPDATE`,
+        `SELECT balance, last_claim_at, streak_count FROM coin_wallets WHERE user_id = $1 FOR UPDATE`,
         [userId]
       );
-      const row = cur.rows[0] || { balance: 0, last_claim_at: null };
+      const row = cur.rows[0] || { balance: 0, last_claim_at: null, streak_count: 0 };
       const now = Date.now();
       const last = row.last_claim_at ? new Date(row.last_claim_at).getTime() : 0;
       const passed = now - last;
@@ -404,21 +409,33 @@ class NeonDatabase {
         await client.query('ROLLBACK');
         return { success: false, nextClaimInMs: retryInMs };
       }
-
+      // 計算連續簽到（以 UTC 日期判斷相鄰天數）
+      const lastDateStr = row.last_claim_at ? new Date(row.last_claim_at).toISOString().slice(0, 10) : null;
+      const nowDateStr = new Date().toISOString().slice(0, 10);
+      let newStreak = 1;
+      if (lastDateStr) {
+        const deltaDays = Math.floor((Date.parse(nowDateStr) - Date.parse(lastDateStr)) / (24 * 60 * 60 * 1000));
+        if (deltaDays === 1) newStreak = (parseInt(row.streak_count) || 0) + 1;
+        else if (deltaDays > 1) newStreak = 1;
+        else newStreak = parseInt(row.streak_count) || 1; // 同日，理論上已被冷卻擋下
+      }
+      const base = Math.max(0, parseInt(reward) || 0);
+      const bonus = Math.min(50, Math.max(0, (newStreak - 1) * 10));
+      const grant = base + bonus;
       const up = await client.query(
         `UPDATE coin_wallets
-         SET balance = balance + $2, last_claim_at = NOW(), updated_at = CURRENT_TIMESTAMP
+         SET balance = balance + $2, last_claim_at = NOW(), updated_at = CURRENT_TIMESTAMP, streak_count = $3
          WHERE user_id = $1
-         RETURNING balance, last_claim_at`,
-        [userId, reward]
+         RETURNING balance, last_claim_at, streak_count`,
+        [userId, grant, newStreak]
       );
       await client.query(
         `INSERT INTO coin_transactions (user_id, type, amount, reason)
-         VALUES ($1, 'claim', $2, '每日簽到')`,
-        [userId, reward]
+         VALUES ($1, 'claim', $2, $3)`,
+        [userId, grant, `每日簽到(連續${newStreak}天)`]
       );
       await client.query('COMMIT');
-      return { success: true, amount: reward, wallet: { user_id: userId, balance: up.rows[0].balance, last_claim_at: up.rows[0].last_claim_at } };
+      return { success: true, amount: grant, wallet: { user_id: userId, balance: up.rows[0].balance, last_claim_at: up.rows[0].last_claim_at, streak_count: up.rows[0].streak_count } };
     } catch (e) {
       await client.query('ROLLBACK');
       throw e;
@@ -440,7 +457,7 @@ class NeonDatabase {
   }
 
   async resetAllCoins() {
-    await this.pool.query(`UPDATE coin_wallets SET balance = 0, last_claim_at = NULL, updated_at = CURRENT_TIMESTAMP`);
+    await this.pool.query(`UPDATE coin_wallets SET balance = 0, last_claim_at = NULL, streak_count = 0, updated_at = CURRENT_TIMESTAMP`);
     await this.pool.query(`DELETE FROM coin_transactions`);
     return true;
   }

@@ -84,7 +84,7 @@ const Header = () => {
                 <MessageCircle className="w-5 h-5" />
               </a>
 
-              <CRCRCoinWidget compact />
+              <CRCRCoinWidget compact navigateOnClick />
               {user ? (
                 <div className="relative" ref={userMenuRef}>
                   <button

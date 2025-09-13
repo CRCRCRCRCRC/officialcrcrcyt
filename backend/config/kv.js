@@ -260,7 +260,8 @@ class KVDatabase {
       await this.kv.hset(key, {
         balance: 0,
         last_claim_at: null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        streak: 0
       });
     }
   }
@@ -270,12 +271,13 @@ class KVDatabase {
     await this.ensureCoinWallet(userId);
     const w = await this.kv.hgetall(key);
     if (!w || Object.keys(w).length === 0) {
-      return { user_id: userId, balance: 0, last_claim_at: null };
+      return { user_id: userId, balance: 0, last_claim_at: null, streak: 0 };
     }
     return {
       user_id: userId,
       balance: parseInt(w.balance) || 0,
-      last_claim_at: w.last_claim_at || null
+      last_claim_at: w.last_claim_at || null,
+      streak: parseInt(w.streak) || 0
     };
   }
 
@@ -313,7 +315,8 @@ class KVDatabase {
     await this.kv.hset(key, {
       balance: newBal,
       last_claim_at: w.last_claim_at || null,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      streak: parseInt(w.streak) || 0
     });
     const txKey = this.txKey(userId);
     await this.kv.sadd(txKey, JSON.stringify({
@@ -322,7 +325,7 @@ class KVDatabase {
       reason,
       created_at: new Date().toISOString()
     }));
-    return { success: true, wallet: { user_id: userId, balance: newBal, last_claim_at: w.last_claim_at || null } };
+    return { success: true, wallet: { user_id: userId, balance: newBal, last_claim_at: w.last_claim_at || null, streak: parseInt(w.streak) || 0 } };
   }
 
   async claimDaily(userId, reward = 50, cooldownMs = 24 * 60 * 60 * 1000) {
@@ -337,21 +340,35 @@ class KVDatabase {
       return { success: false, nextClaimInMs: cooldownMs - passed };
     }
 
-    const newBal = (parseInt(w.balance) || 0) + Math.max(0, parseInt(reward) || 0);
+    // 連續簽到加成（以 UTC 日期計）
+    const lastDateStr = w.last_claim_at ? new Date(w.last_claim_at).toISOString().slice(0, 10) : null;
+    const nowDateStr = new Date().toISOString().slice(0, 10);
+    let newStreak = 1;
+    if (lastDateStr) {
+      const deltaDays = Math.floor((Date.parse(nowDateStr) - Date.parse(lastDateStr)) / (24 * 60 * 60 * 1000));
+      if (deltaDays === 1) newStreak = (parseInt(w.streak) || 0) + 1;
+      else if (deltaDays > 1) newStreak = 1;
+      else newStreak = parseInt(w.streak) || 1; // 同日，理論上已被冷卻擋下
+    }
+    const base = Math.max(0, parseInt(reward) || 0);
+    const bonus = Math.min(50, Math.max(0, (newStreak - 1) * 10));
+    const grant = base + bonus;
+    const newBal = (parseInt(w.balance) || 0) + grant;
     const lastClaimISO = new Date().toISOString();
     await this.kv.hset(key, {
       balance: newBal,
       last_claim_at: lastClaimISO,
-      updated_at: lastClaimISO
+      updated_at: lastClaimISO,
+      streak: newStreak
     });
     const txKey = this.txKey(userId);
     await this.kv.sadd(txKey, JSON.stringify({
       type: 'claim',
-      amount: Math.max(0, parseInt(reward) || 0),
-      reason: '每日簽到',
+      amount: grant,
+      reason: `每日簽到(連續${newStreak}天)`,
       created_at: lastClaimISO
     }));
-    return { success: true, amount: Math.max(0, parseInt(reward) || 0), wallet: { user_id: userId, balance: newBal, last_claim_at: lastClaimISO } };
+    return { success: true, amount: grant, wallet: { user_id: userId, balance: newBal, last_claim_at: lastClaimISO, streak: newStreak } };
   }
 
   async getCoinHistory(userId, limit = 50) {
@@ -372,7 +389,8 @@ class KVDatabase {
       await this.kv.hset(this.walletKey(uid), {
         balance: 0,
         last_claim_at: null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        streak: 0
       });
       // 清空交易
       await this.kv.del(this.txKey(uid));

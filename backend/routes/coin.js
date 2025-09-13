@@ -47,11 +47,12 @@ function toISO(v) {
 }
 
 function mapWallet(w) {
-  if (!w) return { balance: 0, lastClaimAt: null };
+  if (!w) return { balance: 0, lastClaimAt: null, streak: 0 };
   const lastRaw = w.lastClaimAt ?? w.last_claim_at ?? null;
   return {
     balance: Number(w.balance) || 0,
-    lastClaimAt: toISO(lastRaw)
+    lastClaimAt: toISO(lastRaw),
+    streak: Number(w.streak ?? w.streak_count) || 0
   };
 }
 
