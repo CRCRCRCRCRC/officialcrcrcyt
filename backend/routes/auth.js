@@ -205,6 +205,50 @@ router.post('/google', async (req, res) => {
   }
 });
 
+// 人類驗證（Cloudflare Turnstile）
+router.post('/human-verify', async (req, res) => {
+  try {
+    const token = req.body?.token;
+    const SECRET = process.env.TURNSTILE_SECRET_KEY;
+    if (!token) {
+      return res.status(400).json({ ok: false, error: '缺少驗證 token' });
+    }
+    if (!SECRET) {
+      return res.status(500).json({ ok: false, error: '伺服器未設置 TURNSTILE_SECRET_KEY' });
+    }
+
+    // 驗證 Cloudflare Turnstile token
+    const params = new URLSearchParams();
+    params.append('secret', SECRET);
+    params.append('response', token);
+
+    const verifyRes = await axios.post(
+      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+      params.toString(),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+
+    const data = verifyRes.data || {};
+    if (!data.success) {
+      return res.status(401).json({ ok: false, error: '人類驗證失敗', details: data['error-codes'] || [] });
+    }
+
+    // 發一個短期 token 給前端保存（僅作通過入口使用）
+    const humanJwtSecret = process.env.HUMAN_JWT_SECRET || process.env.JWT_SECRET || 'default-jwt-secret';
+    const expiresInSec = 12 * 60 * 60; // 12 小時
+    const humanToken = jwt.sign(
+      { kind: 'human', ok: true },
+      humanJwtSecret,
+      { expiresIn: `${expiresInSec}s` }
+    );
+
+    return res.json({ ok: true, token: humanToken, expiresInSec });
+  } catch (error) {
+    console.error('人類驗證錯誤:', error.response?.data || error.message);
+    return res.status(500).json({ ok: false, error: '人類驗證發生錯誤' });
+  }
+});
+
 // Google OAuth 授權碼登入（需要 client_id + client_secret）
 router.post('/google-code', async (req, res) => {
   try {

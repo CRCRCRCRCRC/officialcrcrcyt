@@ -98,6 +98,9 @@ export const authAPI = {
   
   changePassword: (currentPassword, newPassword) => 
     api.post('/auth/change-password', { currentPassword, newPassword })
+  ,
+  humanVerify: (token) =>
+    api.post('/auth/human-verify', { token })
 }
 
 // 影片 API
