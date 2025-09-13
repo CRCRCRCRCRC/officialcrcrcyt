@@ -49,6 +49,23 @@ api.interceptors.response.use(
         window.location.href = '/'
       }
     }
+    // 處理 403 無效令牌（特別是 /coin/ 端點的舊 token）
+    else if (error.response?.status === 403) {
+      try {
+        const url = String(error?.config?.url || '')
+        const isCoinApi = url.includes('/coin/')
+        const errMsg = error?.response?.data?.error || ''
+        if (isCoinApi && /無效的訪問令牌|invalid/i.test(errMsg)) {
+          localStorage.removeItem('website_token')
+          localStorage.removeItem('website_user')
+          // 保守做法：僅在當前非管理路由時回首頁
+          const path = window.location.pathname || ''
+          if (!path.startsWith('/admin')) {
+            window.location.href = '/'
+          }
+        }
+      } catch {}
+    }
     return Promise.reject(error)
   }
 )

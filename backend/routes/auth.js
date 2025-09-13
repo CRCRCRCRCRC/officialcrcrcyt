@@ -187,9 +187,10 @@ router.post('/google', async (req, res) => {
     }
 
     // 簽發我們自己的 JWT
+    const adminJwtSecret = process.env.JWT_SECRET || 'default-jwt-secret';
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role, name },
-      process.env.JWT_SECRET || 'default-jwt-secret',
+      adminJwtSecret,
       { expiresIn: '24h' }
     );
 
@@ -283,9 +284,10 @@ router.post('/google-code', async (req, res) => {
     }
 
     // 簽發 JWT
+    const adminJwtSecret2 = process.env.JWT_SECRET || 'default-jwt-secret';
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role, name },
-      process.env.JWT_SECRET || 'default-jwt-secret',
+      adminJwtSecret2,
       { expiresIn: '24h' }
     );
 
@@ -342,9 +344,10 @@ router.post('/google-public', async (req, res) => {
       try { await database.updateUser(user.id, { username: user.username, password: user.password, role: user.role }); } catch (e) {}
     }
 
+    const websiteJwtSecret = process.env.WEBSITE_JWT_SECRET || process.env.JWT_SECRET || 'default-jwt-secret';
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: 'user', name, picture },
-      process.env.JWT_SECRET || 'default-jwt-secret',
+      websiteJwtSecret,
       { expiresIn: '7d' }
     );
 
