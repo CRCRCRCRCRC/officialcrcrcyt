@@ -1,11 +1,11 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useCoin } from '../contexts/CoinContext'
 import CoinIcon from '../../CRCRCoin-icon.svg'
 
 const CRCRCoinWidget = ({ compact = false, navigateOnClick = false }) => {
-  const { isLoggedIn, hydrated, balance, streak, history, claimDaily, canClaimNow, nextClaimInMs } = useCoin()
+  const { isLoggedIn, hydrated, balance, streak, lastClaimAt, history, claimDaily, canClaimNow, nextClaimInMs } = useCoin()
 
   const [open, setOpen] = useState(false)
   const [leftMs, setLeftMs] = useState(nextClaimInMs)
@@ -16,9 +16,7 @@ const CRCRCoinWidget = ({ compact = false, navigateOnClick = false }) => {
   useEffect(() => {
     setLeftMs(nextClaimInMs)
     if (nextClaimInMs <= 0) return
-    const id = setInterval(() => {
-      setLeftMs(ms => (ms > 1000 ? ms - 1000 : 0))
-    }, 1000)
+    const id = setInterval(() => setLeftMs(ms => (ms > 1000 ? ms - 1000 : 0)), 1000)
     return () => clearInterval(id)
   }, [nextClaimInMs])
 
@@ -68,21 +66,28 @@ const CRCRCoinWidget = ({ compact = false, navigateOnClick = false }) => {
     'bg-white/60 hover:bg-white/80 border-white/30 backdrop-blur-md shadow-sm hover:shadow ' +
     'text-gray-800'
 
+  const dateStr = (d) => new Date(d).toISOString().slice(0, 10)
+  const todayStr = dateStr(new Date())
+  const lastStr = lastClaimAt ? dateStr(lastClaimAt) : null
+  const canClaim = leftMs <= 0
+  const nextStreak = (() => {
+    if (!lastStr) return 1
+    if (!canClaim) return (Number(streak) || 0) + 1 // 明日
+    const deltaDays = Math.floor((Date.parse(todayStr) - Date.parse(lastStr)) / (24 * 60 * 60 * 1000))
+    return deltaDays === 1 ? (Number(streak) || 0) + 1 : 1
+  })()
+  const rewardLabel = canClaim ? '今日簽到獎勵' : '明日簽到獎勵'
   const nextGrant = (() => {
-    try {
-      const base = 50
-      const bonus = Math.min(50, Math.max(0, (Math.max(0, streak || 0)) * 10))
-      return { base, bonus, total: base + bonus }
-    } catch { return { base: 50, bonus: 0, total: 50 } }
+    const base = 50
+    const bonus = Math.min(50, Math.max(0, (nextStreak - 1) * 10))
+    return { base, bonus, total: base + bonus }
   })()
 
   return (
     <div ref={wrapperRef} className={compact ? 'relative inline-block' : 'relative'}>
       <button
         type="button"
-        onClick={() => {
-          if (navigateOnClick) { navigate('/wallet') } else { setOpen(v => !v) }
-        }}
+        onClick={() => { if (navigateOnClick) { navigate('/wallet') } else { setOpen(v => !v) } }}
         className={pillClass}
         aria-expanded={open}
         aria-haspopup="dialog"
@@ -115,14 +120,14 @@ const CRCRCoinWidget = ({ compact = false, navigateOnClick = false }) => {
                   <div className="text-[10px] text-gray-500 mb-1">CRCRCoin</div>
                 </div>
                 <div className="mt-2 text-[11px] text-gray-600">
-                  連續簽到：<span className="font-semibold text-yellow-700">{Math.max(0, streak || 0)}</span> 天
+                  連續簽到：<span className="font-semibold text-yellow-700">{Math.max(0, Number(streak) || 0)}</span> 天
                 </div>
               </div>
             </div>
 
             <div className="px-4 pb-2">
-              <div className="text-[11px] text-gray-600 mb-1">
-                每日簽到獎勵：<span className="font-semibold text-yellow-700">+{nextGrant.total}</span>
+              <div className="text-[11px] text-gray-700 mb-1">
+                {rewardLabel}：<span className="font-semibold text-yellow-700">+{nextGrant.total}</span>
                 <span className="text-gray-500 ml-1">(含加成 +{nextGrant.bonus})</span>
               </div>
               <div className="flex items-center justify-between">
@@ -177,3 +182,4 @@ const CRCRCoinWidget = ({ compact = false, navigateOnClick = false }) => {
 }
 
 export default CRCRCoinWidget
+

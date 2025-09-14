@@ -26,12 +26,23 @@ const Wallet = () => {
     return `${pad(h)}:${pad(m)}:${pad(sec)}`
   }
 
+  const dateStr = (d) => new Date(d).toISOString().slice(0, 10)
+  const todayStr = dateStr(new Date())
+  const lastStr = lastClaimAt ? dateStr(lastClaimAt) : null
+
+  const canClaim = leftMs <= 0
+  const nextStreak = (() => {
+    if (!lastStr) return 1
+    if (!canClaim) return (Number(streak) || 0) + 1 // 明日
+    const deltaDays = Math.floor((Date.parse(todayStr) - Date.parse(lastStr)) / (24 * 60 * 60 * 1000))
+    return deltaDays === 1 ? (Number(streak) || 0) + 1 : 1
+  })()
+
+  const rewardLabel = canClaim ? '今日簽到獎勵' : '明日簽到獎勵'
   const nextGrant = (() => {
-    try {
-      const base = 50
-      const bonus = Math.min(50, Math.max(0, (Math.max(0, streak || 0)) * 10))
-      return { base, bonus, total: base + bonus }
-    } catch { return { base: 50, bonus: 0, total: 50 } }
+    const base = 50
+    const bonus = Math.min(50, Math.max(0, (nextStreak - 1) * 10))
+    return { base, bonus, total: base + bonus }
   })()
 
   const onDaily = async () => {
@@ -70,10 +81,10 @@ const Wallet = () => {
               </div>
               <div className="bg-white rounded-2xl border shadow p-6">
                 <div className="text-sm text-gray-600">連續簽到</div>
-                <div className="mt-2 text-3xl font-black text-gray-900">{Math.max(0, streak || 0)} <span className="text-base font-semibold">天</span></div>
+                <div className="mt-2 text-3xl font-black text-gray-900">{Math.max(0, Number(streak) || 0)} <span className="text-base font-semibold">天</span></div>
               </div>
               <div className="bg-white rounded-2xl border shadow p-6">
-                <div className="text-sm text-gray-600">今日簽到獎勵</div>
+                <div className="text-sm text-gray-600">{rewardLabel}</div>
                 <div className="mt-2 text-3xl font-black text-gray-900">+{nextGrant.total} <span className="text-base font-semibold">(含加成 +{nextGrant.bonus})</span></div>
               </div>
             </div>
@@ -87,9 +98,10 @@ const Wallet = () => {
                   type="button"
                   onClick={onDaily}
                   disabled={leftMs > 0 || claiming}
+                  aria-disabled={leftMs > 0 || claiming}
                   className={`px-6 py-2 rounded-lg text-white font-semibold ${leftMs > 0 || claiming ? 'bg-gray-300 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'}`}
                 >
-                  {claiming ? '簽到中..' : '簽到'}
+                  {leftMs > 0 ? '已簽到' : (claiming ? '簽到中..' : '簽到')}
                 </button>
               </div>
             </div>
@@ -101,10 +113,12 @@ const Wallet = () => {
               ) : (
                 <ul className="divide-y">
                   {history.map((h, i) => (
-                    <li key={i} className="flex items-center justify-between py-2 text-sm">
-                      <div className="text-gray-700">{h.reason || (h.type === 'claim' ? '每日簽到' : h.type === 'earn' ? '獲得' : '消費')}</div>
-                      <div className={`${h.type === 'spend' ? 'text-rose-600' : 'text-emerald-700'} font-semibold`}>{h.type === 'spend' ? '-' : '+'}{fmtCoin(h.amount)}</div>
-                      <div className="text-gray-400">{h.at ? new Date(h.at).toLocaleString('zh-TW') : ''}</div>
+                    <li key={i} className="grid grid-cols-12 items-center py-2 text-sm">
+                      <div className="col-span-7 text-gray-700">{h.reason || (h.type === 'claim' ? '每日簽到' : h.type === 'earn' ? '獲得' : '消費')}</div>
+                      <div className={`col-span-2 text-right font-mono tabular-nums font-semibold ${h.type === 'spend' ? 'text-rose-600' : 'text-emerald-700'}`}>
+                        {h.type === 'spend' ? '-' : '+'}{fmtCoin(h.amount)}
+                      </div>
+                      <div className="col-span-3 text-right text-gray-400">{h.at ? new Date(h.at).toLocaleString('zh-TW') : ''}</div>
                     </li>
                   ))}
                 </ul>
