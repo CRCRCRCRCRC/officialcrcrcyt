@@ -75,7 +75,7 @@ const Profile = () => {
       <div className="container-custom py-10">
         <h1 className="text-3xl font-bold mb-6">個人資料 & 設定</h1>
 
-        <div className="bg-white rounded-2xl border shadow p-8 max-w-3xl mx-auto">
+        <div className="bg-white rounded-2xl border shadow p-8 max-w-3xl">
           <div className="flex items-start gap-8">
             <img src={preview} alt="avatar" className="w-24 h-24 rounded-full border object-cover" />
             <div className="flex-1 space-y-5">
@@ -91,7 +91,12 @@ const Profile = () => {
                 <label className="block text-sm text-gray-600 mb-1">頭像 URL</label>
                 <input value={picture} onChange={e => setPicture(e.target.value)} className="input w-full" placeholder="https://..." />
                 <div className="mt-2 text-sm text-gray-500">或上傳圖片（最大 512KB）</div>
-                <input type="file" accept="image/*" className="mt-1" onChange={e => onFile(e.target.files?.[0])} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                  onChange={e => onFile(e.target.files?.[0])}
+                />
               </div>
               <div className="pt-2">
                 <button onClick={onSave} disabled={saving} className="px-6 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50">
