@@ -67,4 +67,3 @@ export const WebsiteAuthProvider = ({ children }) => {
     </WebsiteAuthContext.Provider>
   )
 }
-
