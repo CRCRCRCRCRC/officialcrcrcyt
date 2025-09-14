@@ -56,6 +56,7 @@ const Profile = () => {
         const d = res.data || {}
         setName(d.name || '')
         setPicture(d.picture || '')
+        updateProfile({ name: d.name || '', picture: d.picture || '' })
       } catch {}
       setLoading(false)
     })()
@@ -74,8 +75,8 @@ const Profile = () => {
       <div className="container-custom py-10">
         <h1 className="text-3xl font-bold mb-6">個人資料 & 設定</h1>
 
-        <div className="bg-white rounded-2xl border shadow p-6 max-w-2xl">
-          <div className="flex items-start gap-6">
+        <div className="bg-white rounded-2xl border shadow p-8 max-w-3xl mx-auto">
+          <div className="flex items-start gap-8">
             <img src={preview} alt="avatar" className="w-24 h-24 rounded-full border object-cover" />
             <div className="flex-1 space-y-5">
               <div>
@@ -107,3 +108,5 @@ const Profile = () => {
 }
 
 export default Profile
+
+
