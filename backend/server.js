@@ -11,6 +11,7 @@ const channelRoutes = require('./routes/channel');
 const settingsRoutes = require('./routes/settings');
 const announcementRoutes = require('./routes/announcements');
 const coinRoutes = require('./routes/coin');
+const profileRoutes = require('./routes/profile');
 const database = require('./config/database');
 
 const app = express();
@@ -52,6 +53,7 @@ app.use('/api/channel', channelRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/coin', coinRoutes);
+app.use('/api/profile', profileRoutes);
 
 // 健康檢查和初始化
 app.get('/api/health', async (req, res) => {

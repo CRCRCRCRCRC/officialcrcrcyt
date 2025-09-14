@@ -26,8 +26,8 @@ const Header = () => {
   }, [])
 
   const navigation = [
-    { name: '首頁', href: '/' },
-    { name: '公告', href: '/announcements' },
+    { name: '首�?', href: '/' },
+    { name: '?��?', href: '/announcements' },
   ]
 
   const isActive = (path) => location.pathname === path
@@ -96,19 +96,24 @@ const Header = () => {
                     <ChevronDown className="w-4 h-4 text-gray-500" />
                   </button>
                   {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg p-2 z-50">
-                      <button
-                        className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-50 rounded"
-                        onClick={() => {
-                          logout()
-                          setIsUserMenuOpen(false)
-                        }}
-                      >
-                        <LogOut className="w-4 h-4" />
-                        登出
-                      </button>
-                    </div>
-                  )}
+  <div className="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg p-2 z-50">
+    <Link
+      to="/profile"
+      className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-50 rounded"
+      onClick={() => setIsUserMenuOpen(false)}
+    >
+      <User className="w-4 h-4" />
+      個人資料&設定
+    </Link>
+    <button
+      className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-50 rounded"
+      onClick={() => { logout(); setIsUserMenuOpen(false) }}
+    >
+      <LogOut className="w-4 h-4" />
+      登出
+    </button>
+  </div>
+)}
                 </div>
               ) : (
                 <GoogleLoginButtonPublic />
@@ -154,7 +159,7 @@ const Header = () => {
                 
                 {/* Mobile Social Links */}
                 <div className="flex items-center space-x-4 px-4 pt-4 border-t border-gray-200">
-                  <CRCRCoinWidget />
+                  <CRCRCoinWidget navigateOnClick />
                   <a
                     href="https://youtube.com/@officialcrcrcyt"
                     target="_blank"
@@ -184,3 +189,5 @@ const Header = () => {
 }
 
 export default Header
+
+

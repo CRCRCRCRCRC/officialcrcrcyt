@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+﻿import { createContext, useContext, useEffect, useState } from 'react'
 import { authAPI } from '../services/api'
 
 const WebsiteAuthContext = createContext()
@@ -35,8 +35,34 @@ export const WebsiteAuthProvider = ({ children }) => {
     setUser(null)
   }
 
+  const updateProfile = (partial) => {
+    setUser((prev) => {
+      const current = prev || {}
+      const next = {
+        ...current,
+        ...(partial.name !== undefined ? { name: String(partial.name || '').trim() } : {}),
+        ...(partial.picture !== undefined ? { picture: String(partial.picture || '') } : {}),
+      }
+      try { localStorage.setItem('website_user', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
+
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === 'website_user') {
+        try { setUser(e.newValue ? JSON.parse(e.newValue) : null) } catch {}
+      }
+      if (e.key === 'website_token') {
+        setToken(localStorage.getItem('website_token'))
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
   return (
-    <WebsiteAuthContext.Provider value={{ user, token, loginWithGoogleCode, logout }}>
+    <WebsiteAuthContext.Provider value={{ user, token, loginWithGoogleCode, logout, updateProfile }}>
       {children}
     </WebsiteAuthContext.Provider>
   )

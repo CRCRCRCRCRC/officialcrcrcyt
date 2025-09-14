@@ -184,6 +184,13 @@ export const coinAPI = {
   // 加幣（管理員）
   earn: (amount, reason = '任務獎勵') => api.post('/coin/earn', { amount, reason }, { headers: authHeaderForCoin() })
 }
+
+// Profile API（網站使用者）
+export const profileAPI = {
+  get: () => api.get('/profile'),
+  update: (data) => api.post('/profile', data),
+  uploadAvatar: (formData) => api.post('/profile/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+}
 export const announcementAPI = {
   getAll: (params = {}) =>
     api.get('/announcements', { params }),
