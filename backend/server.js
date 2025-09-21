@@ -53,6 +53,15 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/coin', coinRoutes);
 
+// 簡單測試端點
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: 'API 服務器正常運行',
+    timestamp: new Date().toISOString(),
+    routes: ['/api/auth', '/api/channel', '/api/settings', '/api/announcements', '/api/coin']
+  });
+});
+
 
 
 // 健康檢查和初始化
