@@ -44,22 +44,24 @@ const Header = () => {
             <span className="text-xl font-display font-bold text-gradient">CRCRC</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8 h-full">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`flex items-center justify-center h-full px-4 text-sm font-medium transition-colors duration-200 ${
-                  isActive(item.href)
-                    ? 'text-primary-600 border-b-2 border-primary-600'
-                    : 'text-gray-700 hover:text-primary-600'
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
+          {/* Desktop Navigation - 水平居中 */}
+          <div className="absolute left-1/2 transform -translate-x-1/2">
+            <nav className="hidden md:flex items-center space-x-8">
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`flex items-center justify-center px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-lg ${
+                    isActive(item.href)
+                      ? 'text-primary-600 bg-primary-50'
+                      : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+          </div>
 
           {/* Social Links & Mobile Menu Button */}
           <div className="flex items-center space-x-4">
