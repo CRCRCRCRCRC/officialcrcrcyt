@@ -7,6 +7,7 @@ import VideoDetail from './pages/VideoDetail'
 // import About from './pages/About'
 import Announcements from './pages/Announcements'
 import AnnouncementDetail from './pages/AnnouncementDetail'
+import Wallet from './pages/Wallet'
 
 import AdminLogin from './pages/admin/Login'
 import AdminDashboard from './pages/admin/Dashboard'
@@ -28,6 +29,7 @@ function App() {
           {/* <Route path="about" element={<About />} /> */}
           <Route path="announcements" element={<Announcements />} />
           <Route path="announcements/:slug" element={<AnnouncementDetail />} />
+          <Route path="wallet" element={<Wallet />} />
 
         </Route>
 

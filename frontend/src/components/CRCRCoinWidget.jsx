@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useCoin } from '../contexts/CoinContext'
 import CoinIcon from '../../CRCRCoin-icon.svg'
@@ -95,18 +96,15 @@ const CRCRCoinWidget = ({ compact = false }) => {
 
   return (
     <div ref={wrapperRef} className={compact ? 'relative inline-block' : 'relative'}>
-      {/* Pill button */}
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
+      {/* Pill button - Click to go to wallet */}
+      <Link
+        to="/wallet"
         className={pillClass}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        title="CRCRCoin 錢包"
+        title="前往 CRCRCoin 錢包"
       >
         <img src={CoinIcon} className="w-4 h-4" alt="CRCRCoin" />
         <span className="font-semibold tabular-nums">{hydrated ? fmtCoin(balance) : '...'}</span>
-      </button>
+      </Link>
 
       {/* Dropdown panel (glassmorphism) */}
       {open && (
