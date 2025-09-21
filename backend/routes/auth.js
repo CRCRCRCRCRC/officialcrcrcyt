@@ -178,11 +178,11 @@ router.post('/google', async (req, res) => {
     if (!user) {
       // 建立隨機密碼（不會用到，只為符合資料表 NOT NULL）
       const randomPassword = await bcrypt.hash('oauth_google_' + Date.now(), 10);
-      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole, email: email });
-      user = { id: userId, username: email, role: desiredRole, email: email };
+      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
+      user = { id: userId, username: email, role: desiredRole };
     } else if (user.role !== desiredRole) {
       // 提升為 admin（若必要）
-      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole, email: email }); } catch (e) {}
+      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole }); } catch (e) {}
       user.role = desiredRole;
     }
 
@@ -276,10 +276,10 @@ router.post('/google-code', async (req, res) => {
     const desiredRole = 'admin';
     if (!user) {
       const randomPassword = await bcrypt.hash('oauth_google_' + Date.now(), 10);
-      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole, email: email });
-      user = { id: userId, username: email, role: desiredRole, email: email };
+      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
+      user = { id: userId, username: email, role: desiredRole };
     } else if (user.role !== desiredRole) {
-      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole, email: email }); } catch (e) {}
+      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole }); } catch (e) {}
       user.role = desiredRole;
     }
 
@@ -338,12 +338,11 @@ router.post('/google-public', async (req, res) => {
     const desiredRole = 'user';
     if (!user) {
       const randomPassword = await bcrypt.hash('oauth_google_' + Date.now(), 10);
-      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole, email: email });
-      user = { id: userId, username: email, role: desiredRole, email: email };
+      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
+      user = { id: userId, username: email, role: desiredRole };
     } else if (user.role !== desiredRole) {
-      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: user.role, email: email }); } catch (e) {}
+      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: user.role }); } catch (e) {}
     }
-
 
     const websiteJwtSecret = process.env.WEBSITE_JWT_SECRET || process.env.JWT_SECRET || 'default-jwt-secret';
     const token = jwt.sign(
@@ -356,74 +355,6 @@ router.post('/google-public', async (req, res) => {
   } catch (error) {
     console.error('Google 公開登入錯誤:', error.response?.data || error.message);
     res.status(401).json({ error: 'Google 公開登入失敗：' + (error.response?.data?.error_description || error.message) });
-  }
-});
-
-// 修復用戶 email 字段（簡單版本）
-router.post('/fix-emails', async (req, res) => {
-  try {
-    console.log('🔧 修復用戶 email 字段...');
-
-    if (database.pool) {
-      // PostgreSQL - 先檢查現有用戶
-      const checkResult = await database.pool.query('SELECT id, username, email FROM users');
-      console.log('📋 現有用戶列表:', checkResult.rows);
-
-      // 修復 email 字段
-      const result = await database.pool.query(
-        "UPDATE users SET email = username WHERE email IS NULL OR email = ''"
-      );
-      console.log(`✅ 修復了 ${result.rowCount} 個用戶的 email 字段`);
-
-      // 再次檢查修復後的結果
-      const verifyResult = await database.pool.query('SELECT id, username, email FROM users');
-      console.log('📋 修復後的用戶列表:', verifyResult.rows);
-
-      res.json({
-        success: true,
-        message: `成功修復 ${result.rowCount} 個用戶的 email 字段`,
-        before: checkResult.rows,
-        after: verifyResult.rows
-      });
-    } else {
-      // KV 數據庫
-      const userIds = await database.kv.smembers('users');
-      let fixedCount = 0;
-      const beforeUsers = [];
-
-      for (const userId of userIds) {
-        const user = await database.kv.hgetall(userId);
-        beforeUsers.push({ id: userId, ...user });
-      }
-      console.log('📋 KV 數據庫現有用戶:', beforeUsers);
-
-      for (const userId of userIds) {
-        const user = await database.kv.hgetall(userId);
-        if (user && (!user.email || user.email === '')) {
-          if (user.username && user.username.includes('@')) {
-            await database.kv.hset(userId, { ...user, email: user.username });
-            fixedCount++;
-          }
-        }
-      }
-
-      const afterUsers = [];
-      for (const userId of userIds) {
-        const user = await database.kv.hgetall(userId);
-        afterUsers.push({ id: userId, ...user });
-      }
-      console.log('📋 KV 數據庫修復後用戶:', afterUsers);
-
-      res.json({
-        success: true,
-        message: `成功修復 ${fixedCount} 個用戶的 email 字段`,
-        before: beforeUsers,
-        after: afterUsers
-      });
-    }
-  } catch (error) {
-    console.error('修復用戶 email 失敗:', error);
-    res.status(500).json({ error: '修復失敗', details: error.message });
   }
 });
 

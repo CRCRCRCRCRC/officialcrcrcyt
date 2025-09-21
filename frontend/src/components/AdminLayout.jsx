@@ -17,9 +17,7 @@ import {
   Sparkles,
   Zap,
   TrendingUp,
-  Megaphone,
-  MessageCircle,
-  Coins
+  Megaphone
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -61,18 +59,6 @@ const AdminLayout = () => {
       href: '/admin/settings',
       icon: SettingsIcon,
       gradient: 'from-green-500 to-teal-600'
-    },
-    {
-      name: 'Discord 申請',
-      href: '/admin/discord-applications',
-      icon: MessageCircle,
-      gradient: 'from-blue-500 to-cyan-600'
-    },
-    {
-      name: '加幣管理',
-      href: '/admin/add-coins',
-      icon: Coins,
-      gradient: 'from-yellow-500 to-amber-600'
     }
   ]
 

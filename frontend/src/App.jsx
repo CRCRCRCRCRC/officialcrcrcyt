@@ -12,10 +12,9 @@ import Shop from './pages/Shop'
 
 import AdminLogin from './pages/admin/Login'
 import AdminDashboard from './pages/admin/Dashboard'
+
 import AdminAnnouncements from './pages/admin/Announcements'
 import AdminSettings from './pages/admin/Settings'
-import DiscordApplications from './pages/admin/DiscordApplications'
-import AddCoins from './pages/admin/AddCoins'
 import ProtectedRoute from './components/ProtectedRoute'
 import NotFound from './pages/NotFound'
 
@@ -50,8 +49,6 @@ function App() {
 
           <Route path="announcements" element={<AdminAnnouncements />} />
           <Route path="settings" element={<AdminSettings />} />
-          <Route path="discord-applications" element={<DiscordApplications />} />
-          <Route path="add-coins" element={<AddCoins />} />
         </Route>
 
         {/* 404 頁面 */}
