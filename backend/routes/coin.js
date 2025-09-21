@@ -203,7 +203,7 @@ router.get('/discord-applications', authenticateToken, requireAdmin, async (req,
 
 
 // 通過電子郵件給用戶加幣（僅管理員）
-router.post('/add-coins-by-email', async (req, res) => {
+router.post('/add-coins-by-email', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { email, amount, reason } = req.body;
 
@@ -215,41 +215,33 @@ router.post('/add-coins-by-email', async (req, res) => {
       return res.status(400).json({ error: '請提供有效的金額' });
     }
 
-    console.log('🔍 開始查找用戶:', email.trim());
+     // 查找用戶
+     const user = await database.getUserByEmail(email.trim());
 
-    // 查找用戶
-    const user = await database.getUserByEmail(email.trim());
-    console.log('🔍 通過 email 查找結果:', user);
+     if (!user) {
+       // 如果找不到email，嘗試通過username查找
+       const userByUsername = await database.getUserByUsername(email.trim());
 
-    if (!user) {
-      // 如果找不到email，嘗試通過username查找
-      const userByUsername = await database.getUserByUsername(email.trim());
-      console.log('🔍 通過 username 查找結果:', userByUsername);
-
-      if (!userByUsername) {
-        return res.status(404).json({ error: '找不到該電子郵件或用戶名的用戶' });
-      }
-      return res.status(404).json({
-        error: '找不到該電子郵件的用戶',
-        suggestion: `建議：用戶 "${email.trim()}" 可能沒有設置電子郵件，請聯繫用戶獲取正確的電子郵件地址`
-      });
-    }
-
-    console.log('✅ 找到用戶:', user);
+       if (!userByUsername) {
+         return res.status(404).json({ error: '找不到該電子郵件或用戶名的用戶' });
+       }
+       return res.status(404).json({
+         error: '找不到該電子郵件的用戶',
+         suggestion: `建議：用戶 "${email.trim()}" 可能沒有設置電子郵件，請聯繫用戶獲取正確的電子郵件地址`
+       });
+     }
 
     // 給用戶加幣
-    const result = await database.addCoins(user.id, parseInt(amount), reason || '管理員手動加幣');
-    console.log('✅ 加幣結果:', result);
+     const result = await database.addCoins(user.id, parseInt(amount), reason || '管理員手動加幣');
 
-    return res.json({
-      success: true,
-      message: `成功給用戶 ${user.username} (${email}) 添加 ${amount} CRCRCoin`,
-      wallet: mapWallet(result.wallet)
-    });
+     return res.json({
+       success: true,
+       message: `成功給用戶 ${user.username} (${email}) 添加 ${amount} CRCRCoin`,
+       wallet: mapWallet(result.wallet)
+     });
   } catch (error) {
     console.error('通過電子郵件加幣失敗:', error);
-    console.error('錯誤詳情:', error.stack);
-    res.status(500).json({ error: '加幣失敗', details: error.message });
+    res.status(500).json({ error: '加幣失敗' });
   }
 });
 

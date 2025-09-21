@@ -344,12 +344,6 @@ router.post('/google-public', async (req, res) => {
       try { await database.updateUser(user.id, { username: user.username, password: user.password, role: user.role, email: email }); } catch (e) {}
     }
 
-    // 確保用戶的 email 字段被正確設置
-    if (!user.email) {
-      console.log('🔧 修復用戶 email 字段:', email);
-      await database.updateUser(user.id, { username: user.username, password: user.password, role: user.role, email: email });
-      user.email = email;
-    }
 
     const websiteJwtSecret = process.env.WEBSITE_JWT_SECRET || process.env.JWT_SECRET || 'default-jwt-secret';
     const token = jwt.sign(
@@ -365,104 +359,6 @@ router.post('/google-public', async (req, res) => {
   }
 });
 
-// 修復現有用戶的 email 字段（僅管理員）
-router.post('/fix-user-emails', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    console.log('🔧 開始修復用戶 email 字段...');
 
-    // 檢查數據庫類型
-    let users;
-    if (database.pool) {
-      // PostgreSQL
-      users = await database.pool.query('SELECT id, username, email FROM users WHERE email IS NULL OR email = \'\'');
-
-      let fixedCount = 0;
-      for (const user of users.rows) {
-        // 從 username 中提取 email（假設 username 是 email）
-        if (user.username && user.username.includes('@')) {
-          const email = user.username;
-          await database.pool.query('UPDATE users SET email = $1 WHERE id = $2', [email, user.id]);
-          console.log(`✅ 修復用戶 ${user.id}: ${email}`);
-          fixedCount++;
-        }
-      }
-    } else {
-      // KV 數據庫
-      const userIds = await database.kv.smembers('users');
-      let fixedCount = 0;
-
-      for (const userId of userIds) {
-        const user = await database.kv.hgetall(userId);
-        if (user && (!user.email || user.email === '')) {
-          // 從 username 中提取 email（假設 username 是 email）
-          if (user.username && user.username.includes('@')) {
-            const email = user.username;
-            await database.kv.hset(userId, { ...user, email });
-            console.log(`✅ 修復用戶 ${userId}: ${email}`);
-            fixedCount++;
-          }
-        }
-      }
-    }
-
-    res.json({
-      success: true,
-      message: `成功修復用戶的 email 字段`,
-      fixedCount: users ? users.rows.length : 'KV 數據庫'
-    });
-  } catch (error) {
-    console.error('修復用戶 email 失敗:', error);
-    res.status(500).json({ error: '修復失敗', details: error.message });
-  }
-});
-
-// 測試修復用戶 email（公開訪問，用於修復現有用戶）
-router.post('/test-fix-emails', async (req, res) => {
-  try {
-    console.log('🔧 測試修復用戶 email 字段...');
-
-    // 檢查數據庫類型
-    let fixedCount = 0;
-    if (database.pool) {
-      // PostgreSQL
-      const users = await database.pool.query('SELECT id, username, email FROM users WHERE email IS NULL OR email = \'\'');
-
-      for (const user of users.rows) {
-        // 從 username 中提取 email（假設 username 是 email）
-        if (user.username && user.username.includes('@')) {
-          const email = user.username;
-          await database.pool.query('UPDATE users SET email = $1 WHERE id = $2', [email, user.id]);
-          console.log(`✅ 修復用戶 ${user.id}: ${email}`);
-          fixedCount++;
-        }
-      }
-    } else {
-      // KV 數據庫
-      const userIds = await database.kv.smembers('users');
-
-      for (const userId of userIds) {
-        const user = await database.kv.hgetall(userId);
-        if (user && (!user.email || user.email === '')) {
-          // 從 username 中提取 email（假設 username 是 email）
-          if (user.username && user.username.includes('@')) {
-            const email = user.username;
-            await database.kv.hset(userId, { ...user, email });
-            console.log(`✅ 修復用戶 ${userId}: ${email}`);
-            fixedCount++;
-          }
-        }
-      }
-    }
-
-    res.json({
-      success: true,
-      message: `測試修復完成，修復了 ${fixedCount} 個用戶的 email 字段`,
-      fixedCount
-    });
-  } catch (error) {
-    console.error('測試修復用戶 email 失敗:', error);
-    res.status(500).json({ error: '測試修復失敗', details: error.message });
-  }
-});
 
 module.exports = router;
