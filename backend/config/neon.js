@@ -18,10 +18,17 @@ class NeonDatabase {
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
           username VARCHAR(255) UNIQUE NOT NULL,
+          email VARCHAR(255) UNIQUE,
           password VARCHAR(255) NOT NULL,
           role VARCHAR(50) DEFAULT 'user',
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
+      `);
+
+      // 添加 email 欄位（如果表已存在但沒有 email 欄位）
+      await this.pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE
       `);
 
       // 創建影片表
@@ -166,6 +173,14 @@ class NeonDatabase {
     const result = await this.pool.query(
       'SELECT * FROM users WHERE id = $1',
       [userId]
+    );
+    return result.rows[0] || null;
+  }
+
+  async getUserByEmail(email) {
+    const result = await this.pool.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
     );
     return result.rows[0] || null;
   }

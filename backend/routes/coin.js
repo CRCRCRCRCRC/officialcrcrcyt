@@ -201,4 +201,70 @@ router.get('/discord-applications', authenticateToken, requireAdmin, async (req,
   }
 });
 
+// 通過電子郵件給用戶加幣（僅管理員）
+router.post('/add-coins-by-email', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { email, amount, reason } = req.body;
+
+    if (!email || !email.trim()) {
+      return res.status(400).json({ error: '請提供用戶電子郵件' });
+    }
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: '請提供有效的金額' });
+    }
+
+    // 查找用戶
+    const user = await database.getUserByEmail(email.trim());
+    if (!user) {
+      return res.status(404).json({ error: '找不到該電子郵件的用戶' });
+    }
+
+    // 給用戶加幣
+    const result = await database.addCoins(user.id, parseInt(amount), reason || '管理員手動加幣');
+
+    return res.json({
+      success: true,
+      message: `成功給用戶 ${email} 添加 ${amount} CRCRCoin`,
+      wallet: mapWallet(result.wallet)
+    });
+  } catch (error) {
+    console.error('通過電子郵件加幣失敗:', error);
+    res.status(500).json({ error: '加幣失敗' });
+  }
+});
+
+// 通過用戶ID給用戶加幣（僅管理員）
+router.post('/add-coins-by-id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { userId, amount, reason } = req.body;
+
+    if (!userId || userId <= 0) {
+      return res.status(400).json({ error: '請提供有效的用戶ID' });
+    }
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: '請提供有效的金額' });
+    }
+
+    // 檢查用戶是否存在
+    const user = await database.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: '找不到該用戶' });
+    }
+
+    // 給用戶加幣
+    const result = await database.addCoins(userId, parseInt(amount), reason || '管理員手動加幣');
+
+    return res.json({
+      success: true,
+      message: `成功給用戶 ${user.username} 添加 ${amount} CRCRCoin`,
+      wallet: mapWallet(result.wallet)
+    });
+  } catch (error) {
+    console.error('通過用戶ID加幣失敗:', error);
+    res.status(500).json({ error: '加幣失敗' });
+  }
+});
+
 module.exports = router;
