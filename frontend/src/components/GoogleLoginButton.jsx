@@ -6,70 +6,70 @@ import { authAPI } from '../services/api'
 const buttonStyles = `
 /* From Uiverse.io by vinodjangid07 */
 .Btn {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  width: 45px;
-  height: 45px;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition-duration: .3s;
-  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199);
-  background-color: rgb(163, 142, 255);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 45px !important;
+  height: 45px !important;
+  border: none !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition-duration: .3s !important;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199) !important;
+  background-color: rgb(163, 142, 255) !important;
 }
 
 /* plus sign */
 .sign {
-  width: 100%;
-  transition-duration: .3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100% !important;
+  transition-duration: .3s !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .sign svg {
-  width: 17px;
+  width: 17px !important;
 }
 
 .sign svg path {
-  fill: white;
+  fill: white !important;
 }
 /* text */
 .text {
-  position: absolute;
-  right: 0%;
-  width: 0%;
-  opacity: 0;
-  color: white;
-  font-size: 1.2em;
-  font-weight: 600;
-  transition-duration: .3s;
+  position: absolute !important;
+  right: 0% !important;
+  width: 0% !important;
+  opacity: 0 !important;
+  color: white !important;
+  font-size: 1.2em !important;
+  font-weight: 600 !important;
+  transition-duration: .3s !important;
 }
 /* hover effect on button width */
 .Btn:hover {
-  width: 125px;
-  border-radius: 40px;
-  transition-duration: .3s;
+  width: 125px !important;
+  border-radius: 40px !important;
+  transition-duration: .3s !important;
 }
 
 .Btn:hover .sign {
-  width: 30%;
-  transition-duration: .3s;
-  padding-left: 20px;
+  width: 30% !important;
+  transition-duration: .3s !important;
+  padding-left: 20px !important;
 }
 /* hover effect button's text */
 .Btn:hover .text {
-  opacity: 1;
-  width: 70%;
-  transition-duration: .3s;
-  padding-right: 10px;
+  opacity: 1 !important;
+  width: 70% !important;
+  transition-duration: .3s !important;
+  padding-right: 10px !important;
 }
 /* button click effect*/
 .Btn:active {
-  transform: translate(2px ,2px);
+  transform: translate(2px ,2px) !important;
 }
 `
 
