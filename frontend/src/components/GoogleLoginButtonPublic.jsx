@@ -54,7 +54,7 @@ const buttonStyles = `
 }
 /* hover effect on button width */
 .Btn:hover {
-  width: 130px !important;
+  width: 135px !important;
   border-radius: 40px !important;
   transition-duration: .3s !important;
 }
@@ -62,7 +62,7 @@ const buttonStyles = `
 .Btn:hover .sign {
   width: 25% !important;
   transition-duration: .3s !important;
-  padding-left: 15px !important;
+  padding-left: 25px !important;
 }
 /* hover effect button's text */
 .Btn:hover .text {
@@ -115,7 +115,7 @@ const GoogleLoginButtonPublic = () => {
         <div className="sign">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-[17px] h-[17px]" />
         </div>
-        <div className="text">GOOGLE登入</div>
+        <div className="text">GOOGLE 登入</div>
       </div>
     </>
   )
