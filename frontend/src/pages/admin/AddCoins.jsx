@@ -12,21 +12,25 @@ const AddCoins = () => {
   const handleSubmit = async (event) => {
     event.preventDefault()
     const trimmedEmail = email.trim()
-    const value = Math.floor(Number(amount) || 0)
+    const value = Math.floor(Number(amount))
 
     if (!trimmedEmail) {
       toast.error('請輸入用戶電子郵件')
       return
     }
-    if (!Number.isFinite(value) || value <= 0) {
-      toast.error('請輸入正確的 CRCRCoin 數量')
+    if (!Number.isFinite(value) || value === 0) {
+      toast.error('請輸入正確的 CRCRCoin 數量（可正負整數）')
       return
     }
 
     setLoading(true)
     try {
       await coinAPI.grantCoins(trimmedEmail, value)
-      toast.success(`已發放 ${value} CRCRCoin 給 ${trimmedEmail}`)
+      if (value > 0) {
+        toast.success(`已發放 ${value} CRCRCoin 給 ${trimmedEmail}`)
+      } else {
+        toast.success(`已扣除 ${Math.abs(value)} CRCRCoin，目標：${trimmedEmail}`)
+      }
       setEmail('')
       setAmount('')
     } catch (error) {
@@ -49,7 +53,7 @@ const AddCoins = () => {
                 管理員發放 CRCRCoin
               </h1>
               <p className="text-sm text-gray-600">
-                直接依電子郵件搜尋用戶並新增 CRCRCoin 餘額
+                直接依電子郵件搜尋用戶，支援發放或扣除 CRCRCoin 餘額
               </p>
             </div>
           </div>
@@ -84,19 +88,19 @@ const AddCoins = () => {
             </label>
             <input
               type="number"
-              min={1}
               step={1}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="例如：100"
+              placeholder="例如：100 或 -50"
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={loading}
               required
             />
           </div>
 
-          <div className="bg-blue-50 border border-blue-100 text-blue-700 text-sm rounded-xl p-4">
-            注意：僅會發放給已經登入過的用戶（Google 登入時使用的電子郵件）。
+          <div className="bg-blue-50 border border-blue-100 text-blue-700 text-sm rounded-xl p-4 space-y-1">
+            <p>注意：僅會發放給已經登入過的用戶（Google 登入時使用的電子郵件）。</p>
+            <p>提示：輸入正數等於發放，輸入負數等於扣除。</p>
           </div>
 
           <button

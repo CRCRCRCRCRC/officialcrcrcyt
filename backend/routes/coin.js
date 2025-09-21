@@ -239,13 +239,13 @@ router.post('/earn', authenticateToken, requireAdmin, async (req, res) => {
 router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const rawEmail = (req.body?.email || '').toString().trim();
-    const amount = Math.max(0, Math.floor(Number(req.body?.amount) || 0));
+    const parsedAmount = Math.floor(Number(req.body?.amount));
+    if (!Number.isFinite(parsedAmount) || parsedAmount === 0) {
+      return res.status(400).json({ error: '金額無效' });
+    }
 
     if (!rawEmail) {
       return res.status(400).json({ error: '請輸入用戶電子郵件' });
-    }
-    if (amount <= 0) {
-      return res.status(400).json({ error: '金額無效' });
     }
 
     let user = await database.getUserByUsername(rawEmail);
@@ -257,7 +257,13 @@ router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(404).json({ error: '找不到該用戶，請確認電子郵件是否正確' });
     }
 
-    const result = await database.addCoins(user.id, amount, `管理員發放 (${req.user.username || req.user.id})`);
+    const result = parsedAmount > 0
+      ? await database.addCoins(user.id, parsedAmount, `管理員發放 (${req.user.username || req.user.id})`)
+      : await database.spendCoins(user.id, Math.abs(parsedAmount), `管理員扣除 (${req.user.username || req.user.id})`);
+
+    if (!result?.success) {
+      return res.status(400).json({ error: result?.error || '調整失敗' });
+    }
 
     return res.json({
       success: true,
