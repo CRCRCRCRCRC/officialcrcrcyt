@@ -50,10 +50,11 @@ const buttonStyles = `
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   transition-duration: .3s !important;
   letter-spacing: 0.5px !important;
+  white-space: nowrap !important;
 }
 /* hover effect on button width */
 .Btn:hover {
-  width: 140px !important;
+  width: 130px !important;
   border-radius: 40px !important;
   transition-duration: .3s !important;
 }
@@ -114,7 +115,7 @@ const GoogleLoginButtonPublic = () => {
         <div className="sign">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-[17px] h-[17px]" />
         </div>
-        <div className="text">GOOGLE LOGIN</div>
+        <div className="text">GOOGLE登入</div>
       </div>
     </>
   )
