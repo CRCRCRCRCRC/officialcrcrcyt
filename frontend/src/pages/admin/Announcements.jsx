@@ -107,7 +107,17 @@ const AdminAnnouncements = () => {
         toast.success('公告已更新')
       } else {
         console.log('📝 創建公告:', formData)
-        const response = await announcementAPI.create(formData)
+        // 如果沒有填寫 slug，則不傳送 slug 參數，讓後端自動生成
+        const createData = {
+          title: formData.title,
+          content: formData.content,
+          published: formData.published
+        }
+        if (formData.slug) {
+          createData.slug = formData.slug
+        }
+
+        const response = await announcementAPI.create(createData)
         console.log('✅ 創建響應完整:', response)
         console.log('✅ 創建響應數據:', response.data)
         console.log('📅 創建響應中的日期:', {
@@ -430,7 +440,7 @@ const AdminAnnouncements = () => {
                       />
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      留空將自動根據標題生成。只能包含小寫字母、數字和連字符。
+                      留空將自動生成8個字元的亂碼（包含數字和字母）。只能包含小寫字母、數字和連字符。
                     </p>
                   </div>
 

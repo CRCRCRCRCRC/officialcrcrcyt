@@ -458,6 +458,17 @@ class NeonDatabase {
     return slug;
   }
 
+  // 生成隨機 slug（8個字元，包含數字和字母）
+  generateRandomSlug(length = 8) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    console.log('🎲 生成隨機 slug:', result);
+    return result;
+  }
+
   // 確保 slug 唯一
   async ensureUniqueSlug(baseSlug) {
     let slug = baseSlug;
@@ -480,7 +491,15 @@ class NeonDatabase {
     const { title, content, slug: customSlug, published = true } = announcementData;
 
     // 生成 slug
-    const baseSlug = customSlug || this.generateSlug(title);
+    let baseSlug;
+    if (customSlug && customSlug.trim()) {
+      // 如果提供了自定義 slug，使用它
+      baseSlug = customSlug.trim();
+    } else {
+      // 如果沒有提供 slug，生成8字元隨機 slug
+      baseSlug = this.generateRandomSlug(8);
+    }
+
     const uniqueSlug = await this.ensureUniqueSlug(baseSlug);
 
     const result = await this.pool.query(`
@@ -529,12 +548,25 @@ class NeonDatabase {
   async updateAnnouncementBySlug(originalSlug, announcementData) {
     const { title, content, slug: customSlug, published } = announcementData;
 
-    // 如果有自定義 slug 或標題改變，重新生成 slug
+    // 獲取現有的公告數據
+    const existingAnnouncement = await this.getAnnouncementBySlug(originalSlug);
+    if (!existingAnnouncement) {
+      throw new Error('公告不存在');
+    }
+
+    // 決定是否需要更新 slug
     let newSlug = null;
     if (customSlug !== undefined || title !== undefined) {
       const baseSlug = customSlug || this.generateSlug(title);
       newSlug = await this.ensureUniqueSlugExcluding(baseSlug, originalSlug);
     }
+
+    // 準備更新數據
+    const updateData = {
+      title: title !== undefined ? title : existingAnnouncement.title,
+      content: content !== undefined ? content : existingAnnouncement.content,
+      published: published !== undefined ? published : existingAnnouncement.published
+    };
 
     let query, params;
     if (newSlug) {
@@ -544,7 +576,7 @@ class NeonDatabase {
         WHERE slug = $5
         RETURNING title, slug, content, published, created_at, updated_at
       `;
-      params = [title, newSlug, content, published, originalSlug];
+      params = [updateData.title, newSlug, updateData.content, updateData.published, originalSlug];
     } else {
       query = `
         UPDATE announcements
@@ -552,7 +584,7 @@ class NeonDatabase {
         WHERE slug = $4
         RETURNING title, slug, content, published, created_at, updated_at
       `;
-      params = [title, content, published, originalSlug];
+      params = [updateData.title, updateData.content, updateData.published, originalSlug];
     }
 
     const result = await this.pool.query(query, params);
