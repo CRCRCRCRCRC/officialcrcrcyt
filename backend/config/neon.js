@@ -123,6 +123,23 @@ class NeonDatabase {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS coin_orders (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          product_id VARCHAR(100) NOT NULL,
+          product_name VARCHAR(255) NOT NULL,
+          price INTEGER NOT NULL,
+          discord_id VARCHAR(100) NOT NULL,
+          status VARCHAR(50) DEFAULT 'pending',
+          user_email VARCHAR(255),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await this.pool.query(`
+        ALTER TABLE coin_orders
+        ADD COLUMN IF NOT EXISTS user_email VARCHAR(255)
+      `);
 
       console.log('✅ PostgreSQL 資料表初始化完成');
     } catch (error) {
@@ -495,6 +512,51 @@ class NeonDatabase {
     await this.pool.query(`UPDATE coin_wallets SET balance = 0, last_claim_at = NULL, updated_at = CURRENT_TIMESTAMP`);
     await this.pool.query(`DELETE FROM coin_transactions`);
     return true;
+  }
+
+  async createCoinOrder(userId, orderData) {
+    const {
+      product_id,
+      product_name,
+      price,
+      discord_id,
+      status = 'pending',
+      user_email = null
+    } = orderData;
+
+    const result = await this.pool.query(
+      `INSERT INTO coin_orders (user_id, product_id, product_name, price, discord_id, status, user_email)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       RETURNING id, user_id, product_id, product_name, price, discord_id, status, user_email, created_at`,
+      [userId, product_id, product_name, price, discord_id, status, user_email]
+    );
+
+    return result.rows[0];
+  }
+
+  async getCoinOrders(limit = 100) {
+    const max = Math.max(1, Math.min(500, parseInt(limit) || 100));
+    const res = await this.pool.query(
+      `SELECT o.id, o.user_id, o.product_id, o.product_name, o.price, o.discord_id, o.status,
+              o.user_email, o.created_at, u.username AS current_username
+       FROM coin_orders o
+       LEFT JOIN users u ON u.id = o.user_id
+       ORDER BY o.created_at DESC
+       LIMIT $1`,
+      [max]
+    );
+
+    return res.rows.map(row => ({
+      id: row.id,
+      user_id: row.user_id,
+      product_id: row.product_id,
+      product_name: row.product_name,
+      price: row.price,
+      discord_id: row.discord_id,
+      status: row.status,
+      user_email: row.user_email || row.current_username || null,
+      created_at: row.created_at
+    }));
   }
 
   // 生成 slug

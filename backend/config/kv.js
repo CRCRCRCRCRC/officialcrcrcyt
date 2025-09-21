@@ -379,6 +379,53 @@ class KVDatabase {
     }
     return true;
   }
+
+  async createCoinOrder(userId, orderData) {
+    const id = `coin_order:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    const now = new Date().toISOString();
+    const record = {
+      id,
+      user_id: userId,
+      product_id: orderData.product_id,
+      product_name: orderData.product_name,
+      price: orderData.price,
+      discord_id: orderData.discord_id,
+      status: orderData.status || 'pending',
+      user_email: orderData.user_email || null,
+      created_at: now
+    };
+
+    await this.kv.hset(id, record);
+    await this.kv.sadd('coin_orders', id);
+
+    return record;
+  }
+
+  async getCoinOrders(limit = 100) {
+    const ids = await this.kv.smembers('coin_orders');
+    const orders = [];
+
+    for (const id of ids) {
+      const order = await this.kv.hgetall(id);
+      if (order && Object.keys(order).length > 0) {
+        orders.push({
+          id: order.id,
+          user_id: order.user_id,
+          product_id: order.product_id,
+          product_name: order.product_name,
+          price: Number(order.price) || 0,
+          discord_id: order.discord_id,
+          status: order.status || 'pending',
+          user_email: order.user_email || null,
+          created_at: order.created_at
+        });
+      }
+    }
+
+    orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const max = Math.max(1, Math.min(500, parseInt(limit) || 100));
+    return orders.slice(0, max);
+  }
 }
 
 module.exports = new KVDatabase();

@@ -4,6 +4,15 @@ const database = require('../config/database');
 
 const router = express.Router();
 
+const SHOP_PRODUCTS = [
+  {
+    id: 'discord-role-king',
+    name: 'DC👑｜目前還沒有用的會員◉⁠‿⁠◉',
+    price: 300,
+    description: '購買後將提供管理員 Discord ID，後續權限會由管理員手動處理。'
+  }
+];
+
 // 取得全域重置版本（公開）
 // 前端在載入時可取得此版本；此版本主要保留舊版 localStorage 錢包用
 router.get('/reset-version', async (req, res) => {
@@ -55,6 +64,10 @@ function mapWallet(w) {
   };
 }
 
+router.get('/products', (req, res) => {
+  res.json({ products: SHOP_PRODUCTS });
+});
+
 // 取得目前用戶的伺服器錢包（需要登入）
 // 併回傳伺服器端計算的 nextClaimInMs，避免因客戶端時鐘誤差導致按鈕狀態判斷錯誤
 router.get('/wallet', authenticateToken, async (req, res) => {
@@ -100,6 +113,18 @@ router.get('/history', authenticateToken, async (req, res) => {
   }
 });
 
+// 取得商品訂單紀錄（需要管理員）
+router.get('/orders', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const limit = Math.max(1, Math.min(500, parseInt(req.query.limit) || 100));
+    const orders = await database.getCoinOrders(limit);
+    res.json({ orders });
+  } catch (error) {
+    console.error('取得商品訂單失敗:', error);
+    res.status(500).json({ error: '無法取得商品訂單' });
+  }
+});
+
 // 每日簽到（需要登入）
 router.post('/claim-daily', authenticateToken, async (req, res) => {
   try {
@@ -119,6 +144,63 @@ router.post('/claim-daily', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('每日簽到失敗:', error);
     res.status(500).json({ error: '簽到失敗' });
+  }
+});
+
+// 購買商品（需要登入）
+router.post('/purchase', authenticateToken, async (req, res) => {
+  try {
+    const { productId, discordId } = req.body || {};
+    const product = SHOP_PRODUCTS.find(item => item.id === productId);
+    if (!product) {
+      return res.status(404).json({ error: '找不到此商品' });
+    }
+
+    const discord = (discordId || '').toString().trim();
+    if (!discord) {
+      return res.status(400).json({ error: '請輸入 Discord ID' });
+    }
+    if (discord.length > 100) {
+      return res.status(400).json({ error: 'Discord ID 太長，請確認是否正確' });
+    }
+
+    const spendResult = await database.spendCoins(
+      req.user.id,
+      product.price,
+      `購買商品：${product.name}`
+    );
+
+    if (!spendResult?.success) {
+      return res.status(400).json({ error: spendResult?.error || '餘額不足' });
+    }
+
+    try {
+      const order = await database.createCoinOrder(req.user.id, {
+        product_id: product.id,
+        product_name: product.name,
+        price: product.price,
+        discord_id: discord,
+        user_email: req.user.username || req.user.email || null,
+        status: 'pending'
+      });
+
+      return res.json({
+        success: true,
+        wallet: mapWallet(spendResult.wallet),
+        order
+      });
+    } catch (err) {
+      console.error('建立商品訂單失敗，嘗試退款:', err);
+      try {
+        await database.addCoins(req.user.id, product.price, '購買失敗自動退款');
+      } catch (refundError) {
+        console.error('退款失敗，請人工處理:', refundError);
+      }
+      return res.status(500).json({ error: '購買失敗，已嘗試自動退款' });
+    }
+  } catch (error) {
+    console.error('購買商品失敗:', error);
+    res.status(500).json({ error: '購買失敗' });
   }
 });
 
@@ -150,6 +232,44 @@ router.post('/earn', authenticateToken, requireAdmin, async (req, res) => {
   } catch (error) {
     console.error('加幣失敗:', error);
     res.status(500).json({ error: '加幣失敗' });
+  }
+});
+
+// 管理員發放 CRCRCoin 給指定用戶
+router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const rawEmail = (req.body?.email || '').toString().trim();
+    const amount = Math.max(0, Math.floor(Number(req.body?.amount) || 0));
+
+    if (!rawEmail) {
+      return res.status(400).json({ error: '請輸入用戶電子郵件' });
+    }
+    if (amount <= 0) {
+      return res.status(400).json({ error: '金額無效' });
+    }
+
+    let user = await database.getUserByUsername(rawEmail);
+    if (!user && rawEmail.toLowerCase() !== rawEmail) {
+      user = await database.getUserByUsername(rawEmail.toLowerCase());
+    }
+
+    if (!user) {
+      return res.status(404).json({ error: '找不到該用戶，請確認電子郵件是否正確' });
+    }
+
+    const result = await database.addCoins(user.id, amount, `管理員發放 (${req.user.username || req.user.id})`);
+
+    return res.json({
+      success: true,
+      target: {
+        id: user.id,
+        email: user.username
+      },
+      wallet: mapWallet(result.wallet)
+    });
+  } catch (error) {
+    console.error('管理員發放 CRCRCoin 失敗:', error);
+    res.status(500).json({ error: '發放失敗' });
   }
 });
 

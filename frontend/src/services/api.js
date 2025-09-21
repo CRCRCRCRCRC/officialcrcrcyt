@@ -170,16 +170,27 @@ export const coinAPI = {
   getResetVersion: () => api.get('/coin/reset-version'),
   // 管理員一鍵重置（需要 admin token）
   adminReset: () => api.post('/coin/reset', undefined, { headers: authHeaderForCoin() }),
+  // 取得商品列表（公開）
+  getProducts: () => api.get('/coin/products'),
   // 取得目前用戶的伺服器錢包（需登入）
   getWallet: () => api.get('/coin/wallet', { headers: authHeaderForCoin() }),
   // 取得交易紀錄（需登入）
   getHistory: (limit = 50) => api.get('/coin/history', { params: { limit }, headers: authHeaderForCoin() }),
   // 每日簽到（需登入）
   claimDaily: () => api.post('/coin/claim-daily', undefined, { headers: authHeaderForCoin() }),
+  // 購買商品
+  purchaseProduct: (productId, discordId) =>
+    api.post('/coin/purchase', { productId, discordId }, { headers: authHeaderForCoin() }),
   // 消費（扣幣，需登入）
   spend: (amount, reason = '消費') => api.post('/coin/spend', { amount, reason }, { headers: authHeaderForCoin() }),
   // 加幣（管理員）
-  earn: (amount, reason = '任務獎勵') => api.post('/coin/earn', { amount, reason }, { headers: authHeaderForCoin() })
+  earn: (amount, reason = '任務獎勵') => api.post('/coin/earn', { amount, reason }, { headers: authHeaderForCoin() }),
+  // 管理員發放 CRCRCoin
+  grantCoins: (email, amount) =>
+    api.post('/coin/grant', { email, amount }, { headers: authHeaderForCoin() }),
+  // 取得商品訂單（管理員）
+  getOrders: (params = {}) =>
+    api.get('/coin/orders', { params, headers: authHeaderForCoin() })
 }
 export const announcementAPI = {
   getAll: (params = {}) =>
