@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Coins, Calendar, TrendingUp, Wallet as WalletIcon } from 'lucide-react'
+import { ArrowLeft, Coins, Calendar, TrendingUp, Wallet as WalletIcon, ShoppingBag } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCoin } from '../contexts/CoinContext'
 import toast from 'react-hot-toast'
@@ -173,23 +173,32 @@ const Wallet = () => {
                           : (canClaimNow ? '可以領取每日獎勵了！' : `下次簽到：${fmtNextClaimTime(leftMs)}`))}
                     </p>
                   </div>
-                  <button
-                    onClick={onDaily}
-                    disabled={!isLoggedIn || !hydrated || !canClaimNow || claiming}
-                    className={`px-6 py-3 rounded-xl font-semibold text-white transition-all ${
-                      (!isLoggedIn || !hydrated || !canClaimNow || claiming)
-                        ? 'bg-gray-300 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-lg hover:shadow-xl'
-                    }`}
-                  >
-                    {!isLoggedIn
-                      ? '請先登入'
-                      : (!hydrated
-                        ? '同步中...'
-                        : (claiming
-                          ? '處理中...'
-                          : (canClaimNow ? '領取 +50' : fmtNextClaimTime(leftMs))))}
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={onDaily}
+                      disabled={!isLoggedIn || !hydrated || !canClaimNow || claiming}
+                      className={`px-6 py-3 rounded-xl font-semibold text-white transition-all ${
+                        (!isLoggedIn || !hydrated || !canClaimNow || claiming)
+                          ? 'bg-gray-300 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 shadow-lg hover:shadow-xl'
+                      }`}
+                    >
+                      {!isLoggedIn
+                        ? '請先登入'
+                        : (!hydrated
+                          ? '同步中...'
+                          : (claiming
+                            ? '處理中...'
+                            : (canClaimNow ? '領取 +50' : fmtNextClaimTime(leftMs))))}
+                    </button>
+                    <Link
+                      to="/shop"
+                      className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      前往商城
+                    </Link>
+                  </div>
                 </div>
               </div>
             </motion.div>

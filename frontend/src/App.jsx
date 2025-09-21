@@ -8,6 +8,7 @@ import VideoDetail from './pages/VideoDetail'
 import Announcements from './pages/Announcements'
 import AnnouncementDetail from './pages/AnnouncementDetail'
 import Wallet from './pages/Wallet'
+import Shop from './pages/Shop'
 
 import AdminLogin from './pages/admin/Login'
 import AdminDashboard from './pages/admin/Dashboard'
@@ -30,6 +31,7 @@ function App() {
           <Route path="announcements" element={<Announcements />} />
           <Route path="announcements/:slug" element={<AnnouncementDetail />} />
           <Route path="wallet" element={<Wallet />} />
+          <Route path="shop" element={<Shop />} />
 
         </Route>
 
