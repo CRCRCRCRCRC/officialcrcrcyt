@@ -1,6 +1,77 @@
 import toast from 'react-hot-toast'
 import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 
+// Google Login Button Animation Styles
+const buttonStyles = `
+/* From Uiverse.io by vinodjangid07 */
+.Btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 45px !important;
+  height: 45px !important;
+  border: none !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition-duration: .3s !important;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199) !important;
+  background-color: rgb(163, 142, 255) !important;
+}
+
+/* plus sign */
+.sign {
+  width: 100% !important;
+  transition-duration: .3s !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.sign svg {
+  width: 17px !important;
+}
+
+.sign svg path {
+  fill: white !important;
+}
+/* text */
+.text {
+  position: absolute !important;
+  right: 0% !important;
+  width: 0% !important;
+  opacity: 0 !important;
+  color: white !important;
+  font-size: 1.2em !important;
+  font-weight: 600 !important;
+  transition-duration: .3s !important;
+}
+/* hover effect on button width */
+.Btn:hover {
+  width: 125px !important;
+  border-radius: 40px !important;
+  transition-duration: .3s !important;
+}
+
+.Btn:hover .sign {
+  width: 30% !important;
+  transition-duration: .3s !important;
+  padding-left: 20px !important;
+}
+/* hover effect button's text */
+.Btn:hover .text {
+  opacity: 1 !important;
+  width: 70% !important;
+  transition-duration: .3s !important;
+  padding-right: 10px !important;
+}
+/* button click effect*/
+.Btn:active {
+  transform: translate(2px ,2px) !important;
+}
+`
+
 const GoogleLoginButtonPublic = () => {
   const { loginWithGoogleCode } = useWebsiteAuth()
 
@@ -33,14 +104,15 @@ const GoogleLoginButtonPublic = () => {
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 text-sm"
-    >
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-4 h-4 mr-2" />
-      使用 Google 登入
-    </button>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: buttonStyles }} />
+      <div className="Btn" onClick={handleClick}>
+        <div className="sign">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-[17px] h-[17px]" />
+        </div>
+        <div className="text">GOOGLE LOGIN</div>
+      </div>
+    </>
   )
 }
 
