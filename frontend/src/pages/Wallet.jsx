@@ -50,17 +50,23 @@ const Wallet = () => {
   const fmtNextClaimTime = (ms) => {
     if (ms <= 0) return '可以簽到'
 
-    // 計算到明天凌晨0點的時間
-    const now = new Date()
-    const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    tomorrow.setHours(0, 0, 0, 0)
+    // 計算剩餘時間
+    const hours = Math.floor(ms / (1000 * 60 * 60))
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
 
-    const timeUntilMidnight = tomorrow.getTime() - now.getTime()
-    const hours = Math.floor(timeUntilMidnight / (1000 * 60 * 60))
-    const minutes = Math.floor((timeUntilMidnight % (1000 * 60 * 60)) / (1000 * 60))
+    // 如果超過24小時，顯示明天格式
+    if (hours >= 24) {
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      tomorrow.setHours(0, 0, 0, 0)
+      const timeUntilMidnight = tomorrow.getTime() - Date.now()
+      const h = Math.floor(timeUntilMidnight / (1000 * 60 * 60))
+      const m = Math.floor((timeUntilMidnight % (1000 * 60 * 60)) / (1000 * 60))
+      return `明天 ${pad(h)}:${pad(m)}`
+    }
 
-    return `明天 ${pad(hours)}:${pad(minutes)}`
+    // 如果在24小時內，顯示剩餘小時和分鐘
+    return `${pad(hours)}:${pad(minutes)} 後`
   }
 
   const pad = (x) => String(x).padStart(2, '0')

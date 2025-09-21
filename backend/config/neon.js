@@ -391,10 +391,17 @@ class NeonDatabase {
         [userId]
       );
 
-      // 檢查今天是否已經簽到過
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // 設置為今天凌晨0點
+      // 檢查今天是否已經簽到過（使用 UTC 時間避免時區問題）
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // 今天的 UTC 凌晨0點
       const todayStr = today.toISOString().split('T')[0]; // 獲取今天的日期字符串 (YYYY-MM-DD)
+
+      console.log('🔍 簽到檢查:', {
+        userId,
+        todayStr,
+        currentTime: now.toISOString(),
+        todayUTC: today.toISOString()
+      });
 
       const cur = await client.query(
         `SELECT balance, last_claim_at FROM coin_wallets WHERE user_id = $1 FOR UPDATE`,
@@ -402,23 +409,40 @@ class NeonDatabase {
       );
       const row = cur.rows[0] || { balance: 0, last_claim_at: null };
 
+      console.log('🔍 錢包狀態:', {
+        balance: row.balance,
+        lastClaimAt: row.last_claim_at
+      });
+
       // 檢查上次簽到是否是今天
       let canClaim = true;
       let nextClaimInMs = 0;
 
       if (row.last_claim_at) {
         const lastClaimDate = new Date(row.last_claim_at);
-        lastClaimDate.setHours(0, 0, 0, 0); // 設置為上次簽到的凌晨0點
-        const lastClaimDateStr = lastClaimDate.toISOString().split('T')[0];
+        const lastClaimDateOnly = new Date(lastClaimDate.getFullYear(), lastClaimDate.getMonth(), lastClaimDate.getDate());
+        const lastClaimDateStr = lastClaimDateOnly.toISOString().split('T')[0];
+
+        console.log('🔍 上次簽到比較:', {
+          lastClaimDateStr,
+          todayStr,
+          isSameDay: lastClaimDateStr === todayStr
+        });
 
         if (lastClaimDateStr === todayStr) {
           // 今天已經簽到過了
           canClaim = false;
 
-          // 計算到明天凌晨0點的時間
+          // 計算到明天凌晨0點的時間（UTC）
           const tomorrow = new Date(today);
           tomorrow.setDate(tomorrow.getDate() + 1);
-          nextClaimInMs = tomorrow.getTime() - Date.now();
+          nextClaimInMs = tomorrow.getTime() - now.getTime();
+
+          console.log('🔍 冷卻時間計算:', {
+            nextClaimInMs,
+            tomorrow: tomorrow.toISOString(),
+            now: now.toISOString()
+          });
         }
       }
 
