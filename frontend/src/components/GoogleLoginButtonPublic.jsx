@@ -8,8 +8,8 @@ const buttonStyles = `
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  width: 45px !important;
-  height: 45px !important;
+  width: 50px !important;
+  height: 50px !important;
   border: none !important;
   border-radius: 50% !important;
   cursor: pointer !important;
@@ -18,6 +18,7 @@ const buttonStyles = `
   transition-duration: .3s !important;
   box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199) !important;
   background-color: rgb(163, 142, 255) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
 
 /* plus sign */
@@ -30,7 +31,8 @@ const buttonStyles = `
 }
 
 .sign svg {
-  width: 17px !important;
+  width: 20px !important;
+  height: 20px !important;
 }
 
 .sign svg path {
@@ -43,28 +45,30 @@ const buttonStyles = `
   width: 0% !important;
   opacity: 0 !important;
   color: white !important;
-  font-size: 1.2em !important;
-  font-weight: 600 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   transition-duration: .3s !important;
+  letter-spacing: 0.5px !important;
 }
 /* hover effect on button width */
 .Btn:hover {
-  width: 125px !important;
+  width: 140px !important;
   border-radius: 40px !important;
   transition-duration: .3s !important;
 }
 
 .Btn:hover .sign {
-  width: 30% !important;
+  width: 25% !important;
   transition-duration: .3s !important;
-  padding-left: 20px !important;
+  padding-left: 15px !important;
 }
 /* hover effect button's text */
 .Btn:hover .text {
   opacity: 1 !important;
-  width: 70% !important;
+  width: 75% !important;
   transition-duration: .3s !important;
-  padding-right: 10px !important;
+  padding-right: 15px !important;
 }
 /* button click effect*/
 .Btn:active {
