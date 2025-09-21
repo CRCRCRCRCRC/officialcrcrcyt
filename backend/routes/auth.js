@@ -359,6 +359,45 @@ router.post('/google-public', async (req, res) => {
   }
 });
 
+// 修復用戶 email 字段（簡單版本）
+router.post('/fix-emails', async (req, res) => {
+  try {
+    console.log('🔧 修復用戶 email 字段...');
 
+    if (database.pool) {
+      // PostgreSQL
+      const result = await database.pool.query(
+        "UPDATE users SET email = username WHERE email IS NULL OR email = ''"
+      );
+      console.log(`✅ 修復了 ${result.rowCount} 個用戶的 email 字段`);
+      res.json({
+        success: true,
+        message: `成功修復 ${result.rowCount} 個用戶的 email 字段`
+      });
+    } else {
+      // KV 數據庫
+      const userIds = await database.kv.smembers('users');
+      let fixedCount = 0;
+
+      for (const userId of userIds) {
+        const user = await database.kv.hgetall(userId);
+        if (user && (!user.email || user.email === '')) {
+          if (user.username && user.username.includes('@')) {
+            await database.kv.hset(userId, { ...user, email: user.username });
+            fixedCount++;
+          }
+        }
+      }
+      console.log(`✅ 修復了 ${fixedCount} 個用戶的 email 字段`);
+      res.json({
+        success: true,
+        message: `成功修復 ${fixedCount} 個用戶的 email 字段`
+      });
+    }
+  } catch (error) {
+    console.error('修復用戶 email 失敗:', error);
+    res.status(500).json({ error: '修復失敗' });
+  }
+});
 
 module.exports = router;
