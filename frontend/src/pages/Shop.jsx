@@ -132,34 +132,43 @@ const Shop = () => {
 
           <div className="grid grid-cols-1 gap-6">
             {PRODUCTS.map((product) => (
-              <div
-                key={product.id}
-                className="border border-purple-100 rounded-2xl p-6 bg-white shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                      <ShieldCheck className="w-5 h-5 text-purple-500" />
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-2 flex items-center gap-2">
-                      <MessageCircle className="w-4 h-4 text-gray-400" />
-                      {product.description}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-purple-600">{product.price.toLocaleString('zh-TW')} CRCRCoin</div>
-                    <button
-                      type="button"
-                      onClick={() => handleBuyClick(product)}
-                      className="mt-3 inline-flex items-center justify-center px-5 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow hover:shadow-md transition disabled:opacity-60 disabled:cursor-not-allowed"
-                      disabled={!isLoggedIn || (hydrated && balance < product.price)}
-                    >
-                      {isLoggedIn ? '購買' : '請先登入'}
-                    </button>
-                    {isLoggedIn && hydrated && balance < product.price && (
-                      <p className="text-xs text-red-500 mt-2">餘額不足，請先累積 CRCRCoin 再嘗試購買。</p>
-                    )}
+              <div key={product.id} className="rounded-2xl bg-gradient-to-r from-purple-100/60 via-pink-100/60 to-blue-100/60 p-[1px]">
+                <div className="rounded-2xl bg-white p-6 md:p-7 shadow-sm hover:shadow-lg transition-shadow">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg">
+                          <ShieldCheck className="w-6 h-6" />
+                        </div>
+                        <h3 className="text-lg md:text-xl font-semibold text-gray-900 leading-tight">
+                          {product.name}
+                        </h3>
+                      </div>
+                      <p className="mt-3 text-sm text-gray-600 flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4 text-gray-400" />
+                        {product.description}
+                      </p>
+                    </div>
+
+                    <div className="w-full md:w-auto text-center md:text-right">
+                      <div className="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+                        {product.price.toLocaleString('zh-TW')}
+                        <span className="ml-1 text-base md:text-lg font-semibold text-purple-500">CRCRCoin</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleBuyClick(product)}
+                        className="mt-4 inline-flex w-full md:w-auto items-center justify-center px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
+                        disabled={!isLoggedIn || (hydrated && balance < product.price)}
+                      >
+                        {isLoggedIn ? '購買' : '請先登入'}
+                      </button>
+                      {isLoggedIn && hydrated && balance < product.price && (
+                        <p className="text-xs text-red-500 mt-3 md:text-right">
+                          餘額不足，請先累積 CRCRCoin 再嘗試購買。
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
