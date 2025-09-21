@@ -365,19 +365,37 @@ router.post('/fix-emails', async (req, res) => {
     console.log('🔧 修復用戶 email 字段...');
 
     if (database.pool) {
-      // PostgreSQL
+      // PostgreSQL - 先檢查現有用戶
+      const checkResult = await database.pool.query('SELECT id, username, email FROM users');
+      console.log('📋 現有用戶列表:', checkResult.rows);
+
+      // 修復 email 字段
       const result = await database.pool.query(
         "UPDATE users SET email = username WHERE email IS NULL OR email = ''"
       );
       console.log(`✅ 修復了 ${result.rowCount} 個用戶的 email 字段`);
+
+      // 再次檢查修復後的結果
+      const verifyResult = await database.pool.query('SELECT id, username, email FROM users');
+      console.log('📋 修復後的用戶列表:', verifyResult.rows);
+
       res.json({
         success: true,
-        message: `成功修復 ${result.rowCount} 個用戶的 email 字段`
+        message: `成功修復 ${result.rowCount} 個用戶的 email 字段`,
+        before: checkResult.rows,
+        after: verifyResult.rows
       });
     } else {
       // KV 數據庫
       const userIds = await database.kv.smembers('users');
       let fixedCount = 0;
+      const beforeUsers = [];
+
+      for (const userId of userIds) {
+        const user = await database.kv.hgetall(userId);
+        beforeUsers.push({ id: userId, ...user });
+      }
+      console.log('📋 KV 數據庫現有用戶:', beforeUsers);
 
       for (const userId of userIds) {
         const user = await database.kv.hgetall(userId);
@@ -388,15 +406,24 @@ router.post('/fix-emails', async (req, res) => {
           }
         }
       }
-      console.log(`✅ 修復了 ${fixedCount} 個用戶的 email 字段`);
+
+      const afterUsers = [];
+      for (const userId of userIds) {
+        const user = await database.kv.hgetall(userId);
+        afterUsers.push({ id: userId, ...user });
+      }
+      console.log('📋 KV 數據庫修復後用戶:', afterUsers);
+
       res.json({
         success: true,
-        message: `成功修復 ${fixedCount} 個用戶的 email 字段`
+        message: `成功修復 ${fixedCount} 個用戶的 email 字段`,
+        before: beforeUsers,
+        after: afterUsers
       });
     }
   } catch (error) {
     console.error('修復用戶 email 失敗:', error);
-    res.status(500).json({ error: '修復失敗' });
+    res.status(500).json({ error: '修復失敗', details: error.message });
   }
 });
 
