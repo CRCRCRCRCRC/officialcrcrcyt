@@ -7,7 +7,15 @@ class KVDatabase {
   // 用戶相關操作
   async createUser(userData) {
     const userId = `user:${Date.now()}`;
-    await this.kv.hset(userId, userData);
+    // 確保用戶數據包含必要的欄位
+    const userWithDefaults = {
+      username: userData.username,
+      password: userData.password,
+      role: userData.role || 'user',
+      email: userData.email || null,
+      created_at: userData.created_at || new Date().toISOString()
+    };
+    await this.kv.hset(userId, userWithDefaults);
     await this.kv.sadd('users', userId);
     return userId;
   }
@@ -31,6 +39,17 @@ class KVDatabase {
   async updateUser(userId, userData) {
     await this.kv.hset(userId, userData);
     return true;
+  }
+
+  async getUserByEmail(email) {
+    const userIds = await this.kv.smembers('users');
+    for (const userId of userIds) {
+      const user = await this.kv.hgetall(userId);
+      if (user.email === email) {
+        return { id: userId, ...user };
+      }
+    }
+    return null;
   }
 
   // 影片相關操作

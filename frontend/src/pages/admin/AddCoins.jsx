@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Coins, User, Mail, Plus, CheckCircle, AlertCircle, Users, Eye } from 'lucide-react'
+import { ArrowLeft, Coins, User, Mail, Plus, CheckCircle, AlertCircle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
@@ -12,9 +12,6 @@ const AddCoins = () => {
   })
   const [isProcessing, setIsProcessing] = useState(false)
   const [result, setResult] = useState(null)
-  const [showUserList, setShowUserList] = useState(false)
-  const [users, setUsers] = useState([])
-  const [loadingUsers, setLoadingUsers] = useState(false)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -22,42 +19,6 @@ const AddCoins = () => {
       ...prev,
       [name]: value
     }))
-  }
-
-  const fetchUsers = async () => {
-    setLoadingUsers(true)
-    try {
-      const response = await fetch('/api/coin/users', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('website_token')}`
-        }
-      })
-      const result = await response.json()
-      if (result.users) {
-        setUsers(result.users)
-      }
-    } catch (error) {
-      console.error('獲取用戶列表失敗:', error)
-      toast.error('獲取用戶列表失敗')
-    } finally {
-      setLoadingUsers(false)
-    }
-  }
-
-  const toggleUserList = () => {
-    if (!showUserList) {
-      fetchUsers()
-    }
-    setShowUserList(!showUserList)
-  }
-
-  const handleUserSelect = (user) => {
-    setFormData(prev => ({
-      ...prev,
-      email: user.email || ''
-    }))
-    setShowUserList(false)
-    toast.success(`已選擇用戶: ${user.username}`)
   }
 
   const handleSubmit = async (e) => {
@@ -168,29 +129,18 @@ const AddCoins = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   用戶電子郵件
                 </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="請輸入用戶的電子郵件地址"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      disabled={isProcessing}
-                      required
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={toggleUserList}
-                    className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="請輸入用戶的電子郵件地址"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     disabled={isProcessing}
-                  >
-                    <Eye className="w-4 h-4" />
-                    查看用戶
-                  </button>
+                    required
+                  />
                 </div>
               </div>
 
@@ -301,68 +251,6 @@ const AddCoins = () => {
           </motion.div>
         </div>
 
-        {/* User List Modal */}
-        {showUserList && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[80vh] overflow-hidden"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">用戶列表</h3>
-                <button
-                  onClick={() => setShowUserList(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {loadingUsers ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                  <p className="text-gray-600">載入用戶列表中...</p>
-                </div>
-              ) : (
-                <div className="overflow-auto max-h-96">
-                  <table className="w-full">
-                    <thead className="sticky top-0 bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">用戶名</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">電子郵件</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">註冊時間</th>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {users.map((user) => (
-                        <tr key={user.id} className="border-t border-gray-100 hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm text-gray-900">{user.username}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">
-                            {user.email || <span className="text-gray-400">未設置</span>}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">
-                            {new Date(user.created_at).toLocaleString('zh-TW')}
-                          </td>
-                          <td className="px-4 py-3">
-                            <button
-                              onClick={() => handleUserSelect(user)}
-                              className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
-                            >
-                              選擇
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </motion.div>
-          </div>
-        )}
-
         {/* Instructions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -375,7 +263,6 @@ const AddCoins = () => {
           </h3>
           <ul className="text-blue-800 space-y-2 text-sm">
             <li>• 請確保輸入的電子郵件地址是用戶註冊時使用的地址</li>
-            <li>• 如果不知道用戶的電子郵件，可以點擊"查看用戶"按鈕查看所有用戶的電子郵件地址</li>
             <li>• 加幣金額必須大於 0</li>
             <li>• 原因欄位可選填，用於記錄加幣原因</li>
             <li>• 加幣操作會記錄在用戶的交易歷史中</li>

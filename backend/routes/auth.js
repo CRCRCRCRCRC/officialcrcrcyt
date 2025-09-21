@@ -178,11 +178,11 @@ router.post('/google', async (req, res) => {
     if (!user) {
       // 建立隨機密碼（不會用到，只為符合資料表 NOT NULL）
       const randomPassword = await bcrypt.hash('oauth_google_' + Date.now(), 10);
-      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
-      user = { id: userId, username: email, role: desiredRole };
+      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole, email: email });
+      user = { id: userId, username: email, role: desiredRole, email: email };
     } else if (user.role !== desiredRole) {
       // 提升為 admin（若必要）
-      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole }); } catch (e) {}
+      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole, email: email }); } catch (e) {}
       user.role = desiredRole;
     }
 
@@ -276,10 +276,10 @@ router.post('/google-code', async (req, res) => {
     const desiredRole = 'admin';
     if (!user) {
       const randomPassword = await bcrypt.hash('oauth_google_' + Date.now(), 10);
-      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
-      user = { id: userId, username: email, role: desiredRole };
+      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole, email: email });
+      user = { id: userId, username: email, role: desiredRole, email: email };
     } else if (user.role !== desiredRole) {
-      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole }); } catch (e) {}
+      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole, email: email }); } catch (e) {}
       user.role = desiredRole;
     }
 
@@ -338,10 +338,10 @@ router.post('/google-public', async (req, res) => {
     const desiredRole = 'user';
     if (!user) {
       const randomPassword = await bcrypt.hash('oauth_google_' + Date.now(), 10);
-      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
-      user = { id: userId, username: email, role: desiredRole };
+      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole, email: email });
+      user = { id: userId, username: email, role: desiredRole, email: email };
     } else if (user.role !== desiredRole) {
-      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: user.role }); } catch (e) {}
+      try { await database.updateUser(user.id, { username: user.username, password: user.password, role: user.role, email: email }); } catch (e) {}
     }
 
     const websiteJwtSecret = process.env.WEBSITE_JWT_SECRET || process.env.JWT_SECRET || 'default-jwt-secret';

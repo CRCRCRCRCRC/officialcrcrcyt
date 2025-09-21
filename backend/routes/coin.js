@@ -201,16 +201,6 @@ router.get('/discord-applications', authenticateToken, requireAdmin, async (req,
   }
 });
 
-// 取得用戶列表（僅管理員）- 用於查看用戶的電子郵件
-router.get('/users', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const result = await database.query('SELECT id, username, email, created_at FROM users ORDER BY created_at DESC');
-    res.json({ users: result });
-  } catch (error) {
-    console.error('取得用戶列表失敗:', error);
-    res.status(500).json({ error: '無法取得用戶列表' });
-  }
-});
 
 // 通過電子郵件給用戶加幣（僅管理員）
 router.post('/add-coins-by-email', authenticateToken, requireAdmin, async (req, res) => {
