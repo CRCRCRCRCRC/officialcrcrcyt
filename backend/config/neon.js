@@ -124,6 +124,20 @@ class NeonDatabase {
         )
       `);
 
+      // Discord 身分組申請記錄表
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS discord_role_applications (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          discord_id VARCHAR(255) NOT NULL,
+          status VARCHAR(20) DEFAULT 'pending',
+          applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          processed_at TIMESTAMP NULL,
+          processed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          admin_note TEXT
+        )
+      `);
+
       console.log('✅ PostgreSQL 資料表初始化完成');
     } catch (error) {
       console.error('❌ PostgreSQL 資料表初始化失敗:', error);
@@ -495,6 +509,87 @@ class NeonDatabase {
     await this.pool.query(`UPDATE coin_wallets SET balance = 0, last_claim_at = NULL, updated_at = CURRENT_TIMESTAMP`);
     await this.pool.query(`DELETE FROM coin_transactions`);
     return true;
+  }
+
+  // Discord 身分組申請相關方法
+  async recordDiscordRoleApplication(userId, discordId) {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // 記錄申請
+      await client.query(`
+        INSERT INTO discord_role_applications (user_id, discord_id, status)
+        VALUES ($1, $2, 'pending')
+      `, [userId, discordId]);
+
+      // 記錄交易
+      await client.query(`
+        INSERT INTO coin_transactions (user_id, type, amount, reason)
+        VALUES ($1, 'spend', 300, '購買 Discord 會員身分組')
+      `, [userId]);
+
+      await client.query('COMMIT');
+      console.log(`📝 Discord 身分組申請記錄: User ${userId}, Discord ID: ${discordId}`);
+      return true;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('記錄 Discord 身分組申請失敗:', error);
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getDiscordRoleApplications(options = {}) {
+    const { status, limit = 50 } = options;
+    let query = `
+      SELECT dra.*, u.username
+      FROM discord_role_applications dra
+      JOIN users u ON dra.user_id = u.id
+    `;
+    let params = [];
+    let paramCount = 0;
+
+    if (status) {
+      paramCount++;
+      query += ` WHERE dra.status = $${paramCount}`;
+      params.push(status);
+    }
+
+    query += ' ORDER BY dra.applied_at DESC';
+
+    if (limit) {
+      paramCount++;
+      query += ` LIMIT $${paramCount}`;
+      params.push(parseInt(limit));
+    }
+
+    const result = await this.pool.query(query, params);
+    return result.rows;
+  }
+
+  async updateDiscordApplicationStatus(applicationId, status, adminUserId, adminNote = '') {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      await client.query(`
+        UPDATE discord_role_applications
+        SET status = $1, processed_at = NOW(), processed_by = $2, admin_note = $3
+        WHERE id = $4
+      `, [status, adminUserId, adminNote, applicationId]);
+
+      await client.query('COMMIT');
+      console.log(`✅ Discord 申請 ${applicationId} 狀態更新為: ${status}`);
+      return true;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('更新 Discord 申請狀態失敗:', error);
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   // 生成 slug

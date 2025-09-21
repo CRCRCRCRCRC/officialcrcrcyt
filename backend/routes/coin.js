@@ -153,4 +153,52 @@ router.post('/earn', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// 購買 Discord 身分組（需要登入）
+router.post('/purchase-discord-role', authenticateToken, async (req, res) => {
+  try {
+    const { discordId } = req.body;
+    const amount = 300;
+    const reason = '購買 Discord 會員身分組';
+
+    if (!discordId || !discordId.trim()) {
+      return res.status(400).json({ error: '請提供 Discord ID' });
+    }
+
+    // 檢查餘額是否充足
+    const wallet = await database.getCoinWallet(req.user.id);
+    if (wallet.balance < amount) {
+      return res.status(400).json({ error: '餘額不足' });
+    }
+
+    // 扣除金幣
+    const spendResult = await database.spendCoins(req.user.id, amount, reason);
+    if (!spendResult.success) {
+      return res.status(400).json({ error: spendResult.error || '扣款失敗' });
+    }
+
+    // 記錄 Discord ID 申請
+    await database.recordDiscordRoleApplication(req.user.id, discordId.trim());
+
+    return res.json({
+      success: true,
+      wallet: mapWallet(spendResult.wallet),
+      message: '購買成功！管理員將會處理您的身分組申請。'
+    });
+  } catch (error) {
+    console.error('購買 Discord 身分組失敗:', error);
+    res.status(500).json({ error: '購買失敗' });
+  }
+});
+
+// 取得 Discord 身分組申請記錄（僅管理員）
+router.get('/discord-applications', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const applications = await database.getDiscordRoleApplications();
+    res.json({ applications });
+  } catch (error) {
+    console.error('取得 Discord 申請記錄失敗:', error);
+    res.status(500).json({ error: '無法取得申請記錄' });
+  }
+});
+
 module.exports = router;
