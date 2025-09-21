@@ -391,16 +391,19 @@ class NeonDatabase {
         [userId]
       );
 
-      // 檢查今天是否已經簽到過（使用 UTC 時間避免時區問題）
+      // 檢查今天是否已經簽到過（使用用戶時區 UTC+8）
       const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); // 今天的 UTC 凌晨0點
+      // 考慮用戶時區 (UTC+8)，將時間轉換為用戶當地時間
+      const userTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // UTC+8
+      const today = new Date(userTime.getFullYear(), userTime.getMonth(), userTime.getDate()); // 用戶當地今天的凌晨0點
       const todayStr = today.toISOString().split('T')[0]; // 獲取今天的日期字符串 (YYYY-MM-DD)
 
       console.log('🔍 簽到檢查:', {
         userId,
         todayStr,
         currentTime: now.toISOString(),
-        todayUTC: today.toISOString()
+        userTime: userTime.toISOString(),
+        todayUserTime: today.toISOString()
       });
 
       const cur = await client.query(
@@ -433,14 +436,17 @@ class NeonDatabase {
           // 今天已經簽到過了
           canClaim = false;
 
-          // 計算到明天凌晨0點的時間（UTC）
+          // 計算到明天凌晨0點的時間（用戶時區）
           const tomorrow = new Date(today);
           tomorrow.setDate(tomorrow.getDate() + 1);
-          nextClaimInMs = tomorrow.getTime() - now.getTime();
+          // 將明天凌晨0點轉換為UTC時間進行計算
+          const tomorrowUTC = new Date(tomorrow.getTime() - (8 * 60 * 60 * 1000));
+          nextClaimInMs = tomorrowUTC.getTime() - now.getTime();
 
           console.log('🔍 冷卻時間計算:', {
             nextClaimInMs,
             tomorrow: tomorrow.toISOString(),
+            tomorrowUTC: tomorrowUTC.toISOString(),
             now: now.toISOString()
           });
         }
