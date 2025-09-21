@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Coins, User, Mail, Plus, CheckCircle, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Coins, User, Mail, Plus, CheckCircle, AlertCircle, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 const AddCoins = () => {
+  const [searchType, setSearchType] = useState('email') // 'email' or 'username'
   const [formData, setFormData] = useState({
     email: '',
+    username: '',
     amount: '',
     reason: ''
   })
@@ -21,11 +23,23 @@ const AddCoins = () => {
     }))
   }
 
+  const handleSearchTypeChange = (type) => {
+    setSearchType(type)
+    // 清空對應的輸入框
+    setFormData(prev => ({
+      ...prev,
+      email: type === 'username' ? '' : prev.email,
+      username: type === 'email' ? '' : prev.username
+    }))
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!formData.email.trim()) {
-      toast.error('請輸入用戶電子郵件')
+    const searchValue = searchType === 'email' ? formData.email.trim() : formData.username.trim()
+
+    if (!searchValue) {
+      toast.error(searchType === 'email' ? '請輸入用戶電子郵件' : '請輸入用戶名')
       return
     }
 
@@ -38,17 +52,29 @@ const AddCoins = () => {
     setResult(null)
 
     try {
-      const response = await fetch('/api/coin/add-coins-by-email', {
+      const apiEndpoint = searchType === 'email'
+        ? '/api/coin/add-coins-by-email'
+        : '/api/coin/add-coins-by-username'
+
+      const requestData = searchType === 'email'
+        ? {
+            email: formData.email.trim(),
+            amount: parseInt(formData.amount),
+            reason: formData.reason.trim() || '管理員手動加幣'
+          }
+        : {
+            username: formData.username.trim(),
+            amount: parseInt(formData.amount),
+            reason: formData.reason.trim() || '管理員手動加幣'
+          }
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('website_token')}`
         },
-        body: JSON.stringify({
-          email: formData.email.trim(),
-          amount: parseInt(formData.amount),
-          reason: formData.reason.trim() || '管理員手動加幣'
-        })
+        body: JSON.stringify(requestData)
       })
 
       const data = await response.json()
@@ -63,6 +89,7 @@ const AddCoins = () => {
         // 清空表單
         setFormData({
           email: '',
+          username: '',
           amount: '',
           reason: ''
         })
@@ -124,19 +151,56 @@ const AddCoins = () => {
               </h2>
             </div>
 
+            {/* Search Type Tabs */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">
+                查找用戶方式
+              </label>
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => handleSearchTypeChange('email')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    searchType === 'email'
+                      ? 'bg-white text-green-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Mail className="w-4 h-4" />
+                  電子郵件
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSearchTypeChange('username')}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    searchType === 'username'
+                      ? 'bg-white text-green-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  用戶名
+                </button>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  用戶電子郵件
+                  {searchType === 'email' ? '用戶電子郵件' : '用戶名'}
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  {searchType === 'email' ? (
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  ) : (
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  )}
                   <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
+                    type={searchType === 'email' ? 'email' : 'text'}
+                    name={searchType === 'email' ? 'email' : 'username'}
+                    value={searchType === 'email' ? formData.email : formData.username}
                     onChange={handleInputChange}
-                    placeholder="請輸入用戶的電子郵件地址"
+                    placeholder={searchType === 'email' ? '請輸入用戶的電子郵件地址' : '請輸入用戶名'}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     disabled={isProcessing}
                     required
@@ -262,7 +326,8 @@ const AddCoins = () => {
             使用說明
           </h3>
           <ul className="text-blue-800 space-y-2 text-sm">
-            <li>• 請確保輸入的電子郵件地址是用戶註冊時使用的地址</li>
+            <li>• 支持通過電子郵件地址或用戶名查找用戶</li>
+            <li>• 請確保輸入的電子郵件地址或用戶名是正確的</li>
             <li>• 加幣金額必須大於 0</li>
             <li>• 原因欄位可選填，用於記錄加幣原因</li>
             <li>• 加幣操作會記錄在用戶的交易歷史中</li>
