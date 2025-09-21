@@ -28,6 +28,8 @@ const buttonStyles = `
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  opacity: 1 !important;
+  transform: scale(1) !important;
 }
 
 .sign svg {
@@ -51,6 +53,9 @@ const buttonStyles = `
   transition-duration: .3s !important;
   letter-spacing: 0.5px !important;
   white-space: nowrap !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 /* hover effect on button width */
 .Btn:hover {
@@ -60,16 +65,19 @@ const buttonStyles = `
 }
 
 .Btn:hover .sign {
-  width: 25% !important;
+  opacity: 0 !important;
+  transform: scale(0) !important;
   transition-duration: .3s !important;
-  padding-left: 25px !important;
 }
 /* hover effect button's text */
 .Btn:hover .text {
   opacity: 1 !important;
-  width: 75% !important;
+  width: 100% !important;
   transition-duration: .3s !important;
-  padding-right: 15px !important;
+  text-align: center !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 /* button click effect*/
 .Btn:active {
