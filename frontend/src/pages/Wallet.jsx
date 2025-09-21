@@ -137,7 +137,7 @@ const Wallet = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/80 backdrop-blur-xl border border-white/25 rounded-2xl shadow-xl p-8"
+              className="bg-white/80 backdrop-blur-xl border border-white/25 rounded-2xl shadow-xl p-8 h-full"
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -201,7 +201,7 @@ const Wallet = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white/80 backdrop-blur-xl border border-white/25 rounded-2xl shadow-xl p-6"
+              className="bg-white/80 backdrop-blur-xl border border-white/25 rounded-2xl shadow-xl p-6 h-full"
             >
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
