@@ -505,7 +505,7 @@ class NeonDatabase {
     const result = await this.pool.query(`
       INSERT INTO announcements (title, slug, content, published)
       VALUES ($1, $2, $3, $4)
-      RETURNING title, slug, content, published, created_at, updated_at
+      RETURNING id, title, slug, content, published, created_at, updated_at
     `, [title, uniqueSlug, content, published]);
 
     console.log('🗄️ 資料庫返回的公告數據:', result.rows[0]);
@@ -515,7 +515,7 @@ class NeonDatabase {
   async getAnnouncements(options = {}) {
     const { published, limit } = options;
 
-    let query = 'SELECT title, slug, content, published, created_at, updated_at FROM announcements';
+    let query = 'SELECT id, title, slug, content, published, created_at, updated_at FROM announcements';
     let params = [];
     let paramCount = 0;
 
@@ -534,14 +534,30 @@ class NeonDatabase {
     }
 
     const result = await this.pool.query(query, params);
+    console.log('📋 資料庫查詢結果:', result.rows.map(row => ({
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      published: row.published
+    })));
     return result.rows;
   }
 
   async getAnnouncementBySlug(slug) {
     const result = await this.pool.query(
-      'SELECT title, slug, content, published, created_at, updated_at FROM announcements WHERE slug = $1',
+      'SELECT id, title, slug, content, published, created_at, updated_at FROM announcements WHERE slug = $1',
       [slug]
     );
+    console.log('📋 按 slug 查詢結果:', result.rows[0]);
+    return result.rows[0] || null;
+  }
+
+  async getAnnouncementById(id) {
+    const result = await this.pool.query(
+      'SELECT id, title, slug, content, published, created_at, updated_at FROM announcements WHERE id = $1',
+      [id]
+    );
+    console.log('📋 按 ID 查詢結果:', result.rows[0]);
     return result.rows[0] || null;
   }
 
@@ -574,7 +590,7 @@ class NeonDatabase {
         UPDATE announcements
         SET title = $1, slug = $2, content = $3, published = $4, updated_at = CURRENT_TIMESTAMP
         WHERE slug = $5
-        RETURNING title, slug, content, published, created_at, updated_at
+        RETURNING id, title, slug, content, published, created_at, updated_at
       `;
       params = [updateData.title, newSlug, updateData.content, updateData.published, originalSlug];
     } else {
@@ -582,12 +598,60 @@ class NeonDatabase {
         UPDATE announcements
         SET title = $1, content = $2, published = $3, updated_at = CURRENT_TIMESTAMP
         WHERE slug = $4
-        RETURNING title, slug, content, published, created_at, updated_at
+        RETURNING id, title, slug, content, published, created_at, updated_at
       `;
       params = [updateData.title, updateData.content, updateData.published, originalSlug];
     }
 
     const result = await this.pool.query(query, params);
+    console.log('📝 更新公告結果:', result.rows[0]);
+    return result.rows[0];
+  }
+
+  async updateAnnouncementById(id, announcementData) {
+    const { title, content, slug: customSlug, published } = announcementData;
+
+    // 獲取現有的公告數據
+    const existingAnnouncement = await this.getAnnouncementById(id);
+    if (!existingAnnouncement) {
+      throw new Error('公告不存在');
+    }
+
+    // 決定是否需要更新 slug
+    let newSlug = null;
+    if (customSlug !== undefined || title !== undefined) {
+      const baseSlug = customSlug || this.generateSlug(title);
+      newSlug = await this.ensureUniqueSlugExcluding(baseSlug, existingAnnouncement.slug);
+    }
+
+    // 準備更新數據
+    const updateData = {
+      title: title !== undefined ? title : existingAnnouncement.title,
+      content: content !== undefined ? content : existingAnnouncement.content,
+      published: published !== undefined ? published : existingAnnouncement.published
+    };
+
+    let query, params;
+    if (newSlug) {
+      query = `
+        UPDATE announcements
+        SET title = $1, slug = $2, content = $3, published = $4, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $5
+        RETURNING id, title, slug, content, published, created_at, updated_at
+      `;
+      params = [updateData.title, newSlug, updateData.content, updateData.published, id];
+    } else {
+      query = `
+        UPDATE announcements
+        SET title = $1, content = $2, published = $3, updated_at = CURRENT_TIMESTAMP
+        WHERE id = $4
+        RETURNING id, title, slug, content, published, created_at, updated_at
+      `;
+      params = [updateData.title, updateData.content, updateData.published, id];
+    }
+
+    const result = await this.pool.query(query, params);
+    console.log('📝 按ID更新公告結果:', result.rows[0]);
     return result.rows[0];
   }
 
@@ -613,9 +677,19 @@ class NeonDatabase {
 
   async deleteAnnouncementBySlug(slug) {
     const result = await this.pool.query(
-      'DELETE FROM announcements WHERE slug = $1 RETURNING title, slug, content, published, created_at, updated_at',
+      'DELETE FROM announcements WHERE slug = $1 RETURNING id, title, slug, content, published, created_at, updated_at',
       [slug]
     );
+    console.log('🗑️ 刪除公告結果:', result.rows[0]);
+    return result.rows[0];
+  }
+
+  async deleteAnnouncementById(id) {
+    const result = await this.pool.query(
+      'DELETE FROM announcements WHERE id = $1 RETURNING id, title, slug, content, published, created_at, updated_at',
+      [id]
+    );
+    console.log('🗑️ 按ID刪除公告結果:', result.rows[0]);
     return result.rows[0];
   }
 

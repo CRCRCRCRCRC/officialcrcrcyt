@@ -76,6 +76,7 @@ const AdminAnnouncements = () => {
   }
 
   const handleEdit = (announcement) => {
+    console.log('📝 編輯公告:', announcement)
     setEditingAnnouncement(announcement)
     setFormData({
       title: announcement.title,
@@ -101,8 +102,18 @@ const AdminAnnouncements = () => {
     setSaving(true)
     try {
       if (editingAnnouncement) {
-        console.log('📝 更新公告:', editingAnnouncement.slug, formData)
-        const response = await announcementAPI.update(editingAnnouncement.slug, formData)
+        console.log('📝 更新公告:', {
+          id: editingAnnouncement.id,
+          slug: editingAnnouncement.slug,
+          formData
+        })
+
+        // 決定使用什麼值進行更新
+        const identifier = editingAnnouncement.slug && editingAnnouncement.slug !== ':1' && editingAnnouncement.slug !== '1'
+          ? editingAnnouncement.slug
+          : editingAnnouncement.id
+
+        const response = await announcementAPI.update(identifier, formData)
         console.log('✅ 更新響應:', response.data)
         toast.success('公告已更新')
       } else {
@@ -142,11 +153,35 @@ const AdminAnnouncements = () => {
     }
   }
 
-  const handleDelete = async (slug) => {
+  const handleDelete = async (announcement) => {
     if (!confirm('確定要刪除這個公告嗎？')) return
 
     try {
-      await announcementAPI.delete(slug)
+      // 檢查公告數據
+      console.log('🗑️ 完整公告數據:', announcement)
+      console.log('🗑️ 公告字段:', {
+        id: announcement.id,
+        slug: announcement.slug,
+        title: announcement.title,
+        hasId: !!announcement.id,
+        hasSlug: !!announcement.slug,
+        slugType: typeof announcement.slug,
+        slugValue: JSON.stringify(announcement.slug)
+      })
+
+      // 決定使用什麼值進行刪除
+      let deleteValue
+      if (announcement.slug && announcement.slug !== ':1' && announcement.slug !== '1') {
+        deleteValue = announcement.slug
+        console.log('🗑️ 使用 slug 刪除:', deleteValue)
+      } else if (announcement.id) {
+        deleteValue = announcement.id
+        console.log('🗑️ 使用 id 刪除:', deleteValue)
+      } else {
+        throw new Error('無法確定刪除標識符')
+      }
+
+      await announcementAPI.delete(deleteValue)
       toast.success('公告已刪除')
       fetchAnnouncements()
     } catch (error) {
@@ -170,7 +205,18 @@ const AdminAnnouncements = () => {
 
   const togglePublished = async (announcement) => {
     try {
-      await announcementAPI.update(announcement.slug, {
+      console.log('📝 切換公告狀態:', {
+        id: announcement.id,
+        slug: announcement.slug,
+        published: !announcement.published
+      })
+
+      // 決定使用什麼值進行更新
+      const identifier = announcement.slug && announcement.slug !== ':1' && announcement.slug !== '1'
+        ? announcement.slug
+        : announcement.id
+
+      await announcementAPI.update(identifier, {
         ...announcement,
         published: !announcement.published
       })
@@ -331,7 +377,7 @@ const AdminAnnouncements = () => {
                       <Edit className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() => handleDelete(announcement.slug)}
+                      onClick={() => handleDelete(announcement)}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="刪除公告"
                     >

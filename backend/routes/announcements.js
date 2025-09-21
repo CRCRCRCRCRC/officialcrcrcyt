@@ -107,14 +107,30 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// 更新公告（需要管理員權限）
-router.put('/:slug', authenticateToken, requireAdmin, async (req, res) => {
+// 更新公告（需要管理員權限）- 支援 slug 或 id
+router.put('/:identifier', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { slug: originalSlug } = req.params;
+    const { identifier } = req.params;
     const { title, content, slug, published } = req.body;
 
-    const existingAnnouncement = await database.getAnnouncementBySlug(originalSlug);
+    console.log('更新公告請求:', { identifier, title, content, slug, published });
+
+    // 檢查是否為數字ID
+    const isNumericId = /^\d+$/.test(identifier);
+
+    let existingAnnouncement;
+    if (isNumericId) {
+      // 如果是數字ID，使用ID查詢
+      console.log('使用ID查詢公告:', identifier);
+      existingAnnouncement = await database.getAnnouncementById(parseInt(identifier));
+    } else {
+      // 如果不是數字，使用slug查詢
+      console.log('使用slug查詢公告:', identifier);
+      existingAnnouncement = await database.getAnnouncementBySlug(identifier);
+    }
+
     if (!existingAnnouncement) {
+      console.log('公告不存在:', identifier);
       return res.status(404).json({ error: '公告不存在' });
     }
 
@@ -125,8 +141,18 @@ router.put('/:slug', authenticateToken, requireAdmin, async (req, res) => {
       published: published !== undefined ? Boolean(published) : existingAnnouncement.published
     };
 
-    const updatedAnnouncement = await database.updateAnnouncementBySlug(originalSlug, announcementData);
+    let updatedAnnouncement;
+    if (isNumericId) {
+      // 如果是ID，使用ID更新
+      console.log('使用ID更新公告:', identifier);
+      updatedAnnouncement = await database.updateAnnouncementById(parseInt(identifier), announcementData);
+    } else {
+      // 如果是slug，使用slug更新
+      console.log('使用slug更新公告:', identifier);
+      updatedAnnouncement = await database.updateAnnouncementBySlug(identifier, announcementData);
+    }
 
+    console.log('更新成功:', updatedAnnouncement);
     res.json(updatedAnnouncement);
   } catch (error) {
     console.error('更新公告失敗:', error);
@@ -138,21 +164,33 @@ router.put('/:slug', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// 刪除公告（需要管理員權限）
-router.delete('/:slug', authenticateToken, requireAdmin, async (req, res) => {
+// 刪除公告（需要管理員權限）- 支援 slug 或 id
+router.delete('/:identifier', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { slug } = req.params;
-    console.log('刪除公告請求:', { slug });
+    const { identifier } = req.params;
+    console.log('刪除公告請求:', { identifier });
 
-    const deletedAnnouncement = await database.deleteAnnouncementBySlug(slug);
+    // 檢查是否為數字ID
+    const isNumericId = /^\d+$/.test(identifier);
+
+    let deletedAnnouncement;
+    if (isNumericId) {
+      // 如果是數字ID，使用ID刪除
+      console.log('使用ID刪除:', identifier);
+      deletedAnnouncement = await database.deleteAnnouncementById(parseInt(identifier));
+    } else {
+      // 如果不是數字，使用slug刪除
+      console.log('使用slug刪除:', identifier);
+      deletedAnnouncement = await database.deleteAnnouncementBySlug(identifier);
+    }
 
     if (!deletedAnnouncement) {
-      console.log('公告不存在:', slug);
+      console.log('公告不存在:', identifier);
       return res.status(404).json({ error: '公告不存在' });
     }
 
     console.log('公告已刪除:', {
-      deletedSlug: slug,
+      identifier,
       deletedTitle: deletedAnnouncement.title
     });
 

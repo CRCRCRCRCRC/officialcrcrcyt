@@ -191,11 +191,11 @@ export const announcementAPI = {
   create: (data) =>
     api.post('/announcements', data),
 
-  update: (slug, data) =>
-    api.put(`/announcements/${slug}`, data),
+  update: (identifier, data) =>
+    api.put(`/announcements/${identifier}`, data),
 
-  delete: (slug) =>
-    api.delete(`/announcements/${slug}`),
+  delete: (identifier) =>
+    api.delete(`/announcements/${identifier}`),
 
   reset: () =>
     api.post('/announcements/reset')
