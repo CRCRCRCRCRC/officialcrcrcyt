@@ -18,7 +18,6 @@ const DEFAULT_WALLET = {
   history: [] // { type: 'earn' | 'spend' | 'claim', amount, reason, at }
 }
 
-const DAILY_COOLDOWN_MS = 24 * 60 * 60 * 1000 // 24h
 const CACHE_PREFIX = 'crcrcoin_cache_'
 
 function cacheKeyForUser(user) {
@@ -203,21 +202,11 @@ export const CoinProvider = ({ children }) => {
     }
   }
 
-  // 動作：每日簽到（先以伺服器冷卻判斷一次，再送出簽到，避免本機時鐘誤差）
+  // 動作：每日簽到（完全依賴伺服器判斷）
   const claimDaily = async () => {
     if (!isLoggedIn) return { success: false, error: '請先登入才能簽到' }
     try {
-      // 先向伺服器確認冷卻
-      const wRes = await coinAPI.getWallet()
-      const preMs = Number(wRes?.data?.nextClaimInMs) || 0
-      if (preMs > 0) {
-        const until = Date.now() + preMs
-        setOverrideNextClaimUntil(until)
-        setServerNextUntil(until)
-        return { success: false, error: '尚未到下次簽到時間', nextClaimInMs: preMs }
-      }
-
-      // 再進行簽到
+      // 直接進行簽到，後端會檢查是否可以簽到
       const res = await coinAPI.claimDaily()
       const newWallet = res?.data?.wallet
       const amount = Number(res?.data?.amount) || 0
@@ -227,10 +216,6 @@ export const CoinProvider = ({ children }) => {
           ...(wallet.history || [])
         ].slice(0, 50)
         setFromServer(newWallet, newHist)
-        // 成功後立即套用 24h 冷卻，避免短暫「可按」狀態
-        const until = Date.now() + DAILY_COOLDOWN_MS
-        setOverrideNextClaimUntil(until)
-        setServerNextUntil(until)
       }
       return { success: true, amount }
     } catch (e) {
@@ -248,25 +233,13 @@ export const CoinProvider = ({ children }) => {
     }
   }
 
-  // 狀態：是否可簽到與剩餘時間（以伺服器時間為準，若伺服器回傳冷卻則臨時覆蓋）
-  // 取 wallet.lastClaimAt 與歷史中最近一次 claim 的最大時間，以避免某些情況只更新其中一處造成誤判
-  const claimHistMax = (() => {
-    const list = Array.isArray(wallet.history) ? wallet.history : []
-    const ts = list
-      .filter(h => h?.type === 'claim' && h?.at)
-      .map(h => new Date(h.at).getTime())
-      .filter(n => !Number.isNaN(n))
-    return ts.length ? Math.max(...ts) : 0
-  })()
-  const lastClaimTime = wallet.lastClaimAt ? new Date(wallet.lastClaimAt).getTime() : 0
-  const lastEffective = Math.max(lastClaimTime || 0, claimHistMax || 0)
-  const baseNext = lastEffective ? (lastEffective + DAILY_COOLDOWN_MS - Date.now()) : 0
+  // 狀態：是否可簽到與剩餘時間（完全依賴伺服器判斷）
+  // 現在後端會根據日期來判斷是否可以簽到，而不是固定的24小時冷卻
   const overrideLeft = overrideNextClaimUntil ? (overrideNextClaimUntil - Date.now()) : null
   const serverLeft = serverNextUntil ? (serverNextUntil - Date.now()) : null
   const effectiveNext = Math.max(
     0,
     Math.max(
-      baseNext,
       overrideLeft !== null ? overrideLeft : 0,
       serverLeft !== null ? serverLeft : 0
     )

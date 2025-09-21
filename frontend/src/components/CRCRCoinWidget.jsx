@@ -72,6 +72,24 @@ const CRCRCoinWidget = ({ compact = false }) => {
     return `${pad(h)}:${pad(m)}:${pad(sec)}`
   }
 
+  const fmtNextClaimTime = (ms) => {
+    if (ms <= 0) return '可以簽到'
+
+    // 計算到明天凌晨0點的時間
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0)
+
+    const timeUntilMidnight = tomorrow.getTime() - now.getTime()
+    const hours = Math.floor(timeUntilMidnight / (1000 * 60 * 60))
+    const minutes = Math.floor((timeUntilMidnight % (1000 * 60 * 60)) / (1000 * 60))
+
+    return `明天 ${pad(hours)}:${pad(minutes)}`
+  }
+
+  const pad = (x) => String(x).padStart(2, '0')
+
   const onDaily = async () => {
     if (claiming) return
     setClaiming(true)
@@ -164,7 +182,7 @@ const CRCRCoinWidget = ({ compact = false }) => {
                         ? '同步中...'
                         : (claiming
                             ? '處理中...'
-                            : (canClaimNow ? '領取' : `等待 ${fmtTime(leftMs)}`)))}
+                            : (canClaimNow ? '領取' : fmtNextClaimTime(leftMs))))}
                 </button>
               </div>
               {!isLoggedIn && (

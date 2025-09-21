@@ -381,7 +381,7 @@ class NeonDatabase {
     }
   }
 
-  async claimDaily(userId, reward = 50, cooldownMs = 24 * 60 * 60 * 1000) {
+  async claimDaily(userId, reward = 50) {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
@@ -390,19 +390,41 @@ class NeonDatabase {
          ON CONFLICT (user_id) DO NOTHING`,
         [userId]
       );
+
+      // 檢查今天是否已經簽到過
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // 設置為今天凌晨0點
+      const todayStr = today.toISOString().split('T')[0]; // 獲取今天的日期字符串 (YYYY-MM-DD)
+
       const cur = await client.query(
         `SELECT balance, last_claim_at FROM coin_wallets WHERE user_id = $1 FOR UPDATE`,
         [userId]
       );
       const row = cur.rows[0] || { balance: 0, last_claim_at: null };
-      const now = Date.now();
-      const last = row.last_claim_at ? new Date(row.last_claim_at).getTime() : 0;
-      const passed = now - last;
 
-      if (row.last_claim_at && passed < cooldownMs) {
-        const retryInMs = cooldownMs - passed;
+      // 檢查上次簽到是否是今天
+      let canClaim = true;
+      let nextClaimInMs = 0;
+
+      if (row.last_claim_at) {
+        const lastClaimDate = new Date(row.last_claim_at);
+        lastClaimDate.setHours(0, 0, 0, 0); // 設置為上次簽到的凌晨0點
+        const lastClaimDateStr = lastClaimDate.toISOString().split('T')[0];
+
+        if (lastClaimDateStr === todayStr) {
+          // 今天已經簽到過了
+          canClaim = false;
+
+          // 計算到明天凌晨0點的時間
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          nextClaimInMs = tomorrow.getTime() - Date.now();
+        }
+      }
+
+      if (!canClaim) {
         await client.query('ROLLBACK');
-        return { success: false, nextClaimInMs: retryInMs };
+        return { success: false, nextClaimInMs };
       }
 
       const up = await client.query(

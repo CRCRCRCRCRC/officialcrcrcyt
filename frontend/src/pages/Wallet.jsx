@@ -47,6 +47,24 @@ const Wallet = () => {
     return `${pad(h)}:${pad(m)}:${pad(sec)}`
   }
 
+  const fmtNextClaimTime = (ms) => {
+    if (ms <= 0) return '可以簽到'
+
+    // 計算到明天凌晨0點的時間
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(0, 0, 0, 0)
+
+    const timeUntilMidnight = tomorrow.getTime() - now.getTime()
+    const hours = Math.floor(timeUntilMidnight / (1000 * 60 * 60))
+    const minutes = Math.floor((timeUntilMidnight % (1000 * 60 * 60)) / (1000 * 60))
+
+    return `明天 ${pad(hours)}:${pad(minutes)}`
+  }
+
+  const pad = (x) => String(x).padStart(2, '0')
+
   const onDaily = async () => {
     if (claiming) return
     setClaiming(true)
@@ -146,7 +164,7 @@ const Wallet = () => {
                         ? '請先登入'
                         : (!hydrated
                           ? '同步中...'
-                          : (canClaimNow ? '可以領取每日獎勵了！' : `下次簽到：${fmtTime(leftMs)}`))}
+                          : (canClaimNow ? '可以領取每日獎勵了！' : `下次簽到：${fmtNextClaimTime(leftMs)}`))}
                     </p>
                   </div>
                   <button
@@ -164,7 +182,7 @@ const Wallet = () => {
                         ? '同步中...'
                         : (claiming
                           ? '處理中...'
-                          : (canClaimNow ? '領取 +50' : `等待`)))}
+                          : (canClaimNow ? '領取 +50' : fmtNextClaimTime(leftMs))))}
                   </button>
                 </div>
               </div>
