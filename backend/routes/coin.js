@@ -201,6 +201,17 @@ router.get('/discord-applications', authenticateToken, requireAdmin, async (req,
   }
 });
 
+// 取得用戶列表（僅管理員）- 用於查看用戶的電子郵件
+router.get('/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const result = await database.query('SELECT id, username, email, created_at FROM users ORDER BY created_at DESC');
+    res.json({ users: result });
+  } catch (error) {
+    console.error('取得用戶列表失敗:', error);
+    res.status(500).json({ error: '無法取得用戶列表' });
+  }
+});
+
 // 通過電子郵件給用戶加幣（僅管理員）
 router.post('/add-coins-by-email', authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -217,7 +228,15 @@ router.post('/add-coins-by-email', authenticateToken, requireAdmin, async (req, 
     // 查找用戶
     const user = await database.getUserByEmail(email.trim());
     if (!user) {
-      return res.status(404).json({ error: '找不到該電子郵件的用戶' });
+      // 如果找不到email，嘗試通過username查找
+      const userByUsername = await database.getUserByUsername(email.trim());
+      if (!userByUsername) {
+        return res.status(404).json({ error: '找不到該電子郵件或用戶名的用戶' });
+      }
+      return res.status(404).json({
+        error: '找不到該電子郵件的用戶',
+        suggestion: `建議：用戶 "${email.trim()}" 可能沒有設置電子郵件，請聯繫用戶獲取正確的電子郵件地址`
+      });
     }
 
     // 給用戶加幣
@@ -234,38 +253,6 @@ router.post('/add-coins-by-email', authenticateToken, requireAdmin, async (req, 
   }
 });
 
-// 通過用戶名給用戶加幣（僅管理員）
-router.post('/add-coins-by-username', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { username, amount, reason } = req.body;
-
-    if (!username || !username.trim()) {
-      return res.status(400).json({ error: '請提供用戶名' });
-    }
-
-    if (!amount || amount <= 0) {
-      return res.status(400).json({ error: '請提供有效的金額' });
-    }
-
-    // 查找用戶
-    const user = await database.getUserByUsername(username.trim());
-    if (!user) {
-      return res.status(404).json({ error: '找不到該用戶名' });
-    }
-
-    // 給用戶加幣
-    const result = await database.addCoins(user.id, parseInt(amount), reason || '管理員手動加幣');
-
-    return res.json({
-      success: true,
-      message: `成功給用戶 ${user.username} 添加 ${amount} CRCRCoin`,
-      wallet: mapWallet(result.wallet)
-    });
-  } catch (error) {
-    console.error('通過用戶名加幣失敗:', error);
-    res.status(500).json({ error: '加幣失敗' });
-  }
-});
 
 // 通過用戶ID給用戶加幣（僅管理員）
 router.post('/add-coins-by-id', authenticateToken, requireAdmin, async (req, res) => {
