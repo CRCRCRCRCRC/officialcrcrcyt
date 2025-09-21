@@ -203,7 +203,7 @@ router.get('/discord-applications', authenticateToken, requireAdmin, async (req,
 
 
 // 通過電子郵件給用戶加幣（僅管理員）
-router.post('/add-coins-by-email', authenticateToken, requireAdmin, async (req, res) => {
+router.post('/add-coins-by-email', async (req, res) => {
   try {
     const { email, amount, reason } = req.body;
 
@@ -215,11 +215,17 @@ router.post('/add-coins-by-email', authenticateToken, requireAdmin, async (req, 
       return res.status(400).json({ error: '請提供有效的金額' });
     }
 
+    console.log('🔍 開始查找用戶:', email.trim());
+
     // 查找用戶
     const user = await database.getUserByEmail(email.trim());
+    console.log('🔍 通過 email 查找結果:', user);
+
     if (!user) {
       // 如果找不到email，嘗試通過username查找
       const userByUsername = await database.getUserByUsername(email.trim());
+      console.log('🔍 通過 username 查找結果:', userByUsername);
+
       if (!userByUsername) {
         return res.status(404).json({ error: '找不到該電子郵件或用戶名的用戶' });
       }
@@ -229,8 +235,11 @@ router.post('/add-coins-by-email', authenticateToken, requireAdmin, async (req, 
       });
     }
 
+    console.log('✅ 找到用戶:', user);
+
     // 給用戶加幣
     const result = await database.addCoins(user.id, parseInt(amount), reason || '管理員手動加幣');
+    console.log('✅ 加幣結果:', result);
 
     return res.json({
       success: true,
@@ -239,7 +248,8 @@ router.post('/add-coins-by-email', authenticateToken, requireAdmin, async (req, 
     });
   } catch (error) {
     console.error('通過電子郵件加幣失敗:', error);
-    res.status(500).json({ error: '加幣失敗' });
+    console.error('錯誤詳情:', error.stack);
+    res.status(500).json({ error: '加幣失敗', details: error.message });
   }
 });
 

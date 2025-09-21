@@ -53,6 +53,14 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/coin', coinRoutes);
 
+// 調試：添加路由檢查
+console.log('🔗 已註冊的路由:');
+app._router.stack.forEach((r) => {
+  if (r.route && r.route.path) {
+    console.log(`  ${r.route.stack[0].method.toUpperCase()} ${r.route.path}`);
+  }
+});
+
 // 健康檢查和初始化
 app.get('/api/health', async (req, res) => {
   try {
