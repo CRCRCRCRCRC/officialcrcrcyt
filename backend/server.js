@@ -53,11 +53,18 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/coin', coinRoutes);
 
+// 測試路由
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API 服務器正常運行', timestamp: new Date().toISOString() });
+});
+
 // 調試：添加路由檢查
 console.log('🔗 已註冊的路由:');
 app._router.stack.forEach((r) => {
   if (r.route && r.route.path) {
     console.log(`  ${r.route.stack[0].method.toUpperCase()} ${r.route.path}`);
+  } else if (r.name === 'router') {
+    console.log(`  Router middleware`);
   }
 });
 
@@ -69,7 +76,8 @@ app.get('/api/health', async (req, res) => {
     res.json({
       status: 'OK',
       timestamp: new Date().toISOString(),
-      database: 'Neon PostgreSQL Ready'
+      database: 'Neon PostgreSQL Ready',
+      routes: 'API routes registered'
     });
   } catch (error) {
     console.error('資料庫初始化失敗:', error);
@@ -82,9 +90,21 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// 測試 coin 路由
+app.get('/api/coin/test', (req, res) => {
+  res.json({ message: 'Coin API 正常運行', timestamp: new Date().toISOString() });
+});
+
+// 調試：添加請求日誌
+app.use((req, res, next) => {
+  console.log(`📨 ${req.method} ${req.path}`);
+  next();
+});
+
 // 404 處理
 app.use('*', (req, res) => {
-  res.status(404).json({ error: 'API endpoint not found' });
+  console.log(`❌ 404 - ${req.method} ${req.path} - 找不到路由`);
+  res.status(404).json({ error: 'API endpoint not found', path: req.path, method: req.method });
 });
 
 // 錯誤處理中間件
