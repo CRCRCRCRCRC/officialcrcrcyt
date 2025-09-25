@@ -4,6 +4,13 @@ import { X, Upload, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import defaultAvatar from '../assets/default-avatar.svg'
 
+const resolveAvatarSrc = (value) => {
+  if (!value) return ''
+  if (/^(?:https?:)?\/\//i.test(value) || value.startsWith('data:')) return value
+  const normalized = value.replace(/^\.?\/+/, '')
+  return normalized ? `/${normalized}` : ''
+}
+
 const ProfileSettingsModal = ({ open, onClose, initialData, onSubmit }) => {
   const [displayName, setDisplayName] = useState('')
   const [avatarPreview, setAvatarPreview] = useState('')
@@ -14,14 +21,14 @@ const ProfileSettingsModal = ({ open, onClose, initialData, onSubmit }) => {
   useEffect(() => {
     if (!open) return
     setDisplayName(initialData?.displayName || '')
-    setAvatarPreview(initialData?.avatarUrl || '')
+    setAvatarPreview(resolveAvatarSrc(initialData?.avatarUrl || ''))
     setAvatarFile(null)
     setRemoveAvatar(false)
   }, [open, initialData?.displayName, initialData?.avatarUrl])
 
   useEffect(() => {
     return () => {
-      if (avatarFile && typeof avatarFile.preview === 'string') {
+      if (avatarFile?.preview) {
         URL.revokeObjectURL(avatarFile.preview)
       }
     }
@@ -30,7 +37,8 @@ const ProfileSettingsModal = ({ open, onClose, initialData, onSubmit }) => {
   const previewSrc = useMemo(() => {
     if (avatarFile?.preview) return avatarFile.preview
     if (removeAvatar) return defaultAvatar
-    return avatarPreview || defaultAvatar
+    const normalized = resolveAvatarSrc(avatarPreview)
+    return normalized || defaultAvatar
   }, [avatarFile, avatarPreview, removeAvatar])
 
   const handleFileChange = (event) => {
@@ -190,4 +198,3 @@ const ProfileSettingsModal = ({ open, onClose, initialData, onSubmit }) => {
 }
 
 export default ProfileSettingsModal
-

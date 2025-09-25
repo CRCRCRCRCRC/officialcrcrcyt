@@ -8,6 +8,13 @@ import CRCRCoinWidget from './CRCRCoinWidget'
 import ProfileSettingsModal from './ProfileSettingsModal'
 import defaultAvatar from '../assets/default-avatar.svg'
 
+const resolveAvatarSrc = (value) => {
+  if (!value) return ''
+  if (/^(?:https?:)?\/\//i.test(value) || value.startsWith('data:')) return value
+  const normalized = value.replace(/^\.?\/+/, '')
+  return normalized ? `/${normalized}` : ''
+}
+
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -17,7 +24,8 @@ const Header = () => {
   const userMenuRef = useRef(null)
 
   const userDisplayName = user?.displayName || user?.name || user?.username || user?.email
-  const userAvatar = user?.avatarUrl || user?.picture || defaultAvatar
+  const rawUserAvatar = user?.avatarUrl || user?.picture || ''
+  const userAvatar = resolveAvatarSrc(rawUserAvatar) || defaultAvatar
 
   useEffect(() => {
     const handleDocClick = (event) => {
@@ -209,7 +217,7 @@ const Header = () => {
       <ProfileSettingsModal
         open={showProfileModal}
         onClose={() => setShowProfileModal(false)}
-        initialData={{ displayName: user?.displayName || user?.name || '', avatarUrl: user?.avatarUrl || user?.picture || '' }}
+        initialData={{ displayName: user?.displayName || user?.name || '', avatarUrl: rawUserAvatar }}
         onSubmit={updateProfile}
       />
     </>
