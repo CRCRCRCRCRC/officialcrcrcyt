@@ -97,10 +97,11 @@ export const authAPI = {
     api.get('/auth/verify'),
   
   changePassword: (currentPassword, newPassword) => 
-    api.post('/auth/change-password', { currentPassword, newPassword })
+    api.post('/auth/change-password', { currentPassword, newPassword }),
+  
+  updateProfile: (formData) => 
+    api.put('/auth/profile', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
 }
-
-// 影片 API
 export const videoAPI = {
   getAll: (params = {}) => 
     api.get('/videos', { params }),

@@ -7,7 +7,19 @@ class KVDatabase {
   // 用戶相關操作
   async createUser(userData) {
     const userId = `user:${Date.now()}`;
-    await this.kv.hset(userId, userData);
+    const payload = { ...userData };
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'displayName') && !Object.prototype.hasOwnProperty.call(payload, 'display_name')) {
+      payload.display_name = payload.displayName;
+      delete payload.displayName;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, 'avatarUrl') && !Object.prototype.hasOwnProperty.call(payload, 'avatar_url')) {
+      payload.avatar_url = payload.avatarUrl;
+      delete payload.avatarUrl;
+    }
+
+    await this.kv.hset(userId, payload);
     await this.kv.sadd('users', userId);
     return userId;
   }
@@ -31,6 +43,25 @@ class KVDatabase {
   async updateUser(userId, userData) {
     await this.kv.hset(userId, userData);
     return true;
+  }
+
+  async updateUserProfile(userId, profileData = {}) {
+    const payload = {};
+
+    if (Object.prototype.hasOwnProperty.call(profileData, 'displayName')) {
+      payload.display_name = profileData.displayName;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(profileData, 'avatarUrl')) {
+      payload.avatar_url = profileData.avatarUrl;
+    }
+
+    if (!Object.keys(payload).length) {
+      return await this.getUserById(userId);
+    }
+
+    await this.kv.hset(userId, payload);
+    return await this.getUserById(userId);
   }
 
   // 影片相關操作
@@ -181,7 +212,8 @@ class KVDatabase {
           username: 'CRCRC',
           password: hashedPassword,
           role: 'admin',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          displayName: 'CRCRC'
         });
         
         console.log('✅ 默認管理員用戶創建成功 (用戶名: CRCRC, 密碼: admin)');

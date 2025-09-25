@@ -24,6 +24,15 @@ class NeonDatabase {
         )
       `);
 
+      await this.pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS display_name VARCHAR(255)
+      `);
+      await this.pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)
+      `);
+
       // 創建影片表
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS videos (
@@ -149,10 +158,10 @@ class NeonDatabase {
 
   // 用戶相關操作
   async createUser(userData) {
-    const { username, password, role = 'user' } = userData;
+    const { username, password, role = 'user', displayName = null, avatarUrl = null } = userData;
     const result = await this.pool.query(
-      'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id',
-      [username, password, role]
+      'INSERT INTO users (username, password, role, display_name, avatar_url) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [username, password, role, displayName, avatarUrl]
     );
     return result.rows[0].id;
   }
@@ -171,6 +180,36 @@ class NeonDatabase {
       [userId]
     );
     return result.rows[0] || null;
+  }
+
+
+  async updateUserProfile(userId, profileData = {}) {
+    const fields = [];
+    const values = [];
+    let index = 1;
+
+    if (Object.prototype.hasOwnProperty.call(profileData, 'displayName')) {
+      fields.push(`display_name = $${index++}`);
+      values.push(profileData.displayName || null);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(profileData, 'avatarUrl')) {
+      fields.push(`avatar_url = $${index++}`);
+      values.push(profileData.avatarUrl || null);
+    }
+
+    if (!fields.length) {
+      return await this.getUserById(userId);
+    }
+
+    values.push(userId);
+
+    await this.pool.query(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = $${index}`,
+      values
+    );
+
+    return await this.getUserById(userId);
   }
 
   async updateUser(userId, userData) {
