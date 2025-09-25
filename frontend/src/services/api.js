@@ -3,7 +3,7 @@ import axios from 'axios'
 // 創建 axios 實例
 const api = axios.create({
   baseURL: '/api',
-  timeout: 10000,
+  timeout: 60000,
 })
 
 // 請求攔截器 - 添加 token（同時支援管理端 token 與網站端 website_token）
