@@ -1,9 +1,8 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Upload, Loader2, ImageOff } from 'lucide-react'
+import { X, Upload, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-
-const defaultAvatar = 'https://i.pravatar.cc/100'
+import defaultAvatar from '../assets/default-avatar.svg'
 
 const ProfileSettingsModal = ({ open, onClose, initialData, onSubmit }) => {
   const [displayName, setDisplayName] = useState('')
@@ -29,9 +28,9 @@ const ProfileSettingsModal = ({ open, onClose, initialData, onSubmit }) => {
   }, [avatarFile])
 
   const previewSrc = useMemo(() => {
-    if (removeAvatar) return ''
     if (avatarFile?.preview) return avatarFile.preview
-    return avatarPreview
+    if (removeAvatar) return defaultAvatar
+    return avatarPreview || defaultAvatar
   }, [avatarFile, avatarPreview, removeAvatar])
 
   const handleFileChange = (event) => {
@@ -132,21 +131,14 @@ const ProfileSettingsModal = ({ open, onClose, initialData, onSubmit }) => {
                   <label className="block text-sm font-medium text-gray-700">頭像</label>
                   <div className="mt-3 flex items-center gap-4">
                     <div className="relative h-20 w-20 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50">
-                      {previewSrc ? (
-                        <img
-                          src={previewSrc}
-                          alt="頭像預覽"
-                          className="h-full w-full object-cover"
-                          onError={(event) => {
-                            event.currentTarget.src = defaultAvatar
-                          }}
-                        />
-                      ) : (
-                        <div className="flex h-full w-full flex-col items-center justify-center text-gray-400">
-                          <ImageOff className="h-6 w-6" />
-                          <span className="mt-1 text-xs">無頭像</span>
-                        </div>
-                      )}
+                      <img
+                        src={previewSrc}
+                        alt="頭像預覽"
+                        className="h-full w-full object-cover"
+                        onError={(event) => {
+                          event.currentTarget.src = defaultAvatar
+                        }}
+                      />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-primary-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-600">

@@ -6,6 +6,7 @@ import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 import GoogleLoginButtonPublic from './GoogleLoginButtonPublic'
 import CRCRCoinWidget from './CRCRCoinWidget'
 import ProfileSettingsModal from './ProfileSettingsModal'
+import defaultAvatar from '../assets/default-avatar.svg'
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -16,7 +17,7 @@ const Header = () => {
   const userMenuRef = useRef(null)
 
   const userDisplayName = user?.displayName || user?.name || user?.username || user?.email
-  const userAvatar = user?.avatarUrl || user?.picture || 'https://i.pravatar.cc/80'
+  const userAvatar = user?.avatarUrl || user?.picture || defaultAvatar
 
   useEffect(() => {
     const handleDocClick = (event) => {
@@ -98,7 +99,14 @@ const Header = () => {
                       className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100"
                       onClick={() => setIsUserMenuOpen((open) => !open)}
                     >
-                      <img src={userAvatar} alt={userDisplayName || user?.email} className="w-8 h-8 rounded-full object-cover" />
+                      <img
+                        src={userAvatar}
+                        alt={userDisplayName || user?.email || 'default avatar'}
+                        className="w-8 h-8 rounded-full object-cover"
+                        onError={(event) => {
+                          event.currentTarget.src = defaultAvatar
+                        }}
+                      />
                       <span className="text-sm font-medium text-gray-700">{userDisplayName || user?.email}</span>
                       <ChevronDown className="w-4 h-4 text-gray-500" />
                     </button>
