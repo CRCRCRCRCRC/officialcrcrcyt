@@ -24,7 +24,7 @@ const Header = () => {
   const userMenuRef = useRef(null)
 
   const userDisplayName = user?.displayName || user?.name || user?.username || user?.email
-  const rawUserAvatar = user?.avatarUrl || user?.picture || ''
+  const rawUserAvatar = user?.picture || user?.avatarUrl || ''
   const userAvatar = resolveAvatarSrc(rawUserAvatar) || defaultAvatar
 
   useEffect(() => {
@@ -217,7 +217,7 @@ const Header = () => {
       <ProfileSettingsModal
         open={showProfileModal}
         onClose={() => setShowProfileModal(false)}
-        initialData={{ displayName: user?.displayName || user?.name || '', avatarUrl: rawUserAvatar }}
+        initialData={{ displayName: user?.displayName || user?.name || '', avatarUrl: user?.picture || user?.avatarUrl || '' }}
         onSubmit={updateProfile}
       />
     </>

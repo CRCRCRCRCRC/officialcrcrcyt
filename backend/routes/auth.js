@@ -2,41 +2,10 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const database = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
-
-const AVATAR_UPLOAD_DIR = path.join(__dirname, '../uploads/avatars');
-
-const avatarStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    if (!fs.existsSync(AVATAR_UPLOAD_DIR)) {
-      fs.mkdirSync(AVATAR_UPLOAD_DIR, { recursive: true });
-    }
-    cb(null, AVATAR_UPLOAD_DIR);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || '').toLowerCase();
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `avatar-${uniqueSuffix}${ext}`);
-  }
-});
-
-const uploadAvatar = multer({
-  storage: avatarStorage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype && file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('僅支援上傳圖片檔案'));
-    }
-  }
-});
 
 const sanitizeUser = (user, overrides = {}) => {
   if (!user) return null;
@@ -56,21 +25,6 @@ const sanitizeUser = (user, overrides = {}) => {
     picture: avatarUrl
   };
 };
-
-const removeAvatarFile = async (storedPath) => {
-  if (!storedPath) return;
-  const normalized = storedPath.replace(/^\.+[\/\\]*/, '').replace(/^[\/\\]+/, '');
-  const uploadsRoot = path.join(__dirname, '..', 'uploads');
-  const absolutePath = path.join(__dirname, '..', normalized);
-  if (!absolutePath.startsWith(uploadsRoot)) return;
-  try {
-    await fs.promises.unlink(absolutePath);
-  } catch (error) {
-    // ignore missing file
-  }
-};
-
-const toAvatarRelativePath = (filename) => path.posix.join('uploads', 'avatars', filename);
 
 // 登入
 router.post('/login', async (req, res) => {
@@ -143,11 +97,10 @@ router.get('/profile', authenticateToken, async (req, res) => {
 });
 
 // 更新個人資料
-router.put('/profile', authenticateToken, uploadAvatar.single('avatar'), async (req, res) => {
+router.put('/profile', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const rawDisplayName = typeof req.body.displayName === 'string' ? req.body.displayName.trim() : undefined;
-    const removeAvatar = req.body && req.body.removeAvatar === 'true';
 
     if (rawDisplayName !== undefined) {
       if (!rawDisplayName) {
@@ -160,27 +113,12 @@ router.put('/profile', authenticateToken, uploadAvatar.single('avatar'), async (
 
     const existingUser = await database.getUserById(userId);
     if (!existingUser) {
-      if (req.file) await removeAvatarFile(toAvatarRelativePath(req.file.filename));
       return res.status(404).json({ error: '用戶不存在' });
     }
 
     const updates = {};
-
-    if (rawDisplayName !== undefined) {
+    if (rawDisplayName !== undefined && rawDisplayName !== (existingUser.display_name || existingUser.displayName)) {
       updates.displayName = rawDisplayName;
-    }
-
-    if (req.file) {
-      const relativePath = toAvatarRelativePath(req.file.filename);
-      if (existingUser.avatar_url && existingUser.avatar_url !== relativePath) {
-        await removeAvatarFile(existingUser.avatar_url);
-      }
-      updates.avatarUrl = relativePath;
-    } else if (removeAvatar) {
-      if (existingUser.avatar_url) {
-        await removeAvatarFile(existingUser.avatar_url);
-      }
-      updates.avatarUrl = null;
     }
 
     let updatedUser = existingUser;
@@ -188,17 +126,12 @@ router.put('/profile', authenticateToken, uploadAvatar.single('avatar'), async (
       updatedUser = await database.updateUserProfile(userId, updates);
     }
 
-    const sanitized = sanitizeUser(updatedUser, updates.avatarUrl === null ? { avatarUrl: '', picture: '' } : {});
-
     res.json({
       message: Object.keys(updates).length ? '個人資料已更新' : '資料未變更',
-      user: sanitized
+      user: sanitizeUser(updatedUser)
     });
   } catch (error) {
     console.error('更新個人資料錯誤:', error);
-    if (req.file) {
-      await removeAvatarFile(toAvatarRelativePath(req.file.filename));
-    }
     res.status(500).json({ error: '更新個人資料失敗' });
   }
 });

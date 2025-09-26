@@ -1,6 +1,6 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Upload, Loader2 } from 'lucide-react'
+import { X, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import defaultAvatar from '../assets/default-avatar.svg'
 
@@ -13,67 +13,26 @@ const resolveAvatarSrc = (value) => {
 
 const ProfileSettingsModal = ({ open, onClose, initialData, onSubmit }) => {
   const [displayName, setDisplayName] = useState('')
-  const [avatarPreview, setAvatarPreview] = useState('')
-  const [avatarFile, setAvatarFile] = useState(null)
-  const [removeAvatar, setRemoveAvatar] = useState(false)
+  const [avatarUrl, setAvatarUrl] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!open) return
     setDisplayName(initialData?.displayName || '')
-    setAvatarPreview(resolveAvatarSrc(initialData?.avatarUrl || ''))
-    setAvatarFile(null)
-    setRemoveAvatar(false)
+    setAvatarUrl(resolveAvatarSrc(initialData?.avatarUrl || ''))
   }, [open, initialData?.displayName, initialData?.avatarUrl])
 
-  useEffect(() => {
-    return () => {
-      if (avatarFile?.preview) {
-        URL.revokeObjectURL(avatarFile.preview)
-      }
-    }
-  }, [avatarFile])
-
   const previewSrc = useMemo(() => {
-    if (avatarFile?.preview) return avatarFile.preview
-    if (removeAvatar) return defaultAvatar
-    const normalized = resolveAvatarSrc(avatarPreview)
+    const normalized = resolveAvatarSrc(avatarUrl)
     return normalized || defaultAvatar
-  }, [avatarFile, avatarPreview, removeAvatar])
-
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) {
-      toast.error('僅接受圖片檔案')
-      return
-    }
-    if (avatarFile?.preview) {
-      URL.revokeObjectURL(avatarFile.preview)
-    }
-    const preview = URL.createObjectURL(file)
-    setAvatarFile(Object.assign(file, { preview }))
-    setAvatarPreview('')
-    setRemoveAvatar(false)
-  }
-
-  const handleRemoveAvatar = () => {
-    if (avatarFile?.preview) {
-      URL.revokeObjectURL(avatarFile.preview)
-    }
-    setAvatarFile(null)
-    setAvatarPreview('')
-    setRemoveAvatar(true)
-  }
+  }, [avatarUrl])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (submitting) return
 
     const payload = {
-      displayName: displayName?.trim() ?? '',
-      avatarFile,
-      removeAvatar
+      displayName: displayName?.trim() ?? ''
     }
 
     setSubmitting(true)
@@ -111,7 +70,7 @@ const ProfileSettingsModal = ({ open, onClose, initialData, onSubmit }) => {
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">個人資料設定</h2>
-                  <p className="mt-1 text-sm text-gray-500">更新暱稱與頭像</p>
+                  <p className="mt-1 text-sm text-gray-500">更新暱稱與檢視頭像</p>
                 </div>
                 <button
                   type="button"
@@ -148,20 +107,9 @@ const ProfileSettingsModal = ({ open, onClose, initialData, onSubmit }) => {
                         }}
                       />
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-primary-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-600">
-                        <Upload className="h-4 w-4" />
-                        上傳新頭像
-                        <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleRemoveAvatar}
-                        className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
-                      >
-                        移除頭像
-                      </button>
-                    </div>
+                    <p className="text-sm text-gray-500">
+                      頭像會依據 Google 帳號同步，無法於此變更。
+                    </p>
                   </div>
                 </div>
               </div>

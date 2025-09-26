@@ -30,13 +30,13 @@ export const WebsiteAuthProvider = ({ children }) => {
     return nextUser
   }
 
-  const updateProfile = async ({ displayName, avatarFile, removeAvatar } = {}) => {
-    const formData = new FormData()
-    if (typeof displayName === 'string') formData.append('displayName', displayName)
-    if (avatarFile) formData.append('avatar', avatarFile)
-    if (removeAvatar) formData.append('removeAvatar', 'true')
+  const updateProfile = async ({ displayName } = {}) => {
+    const payload = {}
+    if (typeof displayName === 'string') {
+      payload.displayName = displayName
+    }
 
-    const res = await authAPI.updateProfile(formData)
+    const res = await authAPI.updateProfile(payload)
     const updatedUser = res?.data?.user
     if (updatedUser) {
       localStorage.setItem('website_user', JSON.stringify(updatedUser))

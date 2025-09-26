@@ -99,8 +99,8 @@ export const authAPI = {
   changePassword: (currentPassword, newPassword) => 
     api.post('/auth/change-password', { currentPassword, newPassword }),
   
-  updateProfile: (formData) => 
-    api.put('/auth/profile', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+  updateProfile: (payload) => 
+    api.put('/auth/profile', payload)
 }
 export const videoAPI = {
   getAll: (params = {}) => 
