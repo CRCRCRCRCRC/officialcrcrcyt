@@ -1,3 +1,24 @@
+const toTimestamp = (value) => {
+  if (!value) return null;
+  const ts = new Date(value).getTime();
+  return Number.isFinite(ts) ? ts : null;
+};
+
+const getNextMidnightTimestamp = (timestamp) => {
+  if (timestamp === null || timestamp === undefined) return null;
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return null;
+  const next = new Date(date);
+  next.setHours(24, 0, 0, 0);
+  return next.getTime();
+};
+
+const msUntilNextMidnight = (timestamp, now = Date.now()) => {
+  const next = getNextMidnightTimestamp(timestamp);
+  if (next === null) return 0;
+  return Math.max(0, next - now);
+};
+
 class KVDatabase {
   constructor() {
     // 將在 database.js 中設置 this.kv
@@ -357,20 +378,22 @@ class KVDatabase {
     return { success: true, wallet: { user_id: userId, balance: newBal, last_claim_at: w.last_claim_at || null } };
   }
 
-  async claimDaily(userId, reward = 50, cooldownMs = 24 * 60 * 60 * 1000) {
+  async claimDaily(userId, reward = 50) {
     const key = this.walletKey(userId);
     await this.ensureCoinWallet(userId);
     const w = await this.kv.hgetall(key);
     const now = Date.now();
-    const last = w.last_claim_at ? new Date(w.last_claim_at).getTime() : 0;
-    const passed = now - last;
+    const lastTs = toTimestamp(w.last_claim_at);
 
-    if (w.last_claim_at && passed < cooldownMs) {
-      return { success: false, nextClaimInMs: cooldownMs - passed };
+    if (lastTs !== null) {
+      const remaining = msUntilNextMidnight(lastTs, now);
+      if (remaining > 0) {
+        return { success: false, nextClaimInMs: remaining };
+      }
     }
 
     const newBal = (parseInt(w.balance) || 0) + Math.max(0, parseInt(reward) || 0);
-    const lastClaimISO = new Date().toISOString();
+    const lastClaimISO = new Date(now).toISOString();
     await this.kv.hset(key, {
       balance: newBal,
       last_claim_at: lastClaimISO,

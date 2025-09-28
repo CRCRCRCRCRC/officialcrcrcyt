@@ -4,6 +4,29 @@ const database = require('../config/database');
 
 const router = express.Router();
 
+const toTimestamp = (value) => {
+  if (!value) return null;
+  const ts = new Date(value).getTime();
+  return Number.isFinite(ts) ? ts : null;
+};
+
+const getNextMidnightTimestamp = (timestamp) => {
+  if (timestamp === null || timestamp === undefined) return null;
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return null;
+  const next = new Date(date);
+  next.setHours(24, 0, 0, 0);
+  return next.getTime();
+};
+
+const msUntilNextMidnight = (value, now = Date.now()) => {
+  const ts = typeof value === 'number' ? value : toTimestamp(value);
+  if (ts === null) return 0;
+  const next = getNextMidnightTimestamp(ts);
+  if (next === null) return 0;
+  return Math.max(0, next - now);
+};
+
 const SHOP_PRODUCTS = [
   {
     id: 'discord-role-king',
@@ -70,22 +93,22 @@ router.get('/products', (req, res) => {
 
 // 取得目前用戶的伺服器錢包（需要登入）
 // 併回傳伺服器端計算的 nextClaimInMs，避免因客戶端時鐘誤差導致按鈕狀態判斷錯誤
-router.get('/wallet', authenticateToken, async (req, res) => {
-  try {
-    const wallet = await database.getCoinWallet(req.user.id);
-    const COOLDOWN_MS = 24 * 60 * 60 * 1000;
-    const raw = wallet?.last_claim_at ?? wallet?.lastClaimAt ?? null;
-    const iso = toISO(raw);
-    let nextClaimInMs = 0;
-    if (iso) {
-      const last = new Date(iso).getTime();
-      const diff = (last + COOLDOWN_MS) - Date.now();
-      if (diff > 0) nextClaimInMs = diff;
-    }
-    res.json({ wallet: mapWallet(wallet), nextClaimInMs });
-  } catch (error) {
-    console.error('取得錢包失敗:', error);
-    res.status(500).json({ error: '無法取得錢包' });
+router.get('/wallet', authenticateToken, async (req, res) => {
+  try {
+    const wallet = await database.getCoinWallet(req.user.id);
+    const raw = wallet?.last_claim_at ?? wallet?.lastClaimAt ?? null;
+    const iso = toISO(raw);
+    let nextClaimInMs = 0;
+    if (iso) {
+      nextClaimInMs = msUntilNextMidnight(iso);
+    }
+    res.json({ wallet: mapWallet(wallet), nextClaimInMs });
+  } catch (error) {
+    console.error('���o���]����:', error);
+    res.status(500).json({ error: '�L�k���o���]' });
+  }
+});
+
   }
 });
 

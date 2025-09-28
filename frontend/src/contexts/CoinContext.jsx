@@ -12,6 +12,25 @@ import { coinAPI } from '../services/api'
 
 const CoinContext = createContext(null)
 
+const toTimestamp = (value) => {
+  if (!value) return null
+  try {
+    const ts = new Date(value).getTime()
+    return Number.isFinite(ts) ? ts : null
+  } catch {
+    return null
+  }
+}
+
+const getNextMidnightTimestamp = (timestamp) => {
+  if (timestamp === null || timestamp === undefined) return null
+  const date = new Date(timestamp)
+  if (Number.isNaN(date.getTime())) return null
+  const next = new Date(date)
+  next.setHours(24, 0, 0, 0)
+  return next.getTime()
+}
+
 const DEFAULT_WALLET = {
   balance: 0,
   lastClaimAt: null, // ISO string
@@ -70,6 +89,31 @@ export const CoinProvider = ({ children }) => {
   const [overrideNextClaimUntil, setOverrideNextClaimUntil] = useState(null)
   const [serverNextUntil, setServerNextUntil] = useState(null)
 
+  const scheduleNextClaimFromMs = (ms) => {
+    if (ms > 0) {
+      const until = Date.now() + ms
+      setOverrideNextClaimUntil(until)
+      setServerNextUntil(until)
+    } else {
+      setOverrideNextClaimUntil(null)
+      setServerNextUntil(null)
+    }
+  }
+
+  const scheduleNextClaimFromLastClaim = (iso) => {
+    const lastTs = toTimestamp(iso)
+    if (lastTs !== null) {
+      const nextMidnight = getNextMidnightTimestamp(lastTs)
+      if (nextMidnight !== null) {
+        setOverrideNextClaimUntil(nextMidnight)
+        setServerNextUntil(nextMidnight)
+        return
+      }
+    }
+    setOverrideNextClaimUntil(null)
+    setServerNextUntil(null)
+  }
+
   // 封裝：以伺服器回傳值更新狀態/快取/廣播
   const setFromServer = (serverWallet, history) => {
     const merged = {
@@ -104,14 +148,7 @@ export const CoinProvider = ({ children }) => {
       // 將伺服器計算的冷卻時間帶入，避免本機時鐘誤差造成「可按但被拒」
       {
         const serverMs = Number(wRes?.data?.nextClaimInMs) || 0
-        if (serverMs > 0) {
-          const until = Date.now() + serverMs
-          setOverrideNextClaimUntil(until)
-          setServerNextUntil(until)
-        } else {
-          setOverrideNextClaimUntil(null)
-          setServerNextUntil(null)
-        }
+        scheduleNextClaimFromMs(serverMs)
       }
     } catch (e) {
       // 失敗則保留快取，不阻塞 UI
@@ -131,6 +168,7 @@ export const CoinProvider = ({ children }) => {
       if (msg.userKey !== userKey) return
       setWallet(msg.wallet)
       if (userKey) saveCache(userKey, msg.wallet)
+      scheduleNextClaimFromLastClaim(msg.wallet?.lastClaimAt)
     }
     return () => {
       try { bc.close() } catch {}
@@ -141,7 +179,9 @@ export const CoinProvider = ({ children }) => {
   // 登入或使用者鍵變更時：先用快取填充，再拉取伺服器
   useEffect(() => {
     setHydrated(false)
-    setWallet(userKey ? loadCache(userKey) : { ...DEFAULT_WALLET })
+    const initialWallet = userKey ? loadCache(userKey) : { ...DEFAULT_WALLET }
+    setWallet(initialWallet)
+    scheduleNextClaimFromLastClaim(initialWallet.lastClaimAt)
     refreshWallet()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userKey, isLoggedIn])
@@ -217,14 +257,15 @@ export const CoinProvider = ({ children }) => {
         ].slice(0, 50)
         setFromServer(newWallet, newHist)
       }
+      if (newWallet?.lastClaimAt) {
+        scheduleNextClaimFromLastClaim(newWallet.lastClaimAt)
+      } else {
+        scheduleNextClaimFromMs(0)
+      }
       return { success: true, amount }
     } catch (e) {
       const nextClaimInMs = Number(e?.response?.data?.nextClaimInMs) || 0
-      if (nextClaimInMs > 0) {
-        const until = Date.now() + nextClaimInMs
-        setOverrideNextClaimUntil(until)
-        setServerNextUntil(until)
-      }
+      scheduleNextClaimFromMs(nextClaimInMs)
       return {
         success: false,
         error: e?.response?.data?.error || '尚未到下次簽到時間',
@@ -234,7 +275,7 @@ export const CoinProvider = ({ children }) => {
   }
 
   // 狀態：是否可簽到與剩餘時間（完全依賴伺服器判斷）
-  // 現在後端會根據日期來判斷是否可以簽到，而不是固定的24小時冷卻
+  // 現在後端會以隔日凌晨為冷卻點，而非固定 24 小時冷卻
   const overrideLeft = overrideNextClaimUntil ? (overrideNextClaimUntil - Date.now()) : null
   const serverLeft = serverNextUntil ? (serverNextUntil - Date.now()) : null
   const effectiveNext = Math.max(
