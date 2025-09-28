@@ -1,20 +1,22 @@
+const DAY_MS = 24 * 60 * 60 * 1000;
+const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
+
 const toTimestamp = (value) => {
   if (!value) return null;
   const ts = new Date(value).getTime();
   return Number.isFinite(ts) ? ts : null;
 };
 
-const getNextMidnightTimestamp = (timestamp) => {
+const getNextTaipeiMidnightTimestamp = (timestamp) => {
   if (timestamp === null || timestamp === undefined) return null;
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) return null;
-  const next = new Date(date);
-  next.setHours(24, 0, 0, 0);
-  return next.getTime();
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts)) return null;
+  const nextDay = Math.floor((ts + TAIPEI_OFFSET_MS) / DAY_MS) + 1;
+  return nextDay * DAY_MS - TAIPEI_OFFSET_MS;
 };
 
-const msUntilNextMidnight = (timestamp, now = Date.now()) => {
-  const next = getNextMidnightTimestamp(timestamp);
+const msUntilNextTaipeiMidnight = (timestamp, now = Date.now()) => {
+  const next = getNextTaipeiMidnightTimestamp(timestamp);
   if (next === null) return 0;
   return Math.max(0, next - now);
 };
@@ -386,7 +388,7 @@ class KVDatabase {
     const lastTs = toTimestamp(w.last_claim_at);
 
     if (lastTs !== null) {
-      const remaining = msUntilNextMidnight(lastTs, now);
+      const remaining = msUntilNextTaipeiMidnight(lastTs, now);
       if (remaining > 0) {
         return { success: false, nextClaimInMs: remaining };
       }

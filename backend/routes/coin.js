@@ -4,25 +4,27 @@ const database = require('../config/database');
 
 const router = express.Router();
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
+
 const toTimestamp = (value) => {
   if (!value) return null;
   const ts = new Date(value).getTime();
   return Number.isFinite(ts) ? ts : null;
 };
 
-const getNextMidnightTimestamp = (timestamp) => {
+const getNextTaipeiMidnightTimestamp = (timestamp) => {
   if (timestamp === null || timestamp === undefined) return null;
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) return null;
-  const next = new Date(date);
-  next.setHours(24, 0, 0, 0);
-  return next.getTime();
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts)) return null;
+  const nextDay = Math.floor((ts + TAIPEI_OFFSET_MS) / DAY_MS) + 1;
+  return nextDay * DAY_MS - TAIPEI_OFFSET_MS;
 };
 
-const msUntilNextMidnight = (value, now = Date.now()) => {
+const msUntilNextTaipeiMidnight = (value, now = Date.now()) => {
   const ts = typeof value === 'number' ? value : toTimestamp(value);
   if (ts === null) return 0;
-  const next = getNextMidnightTimestamp(ts);
+  const next = getNextTaipeiMidnightTimestamp(ts);
   if (next === null) return 0;
   return Math.max(0, next - now);
 };
@@ -98,7 +100,7 @@ router.get('/wallet', authenticateToken, async (req, res) => {
     const wallet = await database.getCoinWallet(req.user.id);
     const raw = wallet?.last_claim_at ?? wallet?.lastClaimAt ?? null;
     const iso = toISO(raw);
-    const nextClaimInMs = iso ? msUntilNextMidnight(iso) : 0;
+    const nextClaimInMs = iso ? msUntilNextTaipeiMidnight(iso) : 0;
     res.json({ wallet: mapWallet(wallet), nextClaimInMs });
   } catch (error) {
     console.error('取得錢包失敗:', error);

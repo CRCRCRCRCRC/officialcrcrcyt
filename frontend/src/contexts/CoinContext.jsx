@@ -12,9 +12,16 @@ import { coinAPI } from '../services/api'
 
 const CoinContext = createContext(null)
 
+const DAY_MS = 24 * 60 * 60 * 1000
+const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000
+
 const toTimestamp = (value) => {
   if (!value) return null
   try {
+    if (value instanceof Date) {
+      const ts = value.getTime()
+      return Number.isFinite(ts) ? ts : null
+    }
     const ts = new Date(value).getTime()
     return Number.isFinite(ts) ? ts : null
   } catch {
@@ -22,19 +29,18 @@ const toTimestamp = (value) => {
   }
 }
 
-const getNextMidnightTimestamp = (timestamp) => {
+const getNextTaipeiMidnightTimestamp = (timestamp) => {
   if (timestamp === null || timestamp === undefined) return null
-  const date = new Date(timestamp)
-  if (Number.isNaN(date.getTime())) return null
-  const next = new Date(date)
-  next.setHours(24, 0, 0, 0)
-  return next.getTime()
+  const ts = Number(timestamp)
+  if (!Number.isFinite(ts)) return null
+  const nextDay = Math.floor((ts + TAIPEI_OFFSET_MS) / DAY_MS) + 1
+  return nextDay * DAY_MS - TAIPEI_OFFSET_MS
 }
 
 const DEFAULT_WALLET = {
   balance: 0,
-  lastClaimAt: null, // ISO string
-  history: [] // { type: 'earn' | 'spend' | 'claim', amount, reason, at }
+  lastClaimAt: null,
+  history: []
 }
 
 const CACHE_PREFIX = 'crcrcoin_cache_'
@@ -72,7 +78,6 @@ function saveCache(cacheKey, wallet) {
     }
     localStorage.setItem(cacheKey, JSON.stringify(toSave))
   } catch {
-    // ignore
   }
 }
 
@@ -103,7 +108,7 @@ export const CoinProvider = ({ children }) => {
   const scheduleNextClaimFromLastClaim = (iso) => {
     const lastTs = toTimestamp(iso)
     if (lastTs !== null) {
-      const nextMidnight = getNextMidnightTimestamp(lastTs)
+      const nextMidnight = getNextTaipeiMidnightTimestamp(lastTs)
       if (nextMidnight !== null) {
         setOverrideNextClaimUntil(nextMidnight)
         setServerNextUntil(nextMidnight)
@@ -114,7 +119,6 @@ export const CoinProvider = ({ children }) => {
     setServerNextUntil(null)
   }
 
-  // 封裝：以伺服器回傳值更新狀態/快取/廣播
   const setFromServer = (serverWallet, history) => {
     const merged = {
       balance: Number(serverWallet?.balance) || 0,
@@ -128,7 +132,6 @@ export const CoinProvider = ({ children }) => {
     }
   }
 
-  // 取得伺服器最新錢包與歷史
   const refreshWallet = async () => {
     if (!isLoggedIn) {
       setWallet({ ...DEFAULT_WALLET })
@@ -145,20 +148,17 @@ export const CoinProvider = ({ children }) => {
       const w = wRes?.data?.wallet
       const h = hRes?.data?.history || []
       setFromServer(w, h)
-      // 將伺服器計算的冷卻時間帶入，避免本機時鐘誤差造成「可按但被拒」
       {
         const serverMs = Number(wRes?.data?.nextClaimInMs) || 0
         scheduleNextClaimFromMs(serverMs)
       }
     } catch (e) {
-      // 失敗則保留快取，不阻塞 UI
     } finally {
       setHydrated(true)
       refreshingRef.current = false
     }
   }
 
-  // 初始化 BroadcastChannel（同分頁間同步）
   useEffect(() => {
     const bc = new BroadcastChannel('crcrcoin')
     bcRef.current = bc
@@ -176,17 +176,14 @@ export const CoinProvider = ({ children }) => {
     }
   }, [userKey])
 
-  // 登入或使用者鍵變更時：先用快取填充，再拉取伺服器
   useEffect(() => {
     setHydrated(false)
     const initialWallet = userKey ? loadCache(userKey) : { ...DEFAULT_WALLET }
     setWallet(initialWallet)
     scheduleNextClaimFromLastClaim(initialWallet.lastClaimAt)
     refreshWallet()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userKey, isLoggedIn])
 
-  // 在頁籤回到前景或跨分頁登入狀態變更時，嘗試刷新
   useEffect(() => {
     const onVis = () => {
       if (document.visibilityState === 'visible') refreshWallet()
@@ -205,7 +202,6 @@ export const CoinProvider = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn, userKey])
 
-  // 動作：加幣（僅 admin）
   const addCoins = async (amount, reason = '任務獎勵') => {
     if (!isLoggedIn) return { success: false, error: '請先登入' }
     const value = Math.max(0, Math.floor(Number(amount) || 0))
@@ -220,7 +216,6 @@ export const CoinProvider = ({ children }) => {
     }
   }
 
-  // 動作：扣幣
   const spendCoins = async (amount, reason = '消費') => {
     if (!isLoggedIn) return { success: false, error: '請先登入' }
     const value = Math.max(0, Math.floor(Number(amount) || 0))
@@ -229,7 +224,6 @@ export const CoinProvider = ({ children }) => {
       const res = await coinAPI.spend(value, reason)
       const newWallet = res?.data?.wallet
       if (newWallet) {
-        // 伺服器不回傳歷史在此端同步扣款歷史以提升即時性（非必要）
         const newHist = [
           { type: 'spend', amount: value, reason, at: new Date().toISOString() },
           ...(wallet.history || [])
@@ -242,11 +236,9 @@ export const CoinProvider = ({ children }) => {
     }
   }
 
-  // 動作：每日簽到（完全依賴伺服器判斷）
   const claimDaily = async () => {
     if (!isLoggedIn) return { success: false, error: '請先登入才能簽到' }
     try {
-      // 直接進行簽到，後端會檢查是否可以簽到
       const res = await coinAPI.claimDaily()
       const newWallet = res?.data?.wallet
       const amount = Number(res?.data?.amount) || 0
@@ -274,8 +266,6 @@ export const CoinProvider = ({ children }) => {
     }
   }
 
-  // 狀態：是否可簽到與剩餘時間（完全依賴伺服器判斷）
-  // 現在後端會以隔日凌晨為冷卻點，而非固定 24 小時冷卻
   const overrideLeft = overrideNextClaimUntil ? (overrideNextClaimUntil - Date.now()) : null
   const serverLeft = serverNextUntil ? (serverNextUntil - Date.now()) : null
   const effectiveNext = Math.max(

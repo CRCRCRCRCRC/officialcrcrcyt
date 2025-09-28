@@ -1,5 +1,28 @@
 const { Pool } = require('pg');
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+const toTimestamp = (value) => {
+  if (!value) return null;
+  const ts = new Date(value).getTime();
+  return Number.isFinite(ts) ? ts : null;
+};
+
+const getNextTaipeiMidnightTimestamp = (timestamp) => {
+  if (timestamp === null || timestamp === undefined) return null;
+  const ts = Number(timestamp);
+  if (!Number.isFinite(ts)) return null;
+  const nextDay = Math.floor((ts + TAIPEI_OFFSET_MS) / DAY_MS) + 1;
+  return nextDay * DAY_MS - TAIPEI_OFFSET_MS;
+};
+
+const msUntilNextTaipeiMidnight = (timestamp, now = Date.now()) => {
+  const next = getNextTaipeiMidnightTimestamp(timestamp);
+  if (next === null) return 0;
+  return Math.max(0, next - now);
+};
+
 class NeonDatabase {
   constructor() {
     this.pool = new Pool({
@@ -447,89 +470,46 @@ class NeonDatabase {
         [userId]
       );
 
-      // 檢查今天是否已經簽到過（使用用戶時區 UTC+8）
-      const now = new Date();
-      // 考慮用戶時區 (UTC+8)，將時間轉換為用戶當地時間
-      const userTime = new Date(now.getTime() + (8 * 60 * 60 * 1000)); // UTC+8
-      const today = new Date(userTime.getFullYear(), userTime.getMonth(), userTime.getDate()); // 用戶當地今天的凌晨0點
-      const todayStr = today.toISOString().split('T')[0]; // 獲取今天的日期字符串 (YYYY-MM-DD)
-
-      console.log('🔍 簽到檢查:', {
-        userId,
-        todayStr,
-        currentTime: now.toISOString(),
-        userTime: userTime.toISOString(),
-        todayUserTime: today.toISOString()
-      });
-
-      const cur = await client.query(
+      const now = Date.now();
+      const walletRes = await client.query(
         `SELECT balance, last_claim_at FROM coin_wallets WHERE user_id = $1 FOR UPDATE`,
         [userId]
       );
-      const row = cur.rows[0] || { balance: 0, last_claim_at: null };
+      const row = walletRes.rows[0] || { balance: 0, last_claim_at: null };
 
-      console.log('🔍 錢包狀態:', {
-        balance: row.balance,
-        lastClaimAt: row.last_claim_at
-      });
-
-      // 檢查上次簽到是否是今天
-      let canClaim = true;
-      let nextClaimInMs = 0;
-
-      if (row.last_claim_at) {
-        const lastClaimDate = new Date(row.last_claim_at);
-        const lastClaimDateOnly = new Date(lastClaimDate.getFullYear(), lastClaimDate.getMonth(), lastClaimDate.getDate());
-        const lastClaimDateStr = lastClaimDateOnly.toISOString().split('T')[0];
-
-        console.log('🔍 上次簽到比較:', {
-          lastClaimDateStr,
-          todayStr,
-          isSameDay: lastClaimDateStr === todayStr
-        });
-
-        if (lastClaimDateStr === todayStr) {
-          // 今天已經簽到過了
-          canClaim = false;
-
-          // 計算到明天凌晨0點的時間（用戶時區）
-          const tomorrow = new Date(today);
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          // 將明天凌晨0點轉換為UTC時間進行計算
-          const tomorrowUTC = new Date(tomorrow.getTime() - (8 * 60 * 60 * 1000));
-          nextClaimInMs = tomorrowUTC.getTime() - now.getTime();
-
-          console.log('🔍 冷卻時間計算:', {
-            nextClaimInMs,
-            tomorrow: tomorrow.toISOString(),
-            tomorrowUTC: tomorrowUTC.toISOString(),
-            now: now.toISOString()
-          });
+      const lastTs = toTimestamp(row.last_claim_at);
+      if (lastTs !== null) {
+        const remaining = msUntilNextTaipeiMidnight(lastTs, now);
+        if (remaining > 0) {
+          await client.query('ROLLBACK');
+          return { success: false, nextClaimInMs: remaining };
         }
       }
 
-      if (!canClaim) {
-        await client.query('ROLLBACK');
-        return { success: false, nextClaimInMs };
-      }
+      const nextBalance = Number(row.balance || 0) + Math.max(0, Number(reward) || 0);
+      const lastClaimISO = new Date(now).toISOString();
 
-      const up = await client.query(
-        `UPDATE coin_wallets
-         SET balance = balance + $2, last_claim_at = NOW(), updated_at = CURRENT_TIMESTAMP
-         WHERE user_id = $1
-         RETURNING balance, last_claim_at`,
-        [userId, reward]
-      );
       await client.query(
-        `INSERT INTO coin_transactions (user_id, type, amount, reason)
-         VALUES ($1, 'claim', $2, '每日簽到')`,
-        [userId, reward]
+        `UPDATE coin_wallets SET balance = $1, last_claim_at = $2, updated_at = $2 WHERE user_id = $3`,
+        [nextBalance, lastClaimISO, userId]
       );
+
+      await client.query(
+        `INSERT INTO coin_transactions (user_id, type, amount, reason, created_at)
+         VALUES ($1, 'claim', $2, '每日簽到', $3)`,
+        [userId, reward, lastClaimISO]
+      );
+
       await client.query('COMMIT');
-      return { success: true, amount: reward, wallet: { user_id: userId, balance: up.rows[0].balance, last_claim_at: up.rows[0].last_claim_at } };
-    } catch (e) {
+
+      return {
+        success: true,
+        amount: Math.max(0, Number(reward) || 0),
+        wallet: { user_id: userId, balance: nextBalance, last_claim_at: lastClaimISO }
+      };
+    } catch (error) {
       await client.query('ROLLBACK');
-      throw e;
+      throw error;
     } finally {
       client.release();
     }
