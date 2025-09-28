@@ -93,22 +93,16 @@ router.get('/products', (req, res) => {
 
 // 取得目前用戶的伺服器錢包（需要登入）
 // 併回傳伺服器端計算的 nextClaimInMs，避免因客戶端時鐘誤差導致按鈕狀態判斷錯誤
-router.get('/wallet', authenticateToken, async (req, res) => {
-  try {
-    const wallet = await database.getCoinWallet(req.user.id);
-    const raw = wallet?.last_claim_at ?? wallet?.lastClaimAt ?? null;
-    const iso = toISO(raw);
-    let nextClaimInMs = 0;
-    if (iso) {
-      nextClaimInMs = msUntilNextMidnight(iso);
-    }
-    res.json({ wallet: mapWallet(wallet), nextClaimInMs });
-  } catch (error) {
-    console.error('���o���]����:', error);
-    res.status(500).json({ error: '�L�k���o���]' });
-  }
-});
-
+router.get('/wallet', authenticateToken, async (req, res) => {
+  try {
+    const wallet = await database.getCoinWallet(req.user.id);
+    const raw = wallet?.last_claim_at ?? wallet?.lastClaimAt ?? null;
+    const iso = toISO(raw);
+    const nextClaimInMs = iso ? msUntilNextMidnight(iso) : 0;
+    res.json({ wallet: mapWallet(wallet), nextClaimInMs });
+  } catch (error) {
+    console.error('取得錢包失敗:', error);
+    res.status(500).json({ error: '無法取得錢包' });
   }
 });
 
