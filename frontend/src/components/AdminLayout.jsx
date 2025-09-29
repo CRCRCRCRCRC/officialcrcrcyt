@@ -239,7 +239,7 @@ const AdminLayout = () => {
           </nav>
 
           {/* User section */}
-          <div className="p-4 border-t border-white/10">
+          <div className="p-4 border-t border-white/10 -mt-10">
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -318,4 +318,5 @@ const AdminLayout = () => {
 }
 
 export default AdminLayout
+
 
