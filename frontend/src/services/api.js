@@ -180,8 +180,8 @@ export const coinAPI = {
   // 每日簽到（需登入）
   claimDaily: () => api.post('/coin/claim-daily', undefined, { headers: authHeaderForCoin() }),
   // 購買商品
-  purchaseProduct: (productId, discordId) =>
-    api.post('/coin/purchase', { productId, discordId }, { headers: authHeaderForCoin() }),
+  purchaseProduct: (payload) =>
+    api.post('/coin/purchase', payload, { headers: authHeaderForCoin() }),
   // 消費（扣幣，需登入）
   spend: (amount, reason = '消費') => api.post('/coin/spend', { amount, reason }, { headers: authHeaderForCoin() }),
   // 加幣（管理員）

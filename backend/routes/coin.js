@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const database = require('../config/database');
 
@@ -32,9 +32,18 @@ const msUntilNextTaipeiMidnight = (value, now = Date.now()) => {
 const SHOP_PRODUCTS = [
   {
     id: 'discord-role-king',
-    name: 'DC👑｜目前還沒有用的會員◉⁠‿⁠◉',
+    name: 'DC👑｜目前還沒有用的會員',
     price: 300,
-    description: '購買後將提供管理員 Discord ID，後續權限會由管理員手動處理。'
+    description: '購買後請提供 Discord ID，管理員會手動處理身分組。',
+    requireDiscordId: true
+  },
+  {
+    id: 'crcrcoin-pack-50',
+    name: '50 CRCRCoin',
+    price: 100,
+    description: '花 100 CRCRCoin 換來 50 CRCRCoin，只是用來打發時間的惡趣味商品，可輸入購買數量。',
+    allowQuantity: true,
+    rewardCoins: 50
   }
 ];
 
@@ -90,7 +99,15 @@ function mapWallet(w) {
 }
 
 router.get('/products', (req, res) => {
-  res.json({ products: SHOP_PRODUCTS });
+  const products = SHOP_PRODUCTS.map(({ id, name, price, description, requireDiscordId = false, allowQuantity = false }) => ({
+    id,
+    name,
+    price,
+    description,
+    requireDiscordId,
+    allowQuantity
+  }));
+  res.json({ products });
 });
 
 // 取得目前用戶的伺服器錢包（需要登入）
@@ -169,61 +186,92 @@ router.post('/claim-daily', authenticateToken, async (req, res) => {
 // 購買商品（需要登入）
 router.post('/purchase', authenticateToken, async (req, res) => {
   try {
-    const { productId, discordId } = req.body || {};
-    const product = SHOP_PRODUCTS.find(item => item.id === productId);
+    const { productId, discordId, quantity } = req.body || {};
+    const product = SHOP_PRODUCTS.find((item) => item.id === productId);
     if (!product) {
       return res.status(404).json({ error: '找不到此商品' });
     }
 
-    const discord = (discordId || '').toString().trim();
-    if (!discord) {
-      return res.status(400).json({ error: '請輸入 Discord ID' });
-    }
-    if (discord.length > 100) {
-      return res.status(400).json({ error: 'Discord ID 太長，請確認是否正確' });
+    const requiresDiscord = Boolean(product.requireDiscordId);
+    const allowsQuantity = Boolean(product.allowQuantity);
+
+    const trimmedDiscord = (discordId || '').toString().trim();
+    if (requiresDiscord) {
+      if (!trimmedDiscord) {
+        return res.status(400).json({ error: '請輸入 Discord ID' });
+      }
+      if (trimmedDiscord.length > 100) {
+        return res.status(400).json({ error: 'Discord ID 太長，請確認是否正確' });
+      }
     }
 
-    const spendResult = await database.spendCoins(
-      req.user.id,
-      product.price,
-      `購買商品：${product.name}`
-    );
+    let qty = 1;
+    if (allowsQuantity) {
+      const parsed = Number.parseInt(quantity, 10);
+      if (!Number.isFinite(parsed) || parsed < 1) {
+        return res.status(400).json({ error: '購買數量無效' });
+      }
+      qty = Math.min(parsed, 99);
+    }
 
+    const totalPrice = product.price * qty;
+    const description = `購買商品：${product.name}${allowsQuantity ? ` x${qty}` : ''}`;
+    const spendResult = await database.spendCoins(req.user.id, totalPrice, description);
     if (!spendResult?.success) {
       return res.status(400).json({ error: spendResult?.error || '餘額不足' });
     }
 
-    try {
-      const order = await database.createCoinOrder(req.user.id, {
-        product_id: product.id,
-        product_name: product.name,
-        price: product.price,
-        discord_id: discord,
-        user_email: req.user.username || req.user.email || null,
-        status: 'pending'
-      });
+    let finalWallet = spendResult.wallet;
+    const responsePayload = {};
 
-      return res.json({
-        success: true,
-        wallet: mapWallet(spendResult.wallet),
-        order
-      });
-    } catch (err) {
-      console.error('建立商品訂單失敗，嘗試退款:', err);
+    if (product.rewardCoins) {
+      const rewardAmount = product.rewardCoins * qty;
       try {
-        await database.addCoins(req.user.id, product.price, '購買失敗自動退款');
-      } catch (refundError) {
-        console.error('退款失敗，請人工處理:', refundError);
+        const rewardResult = await database.addCoins(req.user.id, rewardAmount, `購買商品回饋：${product.name} x${qty}`);
+        if (rewardResult?.wallet) {
+          finalWallet = rewardResult.wallet;
+        }
+        responsePayload.reward = { coins: rewardAmount };
+      } catch (error) {
+        console.error('發放商品回饋失敗:', error);
       }
-      return res.status(500).json({ error: '購買失敗，已嘗試自動退款' });
     }
+
+    if (requiresDiscord) {
+      try {
+        const order = await database.createCoinOrder(req.user.id, {
+          product_id: product.id,
+          product_name: product.name,
+          price: product.price,
+          discord_id: trimmedDiscord,
+          user_email: req.user.username || req.user.email || null,
+          status: 'pending'
+        });
+        responsePayload.order = order;
+      } catch (error) {
+        console.error('建立商品訂單失敗，嘗試退款:', error);
+        try {
+          await database.addCoins(req.user.id, totalPrice, '購買失敗自動退款');
+        } catch (refundError) {
+          console.error('自動退款失敗，請人工協助:', refundError);
+        }
+        return res.status(500).json({ error: '購買失敗，已嘗試自動退款' });
+      }
+    }
+
+    responsePayload.quantity = qty;
+
+    return res.json({
+      success: true,
+      wallet: mapWallet(finalWallet),
+      ...responsePayload
+    });
   } catch (error) {
     console.error('購買商品失敗:', error);
     res.status(500).json({ error: '購買失敗' });
   }
-});
-
-// 消費（扣幣，需登入）
+});
+// ���O�]�����A�ݵn�J�^
 router.post('/spend', authenticateToken, async (req, res) => {
   try {
     const amount = Math.max(0, Math.floor(Number(req.body?.amount) || 0));

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, ShoppingBag, ShieldCheck, Coins, MessageCircle } from 'lucide-react'
+import { ArrowLeft, ShoppingBag, ShieldCheck, Coins, MessageCircle, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useCoin } from '../contexts/CoinContext'
@@ -9,9 +9,17 @@ import { coinAPI } from '../services/api'
 const PRODUCTS = [
   {
     id: 'discord-role-king',
-    name: 'DC👑｜目前還沒有用的會員◉⁠‿⁠◉',
+    name: 'DC👑｜目前還沒有用的會員',
     price: 300,
-    description: '單純支持用的會員身分組，會通知管理員您的 Discord ID 後續手動處理。'
+    description: '購買後請提供 Discord ID，管理員會手動處理身分組。',
+    requireDiscordId: true
+  },
+  {
+    id: 'crcrcoin-pack-50',
+    name: '50 CRCRCoin',
+    price: 100,
+    description: '來亂用的商品：花 100 CRCRCoin 換 50 CRCRCoin，可一次購買多份。',
+    allowQuantity: true
   }
 ]
 
@@ -20,23 +28,28 @@ const Modal = ({ open, title, description, children, actions, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-          aria-label="關閉"
-        >
-          ✕
-        </button>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
-        {description && <p className="text-sm text-gray-600 mb-4 whitespace-pre-line">{description}</p>}
+      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 transition hover:text-gray-600"
+            aria-label="關閉"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
+        <h3 className="mb-2 text-xl font-semibold text-gray-900">{title}</h3>
+        {description && <p className="mb-4 text-sm text-gray-600 whitespace-pre-line">{description}</p>}
         {children}
-        <div className="mt-6 flex justify-end gap-3">
-          {actions}
-        </div>
+        <div className="mt-6 flex justify-end gap-3">{actions}</div>
       </div>
     </div>
   )
+}
+
+const clampQuantity = (value) => {
+  if (!Number.isFinite(value)) return 1
+  return Math.min(99, Math.max(1, Math.floor(value)))
 }
 
 const Shop = () => {
@@ -44,39 +57,78 @@ const Shop = () => {
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [step, setStep] = useState('idle')
   const [discordId, setDiscordId] = useState('')
+  const [quantity, setQuantity] = useState(1)
   const [processing, setProcessing] = useState(false)
 
   const closeModals = () => {
     setSelectedProduct(null)
     setStep('idle')
     setDiscordId('')
+    setQuantity(1)
     setProcessing(false)
   }
 
   const handleBuyClick = (product) => {
     if (!isLoggedIn) {
-      toast.error('請先使用 Google 登入後再購買。')
+      toast.error('請先使用 Google 登入後再購買')
       return
     }
     if (!hydrated) {
-      toast('正在同步錢包資訊，請稍候…')
+      toast('資料同步中，請稍候再試')
       return
     }
     setSelectedProduct(product)
+    setQuantity(1)
     setStep('confirm')
+  }
+
+  const totalCost = useMemo(() => {
+    if (!selectedProduct) return 0
+    const factor = selectedProduct.allowQuantity ? quantity : 1
+    return selectedProduct.price * factor
+  }, [selectedProduct, quantity])
+
+  const insufficientBalance =
+    hydrated &&
+    selectedProduct &&
+    typeof balance === 'number' &&
+    balance < totalCost
+
+  const handleQuantityInput = (event) => {
+    const value = Number.parseInt(event.target.value, 10)
+    if (Number.isNaN(value)) {
+      setQuantity(1)
+      return
+    }
+    setQuantity(clampQuantity(value))
   }
 
   const handlePurchase = async () => {
     if (!selectedProduct) return
-    const trimmed = discordId.trim()
-    if (!trimmed) {
-      toast.error('請輸入 Discord ID')
-      return
+
+    const payload = { productId: selectedProduct.id }
+
+    if (selectedProduct.allowQuantity) {
+      payload.quantity = quantity
     }
+
+    if (selectedProduct.requireDiscordId) {
+      const trimmed = discordId.trim()
+      if (!trimmed) {
+        toast.error('請輸入 Discord ID')
+        return
+      }
+      if (trimmed.length > 100) {
+        toast.error('Discord ID 太長，請確認是否正確')
+        return
+      }
+      payload.discordId = trimmed
+    }
+
     setProcessing(true)
     try {
-      await coinAPI.purchaseProduct(selectedProduct.id, trimmed)
-      toast.success('購買成功！我們會盡快處理您的身分組。')
+      await coinAPI.purchaseProduct(payload)
+      toast.success('購買成功！')
       closeModals()
       await refreshWallet()
     } catch (error) {
@@ -86,131 +138,91 @@ const Shop = () => {
     }
   }
 
-  const insufficientBalance =
-    hydrated && selectedProduct && typeof balance === 'number' && balance < selectedProduct.price
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-      <div className="bg-white/95 backdrop-blur-xl border-b border-white border-opacity-20 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
-            <Link
-              to="/wallet"
-              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              返回錢包
-            </Link>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-              CRCRCoin 商城
-            </h1>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Coins className="w-4 h-4" />
-              <span>
-                目前餘額：{hydrated ? `${Number(balance || 0).toLocaleString('zh-TW')} CRCRCoin` : '同步中…'}
-              </span>
-            </div>
+      <div className="border-b border-white/20 bg-white/95 backdrop-blur-xl shadow-sm">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-6 sm:px-6 lg:px-8">
+          <Link to="/wallet" className="flex items-center text-gray-600 transition hover:text-gray-900">
+            <ArrowLeft className="mr-2 h-5 w-5" />
+            返回錢包
+          </Link>
+          <h1 className="text-2xl font-bold text-transparent bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text">
+            CRCRCoin 商店
+          </h1>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Coins className="h-4 w-4" />
+            <span>
+              餘額：{hydrated ? `${Number(balance || 0).toLocaleString('zh-TW')} CRCRCoin` : '同步中…'}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 backdrop-blur-xl border border-white/25 rounded-3xl shadow-xl p-8"
+          className="rounded-3xl border border-white/20 bg-white/80 p-8 shadow-xl backdrop-blur-xl"
         >
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white">
-              <ShoppingBag className="w-6 h-6" />
+          <div className="mb-8 flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white">
+              <ShoppingBag className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">支援我們的最新方式</h2>
-              <p className="text-sm text-gray-600">購買後會通知管理員手動為您指派 Discord 身分組</p>
+              <h2 className="text-xl font-bold text-gray-900">挑選你想試試看的商品</h2>
+              <p className="text-sm text-gray-600">所有商品都是虛擬體驗，購買後請留意提示訊息。</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-6">
-            {PRODUCTS.map((product) => (
-              <div key={product.id} className="rounded-2xl bg-gradient-to-r from-purple-100/60 via-pink-100/60 to-blue-100/60 p-[1px]">
-                <div className="rounded-2xl bg-white p-6 md:p-7 shadow-sm hover:shadow-lg transition-shadow">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg">
-                          <ShieldCheck className="w-6 h-6" />
+            {PRODUCTS.map((product) => {
+              const disabled = !isLoggedIn || (hydrated && typeof balance === 'number' && balance < product.price)
+              return (
+                <div key={product.id} className="rounded-2xl bg-gradient-to-r from-purple-100/60 via-pink-100/60 to-blue-100/60 p-[1px]">
+                  <div className="rounded-2xl bg-white p-6 shadow-sm transition-shadow hover:shadow-lg">
+                    <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
+                            <ShieldCheck className="h-6 w-6" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-900 md:text-xl">{product.name}</h3>
                         </div>
-                        <h3 className="text-lg md:text-xl font-semibold text-gray-900 leading-tight">
-                          {product.name}
-                        </h3>
-                      </div>
-                      <p className="mt-3 text-sm text-gray-600 flex items-center gap-2">
-                        <MessageCircle className="w-4 h-4 text-gray-400" />
-                        {product.description}
-                      </p>
-                    </div>
-
-                    <div className="w-full md:w-auto text-center md:text-right">
-                      <div className="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
-                        {product.price.toLocaleString('zh-TW')}
-                        <span className="ml-1 text-base md:text-lg font-semibold text-purple-500">CRCRCoin</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleBuyClick(product)}
-                        className="mt-4 inline-flex w-full md:w-auto items-center justify-center px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow-md hover:shadow-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
-                        disabled={!isLoggedIn || (hydrated && balance < product.price)}
-                      >
-                        {isLoggedIn ? '購買' : '請先登入'}
-                      </button>
-                      {isLoggedIn && hydrated && balance < product.price && (
-                        <p className="text-xs text-red-500 mt-3 md:text-right">
-                          餘額不足，請先累積 CRCRCoin 再嘗試購買。
+                        <p className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+                          <MessageCircle className="h-4 w-4 text-gray-400" />
+                          {product.description}
                         </p>
-                      )}
+                      </div>
+                      <div className="w-full text-center md:w-auto md:text-right">
+                        <div className="text-2xl font-extrabold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text md:text-3xl">
+                          {product.price.toLocaleString('zh-TW')}
+                          <span className="ml-1 text-base font-semibold text-purple-500 md:text-lg">CRCRCoin</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleBuyClick(product)}
+                          className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+                          disabled={disabled}
+                        >
+                          {isLoggedIn ? '購買' : '請先登入'}
+                        </button>
+                        {isLoggedIn && hydrated && typeof balance === 'number' && balance < product.price && (
+                          <p className="mt-3 text-xs text-red-500 md:text-right">餘額不足，請先累積更多 CRCRCoin。</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </motion.div>
       </div>
 
       <Modal
         open={step === 'confirm' && !!selectedProduct}
-        title="確認購買"
-        description={`此身分組目前沒啥意義，純屬支持用途。
-確認購買「${selectedProduct?.name}」嗎？`}
-        onClose={closeModals}
-        actions={[
-          (
-            <button
-              key="cancel"
-              type="button"
-              onClick={closeModals}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50"
-            >
-              取消
-            </button>
-          ),
-          (
-            <button
-              key="next"
-              type="button"
-              onClick={() => setStep('discord')}
-              className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700"
-            >
-              我要購買
-            </button>
-          )
-        ]}
-      />
-
-      <Modal
-        open={step === 'discord' && !!selectedProduct}
-        title="輸入 Discord ID"
-        description="請輸入要套用身分組的 Discord ID（右鍵個人頭像可複製 ID）。"
+        title={`確認購買「${selectedProduct?.name ?? ''}」`}
+        description={selectedProduct?.description}
         onClose={processing ? undefined : closeModals}
         actions={[
           (
@@ -218,7 +230,69 @@ const Shop = () => {
               key="cancel"
               type="button"
               onClick={closeModals}
-              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50"
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
+              disabled={processing}
+            >
+              取消
+            </button>
+          ),
+          (
+            <button
+              key="confirm"
+              type="button"
+              onClick={() => {
+                if (selectedProduct?.requireDiscordId) {
+                  setStep('discord')
+                } else {
+                  handlePurchase()
+                }
+              }}
+              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={processing || insufficientBalance}
+            >
+              {selectedProduct?.requireDiscordId ? '下一步' : `確認購買（${totalCost.toLocaleString('zh-TW')} CRCRCoin）`}
+            </button>
+          )
+        ]}
+      >
+        {selectedProduct?.allowQuantity && (
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700" htmlFor="purchase-quantity">
+              購買數量
+            </label>
+            <input
+              id="purchase-quantity"
+              type="number"
+              min={1}
+              max={99}
+              value={quantity}
+              onChange={handleQuantityInput}
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+              disabled={processing}
+            />
+            <p className="text-sm text-gray-600">總價：{totalCost.toLocaleString('zh-TW')} CRCRCoin</p>
+            {insufficientBalance && (
+              <p className="text-xs text-red-500">餘額不足，請調整數量或先賺取更多 CRCRCoin。</p>
+            )}
+          </div>
+        )}
+        {!selectedProduct?.allowQuantity && (
+          <p className="text-sm text-gray-600">總價：{totalCost.toLocaleString('zh-TW')} CRCRCoin</p>
+        )}
+      </Modal>
+
+      <Modal
+        open={step === 'discord' && !!selectedProduct}
+        title="輸入 Discord ID"
+        description="請輸入要套用身分組的 Discord ID（開啟 Discord 開發者模式即可複製 ID）。"
+        onClose={processing ? undefined : closeModals}
+        actions={[
+          (
+            <button
+              key="cancel"
+              type="button"
+              onClick={closeModals}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
               disabled={processing}
             >
               取消
@@ -229,10 +303,10 @@ const Shop = () => {
               key="confirm"
               type="button"
               onClick={handlePurchase}
-              className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-60"
+              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={processing || insufficientBalance}
             >
-              {processing ? '處理中…' : `確認扣除 ${selectedProduct?.price.toLocaleString('zh-TW')} CRCRCoin`}
+              {processing ? '處理中…' : `確認購買（${totalCost.toLocaleString('zh-TW')} CRCRCoin）`}
             </button>
           )
         ]}
@@ -240,13 +314,13 @@ const Shop = () => {
         <input
           type="text"
           value={discordId}
-          onChange={(e) => setDiscordId(e.target.value)}
-          placeholder="例如：123456789012345678"
-          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          onChange={(event) => setDiscordId(event.target.value)}
+          placeholder="範例：123456789012345678"
+          className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
           disabled={processing}
         />
         {insufficientBalance && (
-          <p className="text-xs text-red-500 mt-3">餘額不足，請先補足 CRCRCoin 再購買。</p>
+          <p className="mt-3 text-xs text-red-500">餘額不足，請先累積更多 CRCRCoin。</p>
         )}
       </Modal>
     </div>
