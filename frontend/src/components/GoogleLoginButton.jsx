@@ -1,110 +1,46 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { authAPI } from '../services/api'
 
-// Google Login Button Animation Styles
-const buttonStyles = `
-/* From Uiverse.io by vinodjangid07 */
-.Btn {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  width: 45px !important;
-  height: 45px !important;
-  border: none !important;
-  border-radius: 50% !important;
-  cursor: pointer !important;
-  position: relative !important;
-  overflow: hidden !important;
-  transition-duration: .3s !important;
-  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199) !important;
-  background-color: rgb(163, 142, 255) !important;
-}
-
-/* plus sign */
-.sign {
-  width: 100% !important;
-  transition-duration: .3s !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.sign svg {
-  width: 17px !important;
-}
-
-.sign svg path {
-  fill: white !important;
-}
-/* text */
-.text {
-  position: absolute !important;
-  right: 0% !important;
-  width: 0% !important;
-  opacity: 0 !important;
-  color: white !important;
-  font-size: 1.2em !important;
-  font-weight: 600 !important;
-  transition-duration: .3s !important;
-}
-/* hover effect on button width */
-.Btn:hover {
-  width: 125px !important;
-  border-radius: 40px !important;
-  transition-duration: .3s !important;
-}
-
-.Btn:hover .sign {
-  width: 30% !important;
-  transition-duration: .3s !important;
-  padding-left: 20px !important;
-}
-/* hover effect button's text */
-.Btn:hover .text {
-  opacity: 1 !important;
-  width: 70% !important;
-  transition-duration: .3s !important;
-  padding-right: 10px !important;
-}
-/* button click effect*/
-.Btn:active {
-  transform: translate(2px ,2px) !important;
-}
-`
-
-// 需要在 index.html 內加上 <script src="https://accounts.google.com/gsi/client" async defer></script>
-// 使用 Google OAuth Code Flow（需要 Client ID + Client Secret）
-
-const GoogleLoginButton = ({ onSuccess }) => {
+const GoogleLoginButton = ({ onSuccess, className = '' }) => {
   const [showPassphraseModal, setShowPassphraseModal] = useState(false)
   const [passphrase, setPassphrase] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  const buttonClass = useMemo(() => {
+    const base = 'group relative inline-flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-[0_22px_45px_-24px_rgba(66,133,244,0.75)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_30px_55px_-28px_rgba(66,133,244,0.8)] focus:outline-none focus:ring-2 focus:ring-[#4285F4]/40 focus:ring-offset-2'
+    const disabled = submitting ? 'cursor-not-allowed opacity-70' : ''
+    return [base, disabled, className].filter(Boolean).join(' ')
+  }, [className, submitting])
+
   const openModal = () => {
+    if (submitting) return
     setShowPassphraseModal(true)
   }
 
   const cancel = () => {
+    if (submitting) return
     setShowPassphraseModal(false)
     setPassphrase('')
     toast('已取消登入')
   }
 
   const startGoogleLogin = () => {
+    if (submitting) return
+
     if (!passphrase.trim()) {
-      toast.error('請輸入管理員密語')
+      toast.error('請輸入管理員通關密語')
       return
     }
 
     if (!window.google?.accounts?.oauth2) {
-      toast.error('Google 元件尚未載入')
+      toast.error('Google 登入模組尚未載入')
       return
     }
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || window.GOOGLE_CLIENT_ID
     if (!clientId) {
-      toast.error('尚未設定 Google Client ID')
+      toast.error('找不到 Google Client ID，請確認環境設定')
       return
     }
 
@@ -118,7 +54,7 @@ const GoogleLoginButton = ({ onSuccess }) => {
         try {
           const code = response.code
           if (!code) {
-            toast.error('未取得授權碼')
+            toast.error('未取得授權碼，請再試一次')
             return
           }
 
@@ -136,39 +72,53 @@ const GoogleLoginButton = ({ onSuccess }) => {
       }
     })
 
-    codeClient.requestCode()
+    try {
+      codeClient.requestCode()
+    } catch (error) {
+      toast.error('無法啟動 Google 登入，請稍後再試')
+      setSubmitting(false)
+    }
   }
+
+  const confirmLabel = submitting ? '處理中…' : '啟動 Google 登入'
+  const mainLabel = submitting ? '啟動登入中…' : '使用 Google 登入'
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: buttonStyles }} />
-      <div className="Btn" onClick={openModal}>
-        <div className="sign">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-[17px] h-[17px]" />
-        </div>
-        <div className="text">GOOGLE LOGIN</div>
-      </div>
+      <button type="button" onClick={openModal} disabled={submitting} className={buttonClass}>
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4285F4]/10 transition-colors duration-200 group-hover:bg-[#4285F4]/20">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google 標誌" className="h-6 w-6" />
+        </span>
+        <span className="tracking-wide">{mainLabel}</span>
+      </button>
 
       {showPassphraseModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">管理員二次驗證</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              請先輸入管理員密語，然後繼續完成 Google 登入
-            </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+          <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-slate-900/10">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-slate-900">管理員通關密語</h3>
+              <p className="text-sm text-slate-500">為了安全性，登入前需先驗證管理員專用通關密語。</p>
+            </div>
+
+            <label className="mt-6 block text-sm font-medium text-slate-700" htmlFor="admin-passphrase">
+              通關密語
+            </label>
             <input
+              id="admin-passphrase"
               type="password"
               value={passphrase}
-              onChange={(e) => setPassphrase(e.target.value)}
-              placeholder="管理員密語"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              onChange={(event) => setPassphrase(event.target.value)}
+              placeholder="請輸入密語"
+              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#4285F4] focus:outline-none focus:ring-2 focus:ring-[#4285F4]/30"
               autoFocus
             />
-            <div className="mt-6 flex justify-end gap-2">
+
+            <div className="mt-6 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={cancel}
-                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
+                disabled={submitting}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 取消
               </button>
@@ -176,9 +126,9 @@ const GoogleLoginButton = ({ onSuccess }) => {
                 type="button"
                 onClick={startGoogleLogin}
                 disabled={submitting}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                className="rounded-xl bg-[#4285F4] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[#4285F4]/40 transition hover:bg-[#356ac3] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {submitting ? '處理中...' : '繼續 Google 登入'}
+                {confirmLabel}
               </button>
             </div>
           </div>
