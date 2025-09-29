@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Coins, Calendar, TrendingUp, Wallet as WalletIcon, ShoppingBag } from 'lucide-react'
+import { ArrowLeft, Coins, Calendar, TrendingUp, Wallet as WalletIcon, ShoppingBag, Crown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCoin } from '../contexts/CoinContext'
 import toast from 'react-hot-toast'
@@ -192,11 +192,18 @@ const Wallet = () => {
                             : (canClaimNow ? '領取 +50' : fmtNextClaimTime(leftMs))))}
                     </button>
                     <Link
+                      to="/pass"
+                      className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                    >
+                      <Crown className="w-4 h-4" />
+                      通行券
+                    </Link>
+                    <Link
                       to="/shop"
                       className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
                     >
                       <ShoppingBag className="w-4 h-4" />
-                      前往商城
+                      購買商品
                     </Link>
                   </div>
                 </div>

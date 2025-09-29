@@ -47,6 +47,52 @@ const SHOP_PRODUCTS = [
   }
 ];
 
+const PASS_PREMIUM_PRICE = 6000;
+
+const PASS_REWARDS = [
+  {
+    id: 'pass-level-1',
+    level: 1,
+    title: '等級 1：每日報到',
+    description: '完成基礎任務獎勵',
+    free: { coins: 100, description: '獲得 100 CRCRCoin' },
+    premium: { coins: 250, description: '額外獲得 250 CRCRCoin' }
+  },
+  {
+    id: 'pass-level-2',
+    level: 2,
+    title: '等級 2：熱身完成',
+    description: '累積任務達成',
+    free: { coins: 150, description: '獲得 150 CRCRCoin' },
+    premium: { coins: 300, description: '額外獲得 300 CRCRCoin' }
+  },
+  {
+    id: 'pass-level-3',
+    level: 3,
+    title: '等級 3：勤勞之星',
+    description: '維持登入與互動',
+    free: { coins: 200, description: '獲得 200 CRCRCoin' },
+    premium: { coins: 400, description: '額外獲得 400 CRCRCoin' }
+  },
+  {
+    id: 'pass-level-4',
+    level: 4,
+    title: '等級 4：社群達人',
+    description: '與社群活動互動',
+    free: { coins: 250, description: '獲得 250 CRCRCoin' },
+    premium: { coins: 500, description: '額外獲得 500 CRCRCoin' }
+  },
+  {
+    id: 'pass-level-5',
+    level: 5,
+    title: '等級 5：傳說挑戰',
+    description: '完成所有通行券任務',
+    free: { coins: 300, description: '獲得 300 CRCRCoin' },
+    premium: { coins: 700, description: '額外獲得 700 CRCRCoin' }
+  }
+];
+
+
 // 取得全域重置版本（公開）
 // 前端在載入時可取得此版本；此版本主要保留舊版 localStorage 錢包用
 router.get('/reset-version', async (req, res) => {
@@ -98,6 +144,27 @@ function mapWallet(w) {
   };
 }
 
+const sanitizePassState = (state = {}) => {
+  const toUniqueList = (value) => {
+    if (!Array.isArray(value)) return [];
+    const seen = new Set();
+    const result = [];
+    value.forEach((item) => {
+      const str = item != null ? String(item) : '';
+      if (!seen.has(str)) {
+        seen.add(str);
+        result.push(str);
+      }
+    });
+    return result;
+  };
+  return {
+    hasPremium: !!state.hasPremium,
+    claimedFree: toUniqueList(state.claimedFree),
+    claimedPremium: toUniqueList(state.claimedPremium)
+  };
+};
+
 router.get('/products', (req, res) => {
   const products = SHOP_PRODUCTS.map(({ id, name, price, description, requireDiscordId = false, allowQuantity = false }) => ({
     id,
@@ -124,6 +191,134 @@ router.get('/wallet', authenticateToken, async (req, res) => {
     res.status(500).json({ error: '無法取得錢包' });
   }
 });
+
+router.get('/pass', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [wallet, passState] = await Promise.all([
+      database.getCoinWallet(userId),
+      database.getCoinPass(userId)
+    ]);
+    res.json({
+      config: {
+        premiumPrice: PASS_PREMIUM_PRICE,
+        rewards: PASS_REWARDS
+      },
+      state: sanitizePassState(passState),
+      wallet: mapWallet(wallet)
+    });
+  } catch (error) {
+    console.error('取得通行券資訊失敗:', error);
+    res.status(500).json({ error: '無法取得通行券資訊' });
+  }
+});
+
+router.post('/pass/purchase', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const currentState = sanitizePassState(await database.getCoinPass(userId));
+    if (currentState.hasPremium) {
+      return res.status(400).json({ error: '已擁有高級通行券' });
+    }
+
+    const spendResult = await database.spendCoins(
+      userId,
+      PASS_PREMIUM_PRICE,
+      '購買 CRCRC 通行券（高級）'
+    );
+    if (!spendResult?.success) {
+      return res.status(400).json({ error: spendResult?.error || '餘額不足' });
+    }
+
+    const updatedState = await database.saveCoinPass(userId, {
+      ...currentState,
+      hasPremium: true
+    });
+
+    res.json({
+      success: true,
+      state: sanitizePassState(updatedState),
+      wallet: mapWallet(spendResult.wallet)
+    });
+  } catch (error) {
+    console.error('購買通行券失敗:', error);
+    res.status(500).json({ error: '購買通行券失敗' });
+  }
+});
+
+router.post('/pass/claim', authenticateToken, async (req, res) => {
+  try {
+    const { rewardId, tier } = req.body || {};
+    const userId = req.user.id;
+    if (!rewardId || typeof rewardId !== 'string') {
+      return res.status(400).json({ error: '請提供要領取的獎勵' });
+    }
+    const normalizedTier = (tier || 'free').toString().toLowerCase();
+    if (!['free', 'premium'].includes(normalizedTier)) {
+      return res.status(400).json({ error: '獎勵種類不正確' });
+    }
+    const reward = PASS_REWARDS.find((item) => item.id === rewardId);
+    if (!reward) {
+      return res.status(404).json({ error: '找不到指定的獎勵' });
+    }
+
+    const state = sanitizePassState(await database.getCoinPass(userId));
+    const claimedFree = new Set(state.claimedFree);
+    const claimedPremium = new Set(state.claimedPremium);
+    if ((normalizedTier === 'free' && claimedFree.has(rewardId)) || (normalizedTier === 'premium' && claimedPremium.has(rewardId))) {
+      return res.status(400).json({ error: '此獎勵已領取' });
+    }
+    if (normalizedTier === 'premium' && !state.hasPremium) {
+      return res.status(403).json({ error: '尚未購買高級通行券' });
+    }
+
+    const rewardInfo = normalizedTier === 'premium' ? reward.premium : reward.free;
+    const coins = Number(rewardInfo?.coins) || 0;
+
+    let wallet = null;
+    if (coins > 0) {
+      const add = await database.addCoins(
+        userId,
+        coins,
+        `通行券獎勵：${reward.title}（${normalizedTier === 'premium' ? '高級' : '普通'}）`
+      );
+      if (!add?.success) {
+        return res.status(500).json({ error: '發放獎勵失敗' });
+      }
+      wallet = add.wallet;
+    } else {
+      wallet = await database.getCoinWallet(userId);
+    }
+
+    if (normalizedTier === 'free') {
+      claimedFree.add(rewardId);
+    } else {
+      claimedPremium.add(rewardId);
+    }
+
+    const updatedState = await database.saveCoinPass(userId, {
+      hasPremium: state.hasPremium,
+      claimedFree: Array.from(claimedFree),
+      claimedPremium: Array.from(claimedPremium)
+    });
+
+    res.json({
+      success: true,
+      reward: {
+        id: rewardId,
+        tier: normalizedTier,
+        coins,
+        description: rewardInfo?.description || ''
+      },
+      state: sanitizePassState(updatedState),
+      wallet: mapWallet(wallet)
+    });
+  } catch (error) {
+    console.error('領取通行券獎勵失敗:', error);
+    res.status(500).json({ error: '無法領取獎勵' });
+  }
+});
+
 
 // 取得交易紀錄（需要登入）
 router.get('/history', authenticateToken, async (req, res) => {
@@ -270,7 +465,8 @@ router.post('/purchase', authenticateToken, async (req, res) => {
     console.error('購買商品失敗:', error);
     res.status(500).json({ error: '購買失敗' });
   }
-});
+});
+
 // ���O�]�����A�ݵn�J�^
 router.post('/spend', authenticateToken, async (req, res) => {
   try {

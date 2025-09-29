@@ -179,6 +179,12 @@ export const coinAPI = {
   getHistory: (limit = 50) => api.get('/coin/history', { params: { limit }, headers: authHeaderForCoin() }),
   // 每日簽到（需登入）
   claimDaily: () => api.post('/coin/claim-daily', undefined, { headers: authHeaderForCoin() }),
+  // 通行券資訊
+  getPass: () => api.get('/coin/pass', { headers: authHeaderForCoin() }),
+  // 購買高級通行券
+  purchasePass: () => api.post('/coin/pass/purchase', undefined, { headers: authHeaderForCoin() }),
+  // 領取通行券獎勵
+  claimPassReward: (payload) => api.post('/coin/pass/claim', payload, { headers: authHeaderForCoin() }),
   // 購買商品
   purchaseProduct: (payload) =>
     api.post('/coin/purchase', payload, { headers: authHeaderForCoin() }),

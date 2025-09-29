@@ -307,6 +307,32 @@ class KVDatabase {
     return `coin_tx:${userId}`;
   }
 
+  passKey(userId) {
+    return `coin_pass:${userId}`;
+  }
+
+  parsePassList(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw.map((item) => (item && item.toString ? item.toString() : String(item)));
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map((item) => (item && item.toString ? item.toString() : String(item))) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  normalizePassState(state = {}) {
+    return {
+      hasPremium: !!state.hasPremium,
+      claimedFree: this.parsePassList(state.claimedFree),
+      claimedPremium: this.parsePassList(state.claimedPremium)
+    };
+  }
+
+
   // ===== CRCRCoin - methods =====
   async ensureCoinWallet(userId) {
     const key = this.walletKey(userId);
@@ -333,6 +359,32 @@ class KVDatabase {
       last_claim_at: w.last_claim_at || null
     };
   }
+
+  async getCoinPass(userId) {
+    const raw = await this.kv.hgetall(this.passKey(userId));
+    if (!raw || Object.keys(raw).length === 0) {
+      return { hasPremium: false, claimedFree: [], claimedPremium: [] };
+    }
+    const hasField = raw.has_premium;
+    return this.normalizePassState({
+      hasPremium: hasField === true || hasField === 'true' || hasField === 1 || hasField === '1',
+      claimedFree: raw.claimed_free,
+      claimedPremium: raw.claimed_premium
+    });
+  }
+
+  async saveCoinPass(userId, state = {}) {
+    const normalized = this.normalizePassState(state);
+    const payload = {
+      has_premium: normalized.hasPremium ? 'true' : 'false',
+      claimed_free: JSON.stringify(normalized.claimedFree),
+      claimed_premium: JSON.stringify(normalized.claimedPremium),
+      updated_at: new Date().toISOString()
+    };
+    await this.kv.hset(this.passKey(userId), payload);
+    return normalized;
+  }
+
 
   async addCoins(userId, amount, reason = '任務獎勵') {
     const key = this.walletKey(userId);

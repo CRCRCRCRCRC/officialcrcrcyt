@@ -34,6 +34,28 @@ class NeonDatabase {
     this.initializeTables();
   }
 
+  parsePassList(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw.map((item) => (item && item.toString ? item.toString() : String(item)));
+    }
+    try {
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      return Array.isArray(parsed) ? parsed.map((item) => (item && item.toString ? item.toString() : String(item))) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  normalizePassState(state = {}) {
+    return {
+      hasPremium: !!state.hasPremium,
+      claimedFree: this.parsePassList(state.claimedFree),
+      claimedPremium: this.parsePassList(state.claimedPremium)
+    };
+  }
+
+
   async initializeTables() {
     try {
       // 創建用戶表
@@ -142,6 +164,15 @@ class NeonDatabase {
           user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
           balance INTEGER NOT NULL DEFAULT 0,
           last_claim_at TIMESTAMP NULL,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS coin_passes (
+          user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+          has_premium BOOLEAN DEFAULT false,
+          claimed_free TEXT DEFAULT '[]',
+          claimed_premium TEXT DEFAULT '[]',
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -393,6 +424,38 @@ class NeonDatabase {
     const row = res.rows[0];
     return row || { user_id: userId, balance: 0, last_claim_at: null };
   }
+
+  async getCoinPass(userId) {
+    const result = await this.pool.query(
+      'SELECT has_premium, claimed_free, claimed_premium FROM coin_passes WHERE user_id = $1',
+      [userId]
+    );
+    if (!result.rows.length) {
+      return { hasPremium: false, claimedFree: [], claimedPremium: [] };
+    }
+    const row = result.rows[0];
+    return this.normalizePassState({
+      hasPremium: !!row.has_premium,
+      claimedFree: row.claimed_free,
+      claimedPremium: row.claimed_premium
+    });
+  }
+
+  async saveCoinPass(userId, state = {}) {
+    const normalized = this.normalizePassState(state);
+    await this.pool.query(
+      `INSERT INTO coin_passes (user_id, has_premium, claimed_free, claimed_premium, updated_at)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+       ON CONFLICT (user_id) DO UPDATE
+       SET has_premium = EXCLUDED.has_premium,
+           claimed_free = EXCLUDED.claimed_free,
+           claimed_premium = EXCLUDED.claimed_premium,
+           updated_at = CURRENT_TIMESTAMP`,
+      [userId, normalized.hasPremium, JSON.stringify(normalized.claimedFree), JSON.stringify(normalized.claimedPremium)]
+    );
+    return normalized;
+  }
+
 
   async addCoins(userId, amount, reason = '任務獎勵') {
     const client = await this.pool.connect();
