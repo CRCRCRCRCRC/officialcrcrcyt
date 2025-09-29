@@ -42,36 +42,70 @@ const AdminLayout = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   useEffect(() => {
+    if (!document?.body) {
+      return undefined
+    }
+
     const style = document.createElement('style')
     style.dataset.adminHideDonate = 'true'
-    style.textContent = '#kofi-widget-overlay, .floating-chat { display: none !important; }'
+    style.textContent = `
+      #kofi-widget-overlay,
+      #kofi-widget-overlay *,
+      .floating-chat,
+      .floating-chat *,
+      [id^="kofiframe"],
+      iframe[src*="ko-fi"],
+      a[href*="ko-fi.com"] {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+    `
     document.head.appendChild(style)
 
     const hideOverlay = () => {
       const overlay = document.getElementById('kofi-widget-overlay')
       if (overlay) {
-        overlay.style.setProperty('display', 'none', 'important')
         overlay.remove()
       }
 
-      document.querySelectorAll('.floating-chat, iframe[src*="ko-fi"], [id^="kofiframe"], a[href*="ko-fi.com"]')
+      document
+        .querySelectorAll('.floating-chat, [id^="kofiframe"], iframe[src*="ko-fi"], a[href*="ko-fi.com"]')
         .forEach((node) => {
           if (node instanceof HTMLElement || node instanceof HTMLIFrameElement) {
-            node.style.setProperty('display', 'none', 'important')
             node.remove()
           }
         })
     }
 
     hideOverlay()
-    const observer = new MutationObserver(() => hideOverlay())
-    observer.observe(document.body, { childList: true, subtree: true })
+
+    const observer = typeof MutationObserver !== 'undefined'
+      ? new MutationObserver(() => hideOverlay())
+      : null
+
+    if (observer) {
+      observer.observe(document.body, { childList: true, subtree: true })
+    }
+
+    const koFiScript = document.querySelector('script[src*="ko-fi.com"]')
+    if (koFiScript) {
+      koFiScript.remove()
+    }
+
+    const intervalId = window.setInterval(hideOverlay, 1500)
 
     return () => {
       if (style.parentNode) {
         style.parentNode.removeChild(style)
       }
-      observer.disconnect()
+      if (observer) {
+        observer.disconnect()
+      }
+      window.clearInterval(intervalId)
     }
   }, [])
 
