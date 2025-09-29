@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { authAPI } from '../services/api'
 
+const ADMIN_PASSPHRASE = 'howard is a pig'
+
 const GoogleLoginButton = ({ onSuccess, className = '' }) => {
   const [showPassphraseModal, setShowPassphraseModal] = useState(false)
   const [passphrase, setPassphrase] = useState('')
@@ -28,8 +30,14 @@ const GoogleLoginButton = ({ onSuccess, className = '' }) => {
   const startGoogleLogin = () => {
     if (submitting) return
 
-    if (!passphrase.trim()) {
+    const normalized = passphrase.trim().toLowerCase()
+    if (!normalized) {
       toast.error('請輸入管理員通關密語')
+      return
+    }
+
+    if (normalized !== ADMIN_PASSPHRASE) {
+      toast.error('密語錯誤，請聯絡系統管理員')
       return
     }
 
