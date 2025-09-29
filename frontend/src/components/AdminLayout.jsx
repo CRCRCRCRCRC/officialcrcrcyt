@@ -46,10 +46,27 @@ const AdminLayout = () => {
     style.dataset.adminHideDonate = 'true'
     style.textContent = '#kofi-widget-overlay, .floating-chat { display: none !important; }'
     document.head.appendChild(style)
+
+    const hideOverlay = () => {
+      const overlay = document.getElementById('kofi-widget-overlay')
+      if (overlay) {
+        overlay.style.setProperty('display', 'none', 'important')
+      }
+      const floatingChat = document.querySelector('.floating-chat')
+      if (floatingChat) {
+        floatingChat.style.setProperty('display', 'none', 'important')
+      }
+    }
+
+    hideOverlay()
+    const observer = new MutationObserver(() => hideOverlay())
+    observer.observe(document.body, { childList: true, subtree: true })
+
     return () => {
       if (style.parentNode) {
         style.parentNode.removeChild(style)
       }
+      observer.disconnect()
     }
   }, [])
 
