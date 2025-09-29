@@ -51,11 +51,16 @@ const AdminLayout = () => {
       const overlay = document.getElementById('kofi-widget-overlay')
       if (overlay) {
         overlay.style.setProperty('display', 'none', 'important')
+        overlay.remove()
       }
-      const floatingChat = document.querySelector('.floating-chat')
-      if (floatingChat) {
-        floatingChat.style.setProperty('display', 'none', 'important')
-      }
+
+      document.querySelectorAll('.floating-chat, iframe[src*="ko-fi"], [id^="kofiframe"], a[href*="ko-fi.com"]')
+        .forEach((node) => {
+          if (node instanceof HTMLElement || node instanceof HTMLIFrameElement) {
+            node.style.setProperty('display', 'none', 'important')
+            node.remove()
+          }
+        })
     }
 
     hideOverlay()
