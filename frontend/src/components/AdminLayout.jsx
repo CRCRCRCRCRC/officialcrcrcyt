@@ -41,6 +41,18 @@ const AdminLayout = () => {
   }, [])
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.dataset.adminHideDonate = 'true'
+    style.textContent = '#kofi-widget-overlay, .floating-chat { display: none !important; }'
+    document.head.appendChild(style)
+    return () => {
+      if (style.parentNode) {
+        style.parentNode.removeChild(style)
+      }
+    }
+  }, [])
+
   const navigation = [
     { 
       name: '儀表板', 
@@ -250,3 +262,4 @@ const AdminLayout = () => {
 }
 
 export default AdminLayout
+
