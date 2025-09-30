@@ -192,18 +192,11 @@ const Wallet = () => {
                             : (canClaimNow ? '領取 +50' : fmtNextClaimTime(leftMs))))}
                     </button>
                     <Link
-                      to="/pass"
-                      className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-                    >
-                      <Crown className="w-4 h-4" />
-                      通行券
-                    </Link>
-                    <Link
                       to="/shop"
                       className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
                     >
                       <ShoppingBag className="w-4 h-4" />
-                      購買商品
+                      前往商城
                     </Link>
                   </div>
                 </div>
@@ -245,6 +238,34 @@ const Wallet = () => {
             </motion.div>
           </div>
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="bg-gradient-to-r from-amber-100/80 via-orange-100/80 to-pink-100/80 border border-white/40 rounded-3xl shadow-xl px-6 py-8 sm:px-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-8"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg">
+              <Crown className="w-8 h-8" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-amber-600">CRCRC 通行券</p>
+              <h2 className="text-xl font-bold text-gray-900">解鎖高級獎勵，雙倍收穫</h2>
+              <p className="text-sm text-gray-600">購買高級通行券僅需 6,000 CRCRCoin，即可同時領取普通與高級獎勵。</p>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <Link
+              to="/pass"
+              className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl hover:from-purple-600 hover:to-pink-600 transition-all"
+            >
+              <Crown className="w-4 h-4 mr-2" />
+              查看通行券獎勵
+            </Link>
+            <div className="text-xs text-gray-500 text-center sm:text-left">完成通行券任務即可累積更多 CRCRCoin。</div>
+          </div>
+        </motion.div>
 
         {/* Transaction History */}
         <motion.div
