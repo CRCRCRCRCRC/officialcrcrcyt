@@ -6,6 +6,10 @@ import { useCoin } from '../contexts/CoinContext'
 import toast from 'react-hot-toast'
 import CoinIcon from '../../CRCRCoin-icon.svg'
 
+const PASS_TOTAL_LEVELS = 50
+const PASS_XP_PER_LEVEL = 500
+const PASS_PREMIUM_PRICE = 6000
+
 const Wallet = () => {
   const {
     isLoggedIn,
@@ -131,6 +135,67 @@ const Wallet = () => {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-10 rounded-3xl border border-white/40 bg-gradient-to-r from-amber-100/80 via-orange-100/70 to-pink-100/80 px-6 py-10 sm:px-12 shadow-xl backdrop-blur"
+        >
+          <div className="grid gap-8 lg:grid-cols-[260px,1fr] lg:items-center">
+            <div className="relative mx-auto w-full max-w-[240px] overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-amber-100/80 to-orange-100/80 p-6 text-purple-700 shadow-xl">
+              <div className="pointer-events-none absolute -right-6 -top-10 h-32 w-32 rounded-full bg-purple-200/40 blur-3xl" />
+              <div className="pointer-events-none absolute left-4 bottom-0 h-20 w-20 rounded-full bg-purple-200/30 blur-2xl" />
+              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.35em] text-purple-500">
+                <span>CRCRC PASS</span>
+                <span>PLUS</span>
+              </div>
+              <div className="mt-8 space-y-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 shadow-inner">
+                  <Crown className="h-6 w-6" />
+                </div>
+                <h3 className="text-2xl font-black leading-tight">雙倍獎勵</h3>
+                <p className="text-sm text-purple-600">高級通行券解鎖額外 {PASS_TOTAL_LEVELS} 階段獎勵。</p>
+              </div>
+              <div className="mt-6 space-y-3">
+                <div className="flex items-center justify-between rounded-2xl bg-white/80 px-4 py-2 text-sm font-semibold text-purple-700 shadow-inner">
+                  <span>費用</span>
+                  <span>{PASS_PREMIUM_PRICE.toLocaleString('zh-TW')} CRCRCoin</span>
+                </div>
+                <div className="rounded-2xl bg-white/70 px-4 py-2 text-xs font-semibold text-purple-600 shadow-inner">
+                  每階段需要 {PASS_XP_PER_LEVEL.toLocaleString('zh-TW')} XP
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-6">
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.4em] text-amber-700">本季通行券</p>
+                <h2 className="text-3xl font-bold text-gray-900">解鎖高級獎勵，雙倍收穫</h2>
+                <p className="text-base leading-relaxed text-gray-700">
+                  完成任務累積 XP 即可依序領取 {PASS_TOTAL_LEVELS} 階段獎勵。購買高級通行券後，可同時領取普通與高級獎勵，回饋直接翻倍。
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Link
+                  to="/pass"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:from-purple-600 hover:to-pink-600"
+                >
+                  <Crown className="h-4 w-4" />
+                  查看通行券獎勵
+                </Link>
+                <Link
+                  to="/shop"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-purple-200/60 bg-white/80 px-6 py-3 text-sm font-semibold text-purple-700 shadow transition-all hover:bg-white"
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                  兌換更多 CRCRCoin
+                </Link>
+              </div>
+              <p className="text-xs text-gray-600">
+                每提升一階段需要 {PASS_XP_PER_LEVEL.toLocaleString('zh-TW')} XP，總共 {PASS_TOTAL_LEVELS} 階段，所有進度皆由伺服器即時紀錄。
+              </p>
+            </div>
+          </div>
+        </motion.div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Balance Card */}
           <div className="lg:col-span-2">
@@ -238,34 +303,6 @@ const Wallet = () => {
             </motion.div>
           </div>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="bg-gradient-to-r from-amber-100/80 via-orange-100/80 to-pink-100/80 border border-white/40 rounded-3xl shadow-xl px-6 py-8 sm:px-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between mb-8"
-        >
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg">
-              <Crown className="w-8 h-8" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-amber-600">CRCRC 通行券</p>
-              <h2 className="text-xl font-bold text-gray-900">解鎖高級獎勵，雙倍收穫</h2>
-              <p className="text-sm text-gray-600">購買高級通行券僅需 6,000 CRCRCoin，即可同時領取普通與高級獎勵。</p>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <Link
-              to="/pass"
-              className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl hover:from-purple-600 hover:to-pink-600 transition-all"
-            >
-              <Crown className="w-4 h-4 mr-2" />
-              查看通行券獎勵
-            </Link>
-            <div className="text-xs text-gray-500 text-center sm:text-left">完成通行券任務即可累積更多 CRCRCoin。</div>
-          </div>
-        </motion.div>
 
         {/* Transaction History */}
         <motion.div

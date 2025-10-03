@@ -1,4 +1,4 @@
-const { Pool } = require('pg');
+﻿const { Pool } = require('pg');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
@@ -48,10 +48,14 @@ class NeonDatabase {
   }
 
   normalizePassState(state = {}) {
+    const rawXp = Number(state?.xp ?? state?.XP ?? 0);
     return {
       hasPremium: !!state.hasPremium,
       claimedFree: this.parsePassList(state.claimedFree),
-      claimedPremium: this.parsePassList(state.claimedPremium)
+      claimedPremium: this.parsePassList(state.claimedPremium),
+      xp: Number.isFinite(rawXp) ? Math.max(0, Math.floor(rawXp)) : 0
+    };
+  }
     };
   }
 
@@ -173,8 +177,13 @@ class NeonDatabase {
           has_premium BOOLEAN DEFAULT false,
           claimed_free TEXT DEFAULT '[]',
           claimed_premium TEXT DEFAULT '[]',
+          xp INTEGER DEFAULT 0,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
+      `);
+      await this.pool.query(`
+        ALTER TABLE coin_passes
+        ADD COLUMN IF NOT EXISTS xp INTEGER DEFAULT 0
       `);
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS coin_transactions (
@@ -427,35 +436,47 @@ class NeonDatabase {
 
   async getCoinPass(userId) {
     const result = await this.pool.query(
-      'SELECT has_premium, claimed_free, claimed_premium FROM coin_passes WHERE user_id = $1',
+      'SELECT has_premium, claimed_free, claimed_premium, xp FROM coin_passes WHERE user_id = $1',
       [userId]
     );
     if (!result.rows.length) {
-      return { hasPremium: false, claimedFree: [], claimedPremium: [] };
+      return { hasPremium: false, claimedFree: [], claimedPremium: [], xp: 0 };
     }
     const row = result.rows[0];
     return this.normalizePassState({
       hasPremium: !!row.has_premium,
       claimedFree: row.claimed_free,
-      claimedPremium: row.claimed_premium
+      claimedPremium: row.claimed_premium,
+      xp: row.xp,
     });
   }
 
   async saveCoinPass(userId, state = {}) {
     const normalized = this.normalizePassState(state);
     await this.pool.query(
-      `INSERT INTO coin_passes (user_id, has_premium, claimed_free, claimed_premium, updated_at)
-       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+      `INSERT INTO coin_passes (user_id, has_premium, claimed_free, claimed_premium, xp, updated_at)
+       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
        ON CONFLICT (user_id) DO UPDATE
        SET has_premium = EXCLUDED.has_premium,
            claimed_free = EXCLUDED.claimed_free,
            claimed_premium = EXCLUDED.claimed_premium,
+           xp = EXCLUDED.xp,
            updated_at = CURRENT_TIMESTAMP`,
-      [userId, normalized.hasPremium, JSON.stringify(normalized.claimedFree), JSON.stringify(normalized.claimedPremium)]
+      [userId, normalized.hasPremium, JSON.stringify(normalized.claimedFree), JSON.stringify(normalized.claimedPremium), normalized.xp]
     );
     return normalized;
   }
 
+
+  async addPassXp(userId, amount) {
+    const value = Math.max(0, Math.floor(Number(amount) || 0));
+    if (value <= 0) {
+      return this.normalizePassState(await this.getCoinPass(userId));
+    }
+    const current = await this.getCoinPass(userId);
+    const nextState = { ...current, xp: Math.max(0, (Number(current?.xp) || 0) + value) };
+    return await this.saveCoinPass(userId, nextState);
+  }
 
   async addCoins(userId, amount, reason = '任務獎勵') {
     const client = await this.pool.connect();

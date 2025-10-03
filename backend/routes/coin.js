@@ -47,50 +47,32 @@ const SHOP_PRODUCTS = [
   }
 ];
 
+const PASS_TOTAL_LEVELS = 50;
+const PASS_XP_PER_LEVEL = 500;
 const PASS_PREMIUM_PRICE = 6000;
 
-const PASS_REWARDS = [
-  {
-    id: 'pass-level-1',
-    level: 1,
-    title: '等級 1：每日報到',
-    description: '完成基礎任務獎勵',
-    free: { coins: 100, description: '獲得 100 CRCRCoin' },
-    premium: { coins: 250, description: '額外獲得 250 CRCRCoin' }
-  },
-  {
-    id: 'pass-level-2',
-    level: 2,
-    title: '等級 2：熱身完成',
-    description: '累積任務達成',
-    free: { coins: 150, description: '獲得 150 CRCRCoin' },
-    premium: { coins: 300, description: '額外獲得 300 CRCRCoin' }
-  },
-  {
-    id: 'pass-level-3',
-    level: 3,
-    title: '等級 3：勤勞之星',
-    description: '維持登入與互動',
-    free: { coins: 200, description: '獲得 200 CRCRCoin' },
-    premium: { coins: 400, description: '額外獲得 400 CRCRCoin' }
-  },
-  {
-    id: 'pass-level-4',
-    level: 4,
-    title: '等級 4：社群達人',
-    description: '與社群活動互動',
-    free: { coins: 250, description: '獲得 250 CRCRCoin' },
-    premium: { coins: 500, description: '額外獲得 500 CRCRCoin' }
-  },
-  {
-    id: 'pass-level-5',
-    level: 5,
-    title: '等級 5：傳說挑戰',
-    description: '完成所有通行券任務',
-    free: { coins: 300, description: '獲得 300 CRCRCoin' },
-    premium: { coins: 700, description: '額外獲得 700 CRCRCoin' }
-  }
-];
+const createPassReward = (level) => {
+  const milestone = level % 5 === 0;
+  const freeCoins = milestone ? 100 : 50;
+  const premiumCoins = milestone ? 150 : 75;
+  return {
+    id: `pass-level-${level}`,
+    level,
+    title: `等級 ${level}`,
+    description: milestone ? '重大里程碑獎勵' : '完成任務即可領取獎勵',
+    requiredXp: level * PASS_XP_PER_LEVEL,
+    free: {
+      coins: freeCoins,
+      description: `獲得 ${freeCoins} CRCRCoin`
+    },
+    premium: {
+      coins: premiumCoins,
+      description: `額外獲得 ${premiumCoins} CRCRCoin`
+    }
+  };
+};
+
+const PASS_REWARDS = Array.from({ length: PASS_TOTAL_LEVELS }, (_, index) => createPassReward(index + 1));
 
 
 // 取得全域重置版本（公開）
@@ -144,24 +126,65 @@ function mapWallet(w) {
   };
 }
 
+const toUniqueList = (value) => {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set();
+  const result = [];
+  value.forEach((item) => {
+    const str = item != null ? String(item) : '';
+    if (!seen.has(str)) {
+      seen.add(str);
+      result.push(str);
+    }
+  });
+  return result;
+};
+
 const sanitizePassState = (state = {}) => {
-  const toUniqueList = (value) => {
-    if (!Array.isArray(value)) return [];
-    const seen = new Set();
-    const result = [];
-    value.forEach((item) => {
-      const str = item != null ? String(item) : '';
-      if (!seen.has(str)) {
-        seen.add(str);
-        result.push(str);
-      }
-    });
-    return result;
-  };
+  const rawXp = Number(state?.xp ?? state?.XP ?? 0);
   return {
-    hasPremium: !!state.hasPremium,
-    claimedFree: toUniqueList(state.claimedFree),
-    claimedPremium: toUniqueList(state.claimedPremium)
+    hasPremium: !!state?.hasPremium,
+    claimedFree: toUniqueList(state?.claimedFree || state?.claimed_free),
+    claimedPremium: toUniqueList(state?.claimedPremium || state?.claimed_premium),
+    xp: Number.isFinite(rawXp) ? Math.max(0, Math.floor(rawXp)) : 0
+  };
+};
+
+const buildPassPayload = async (userId, { walletOverride = null, passStateOverride = null } = {}) => {
+  const walletPromise = walletOverride ? Promise.resolve(walletOverride) : database.getCoinWallet(userId);
+  const passPromise = passStateOverride ? Promise.resolve(passStateOverride) : database.getCoinPass(userId);
+  const [walletRaw, passRaw] = await Promise.all([walletPromise, passPromise]);
+  const state = sanitizePassState(passRaw || {});
+  const totalLevels = PASS_REWARDS.length;
+  const xpPerLevel = PASS_XP_PER_LEVEL;
+  const maxXp = totalLevels * xpPerLevel;
+  const xp = Number.isFinite(state.xp) ? state.xp : 0;
+  const clampedXp = Math.max(0, Math.min(xp, maxXp));
+  const completedLevels = totalLevels === 0 ? 0 : Math.min(totalLevels, Math.floor(clampedXp / xpPerLevel));
+  const levelProgress = completedLevels >= totalLevels ? xpPerLevel : clampedXp - completedLevels * xpPerLevel;
+  const currentLevel = totalLevels === 0 ? 0 : Math.min(totalLevels, completedLevels + (completedLevels >= totalLevels ? 0 : 1));
+  const nextLevelXp = Math.min(maxXp, (completedLevels + 1) * xpPerLevel);
+
+  return {
+    config: {
+      premiumPrice: PASS_PREMIUM_PRICE,
+      xpPerLevel,
+      totalLevels,
+      rewards: PASS_REWARDS
+    },
+    state,
+    progress: {
+      xp: clampedXp,
+      xpPerLevel,
+      totalLevels,
+      completedLevels,
+      currentLevel,
+      levelProgress,
+      levelRequiredXp: xpPerLevel,
+      nextLevelXp,
+      maxXp
+    },
+    wallet: mapWallet(walletRaw)
   };
 };
 
@@ -194,19 +217,8 @@ router.get('/wallet', authenticateToken, async (req, res) => {
 
 router.get('/pass', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const [wallet, passState] = await Promise.all([
-      database.getCoinWallet(userId),
-      database.getCoinPass(userId)
-    ]);
-    res.json({
-      config: {
-        premiumPrice: PASS_PREMIUM_PRICE,
-        rewards: PASS_REWARDS
-      },
-      state: sanitizePassState(passState),
-      wallet: mapWallet(wallet)
-    });
+    const payload = await buildPassPayload(req.user.id);
+    res.json(payload);
   } catch (error) {
     console.error('取得通行券資訊失敗:', error);
     res.status(500).json({ error: '無法取得通行券資訊' });
@@ -232,14 +244,16 @@ router.post('/pass/purchase', authenticateToken, async (req, res) => {
 
     const updatedState = await database.saveCoinPass(userId, {
       ...currentState,
-      hasPremium: true
+      hasPremium: true,
+      xp: currentState.xp
     });
 
-    res.json({
-      success: true,
-      state: sanitizePassState(updatedState),
-      wallet: mapWallet(spendResult.wallet)
+    const payload = await buildPassPayload(userId, {
+      walletOverride: spendResult.wallet,
+      passStateOverride: updatedState
     });
+
+    res.json({ success: true, ...payload });
   } catch (error) {
     console.error('購買通行券失敗:', error);
     res.status(500).json({ error: '購買通行券失敗' });
@@ -263,6 +277,10 @@ router.post('/pass/claim', authenticateToken, async (req, res) => {
     }
 
     const state = sanitizePassState(await database.getCoinPass(userId));
+    const stageRequiredXp = reward.requiredXp || (reward.level * PASS_XP_PER_LEVEL);
+    if (state.xp < stageRequiredXp) {
+      return res.status(403).json({ error: '尚未達到領取條件' });
+    }
     const claimedFree = new Set(state.claimedFree);
     const claimedPremium = new Set(state.claimedPremium);
     if ((normalizedTier === 'free' && claimedFree.has(rewardId)) || (normalizedTier === 'premium' && claimedPremium.has(rewardId))) {
@@ -280,7 +298,7 @@ router.post('/pass/claim', authenticateToken, async (req, res) => {
       const add = await database.addCoins(
         userId,
         coins,
-        `通行券獎勵：${reward.title}（${normalizedTier === 'premium' ? '高級' : '普通'}）`
+        `通行券獎勵：第 ${reward.level} 階（${normalizedTier === 'premium' ? '高級' : '普通'}）`
       );
       if (!add?.success) {
         return res.status(500).json({ error: '發放獎勵失敗' });
@@ -299,7 +317,13 @@ router.post('/pass/claim', authenticateToken, async (req, res) => {
     const updatedState = await database.saveCoinPass(userId, {
       hasPremium: state.hasPremium,
       claimedFree: Array.from(claimedFree),
-      claimedPremium: Array.from(claimedPremium)
+      claimedPremium: Array.from(claimedPremium),
+      xp: state.xp
+    });
+
+    const payload = await buildPassPayload(userId, {
+      walletOverride: wallet,
+      passStateOverride: updatedState
     });
 
     res.json({
@@ -310,8 +334,7 @@ router.post('/pass/claim', authenticateToken, async (req, res) => {
         coins,
         description: rewardInfo?.description || ''
       },
-      state: sanitizePassState(updatedState),
-      wallet: mapWallet(wallet)
+      ...payload
     });
   } catch (error) {
     console.error('領取通行券獎勵失敗:', error);
@@ -468,6 +491,22 @@ router.post('/purchase', authenticateToken, async (req, res) => {
 });
 
 // ���O�]�����A�ݵn�J�^
+router.post('/pass/earn', authenticateToken, async (req, res) => {
+  try {
+    const xpValue = Math.max(0, Math.floor(Number(req.body?.xp) || 0));
+    if (xpValue <= 0) {
+      return res.status(400).json({ error: 'XP 數值無效' });
+    }
+
+    const updatedState = await database.addPassXp(req.user.id, xpValue);
+    const payload = await buildPassPayload(req.user.id, { passStateOverride: updatedState });
+    res.json({ success: true, ...payload });
+  } catch (error) {
+    console.error('新增通行券 XP 失敗:', error);
+    res.status(500).json({ error: '無法新增 XP' });
+  }
+});
+
 router.post('/spend', authenticateToken, async (req, res) => {
   try {
     const amount = Math.max(0, Math.floor(Number(req.body?.amount) || 0));

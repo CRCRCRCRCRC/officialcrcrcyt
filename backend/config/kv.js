@@ -369,7 +369,8 @@ class KVDatabase {
     return this.normalizePassState({
       hasPremium: hasField === true || hasField === 'true' || hasField === 1 || hasField === '1',
       claimedFree: raw.claimed_free,
-      claimedPremium: raw.claimed_premium
+      claimedPremium: raw.claimed_premium,
+      xp: raw.xp
     });
   }
 
@@ -379,6 +380,7 @@ class KVDatabase {
       has_premium: normalized.hasPremium ? 'true' : 'false',
       claimed_free: JSON.stringify(normalized.claimedFree),
       claimed_premium: JSON.stringify(normalized.claimedPremium),
+      xp: String(normalized.xp || 0),
       updated_at: new Date().toISOString()
     };
     await this.kv.hset(this.passKey(userId), payload);
@@ -386,7 +388,17 @@ class KVDatabase {
   }
 
 
-  async addCoins(userId, amount, reason = '任務獎勵') {
+    async addPassXp(userId, amount) {
+    const value = Math.max(0, Math.floor(Number(amount) || 0));
+    if (value <= 0) {
+      return this.normalizePassState(await this.getCoinPass(userId));
+    }
+    const current = await this.getCoinPass(userId);
+    const nextState = { ...current, xp: Math.max(0, (Number(current?.xp) || 0) + value) };
+    return await this.saveCoinPass(userId, nextState);
+  }
+
+async addCoins(userId, amount, reason = '任務獎勵') {
     const key = this.walletKey(userId);
     await this.ensureCoinWallet(userId);
     const w = await this.kv.hgetall(key);
