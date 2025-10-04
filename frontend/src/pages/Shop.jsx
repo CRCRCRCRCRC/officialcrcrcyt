@@ -189,15 +189,11 @@ const Shop = () => {
                       </div>
                       <div className="space-y-3">
                         <h3 className="text-lg font-semibold text-gray-900 md:text-xl">{product.name}</h3>
-                        <p className="flex items-center gap-2 text-sm text-gray-600">
-                          <MessageCircle className="h-4 w-4 text-gray-400" />
-                          {product.description}
-                        </p>
                       </div>
                     </div>
                     <div className="mt-6 space-y-4 text-center md:text-left">
                       <div className="text-2xl font-extrabold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text md:text-3xl">
-                        價格：{product.price.toLocaleString('zh-TW')}
+                        價格: {product.price.toLocaleString('zh-TW')}
                         <span className="ml-1 text-base font-semibold text-purple-500 md:text-lg">CRCRCoin</span>
                       </div>
                       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
