@@ -56,9 +56,6 @@ class NeonDatabase {
       xp: Number.isFinite(rawXp) ? Math.max(0, Math.floor(rawXp)) : 0
     };
   }
-    };
-  }
-
 
   async initializeTables() {
     try {

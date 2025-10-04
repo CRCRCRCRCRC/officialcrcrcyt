@@ -325,10 +325,12 @@ class KVDatabase {
   }
 
   normalizePassState(state = {}) {
+    const rawXp = Number(state?.xp ?? state?.XP ?? 0);
     return {
       hasPremium: !!state.hasPremium,
       claimedFree: this.parsePassList(state.claimedFree),
-      claimedPremium: this.parsePassList(state.claimedPremium)
+      claimedPremium: this.parsePassList(state.claimedPremium),
+      xp: Number.isFinite(rawXp) ? Math.max(0, Math.floor(rawXp)) : 0
     };
   }
 
@@ -363,7 +365,7 @@ class KVDatabase {
   async getCoinPass(userId) {
     const raw = await this.kv.hgetall(this.passKey(userId));
     if (!raw || Object.keys(raw).length === 0) {
-      return { hasPremium: false, claimedFree: [], claimedPremium: [] };
+      return { hasPremium: false, claimedFree: [], claimedPremium: [], xp: 0 };
     }
     const hasField = raw.has_premium;
     return this.normalizePassState({
@@ -386,9 +388,7 @@ class KVDatabase {
     await this.kv.hset(this.passKey(userId), payload);
     return normalized;
   }
-
-
-    async addPassXp(userId, amount) {
+  async addPassXp(userId, amount) {
     const value = Math.max(0, Math.floor(Number(amount) || 0));
     if (value <= 0) {
       return this.normalizePassState(await this.getCoinPass(userId));
@@ -398,7 +398,7 @@ class KVDatabase {
     return await this.saveCoinPass(userId, nextState);
   }
 
-async addCoins(userId, amount, reason = '任務獎勵') {
+  async addCoins(userId, amount, reason = '任務獎勵') {
     const key = this.walletKey(userId);
     await this.ensureCoinWallet(userId);
     const w = await this.kv.hgetall(key);
