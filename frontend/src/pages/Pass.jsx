@@ -179,12 +179,6 @@ const Pass = () => {
     const lockedByXp = !stageUnlocked
     const locked = lockedByPremium || lockedByXp
     const processing = claimingKey === `${tier}:${reward.id}`
-    const xpRemaining = Math.max(0, requiredXp - xp)
-    const detailLine = locked
-      ? lockedByPremium
-        ? '購買高級通行券即可領取'
-        : `需要累積 ${requiredXp.toLocaleString('zh-TW')} XP`
-      : info?.description || '立即領取獎勵'
     const cardColor = isPremiumTier
       ? 'from-[#a855f7]/90 via-[#7c3aed]/90 to-[#db2777]/90 border-[#f5d0ff]/40'
       : 'from-[#38bdf8]/90 via-[#2563eb]/90 to-[#4c1d95]/90 border-[#bae6fd]/40'
@@ -208,9 +202,8 @@ const Pass = () => {
             <h4 className='mt-3 text-2xl font-black leading-none text-white'>
               {coins > 0 ? `${coins.toLocaleString('zh-TW')} CRCRCoin` : '特別獎勵'}
             </h4>
-            <p className='mt-2 text-xs text-white/80'>{detailLine}</p>
-            {!locked && info?.description && info.description !== detailLine && (
-              <p className='mt-1 text-xs text-white/70'>{info.description}</p>
+            {!locked && info?.description && (
+              <p className='mt-2 text-xs text-white/80'>{info.description}</p>
             )}
           </div>
           <div className='flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/20 text-white'>
@@ -218,16 +211,6 @@ const Pass = () => {
           </div>
         </div>
         <div className='relative mt-6 flex flex-col gap-2'>
-          {lockedByXp && (
-            <span className='text-[11px] font-semibold uppercase tracking-widest text-white/70'>
-              還需 {xpRemaining.toLocaleString('zh-TW')} XP
-            </span>
-          )}
-          {lockedByPremium && (
-            <span className='text-[11px] font-semibold uppercase tracking-widest text-white/70'>
-              高級通行券限定
-            </span>
-          )}
           <button
             type='button'
             onClick={() => handleClaim(tier, reward)}
@@ -278,9 +261,6 @@ const Pass = () => {
           )}
         </div>
         <div className='relative z-20 w-full'>{renderTierCard('free', reward, stageUnlocked)}</div>
-        <span className='text-xs font-semibold uppercase tracking-wider text-white/60'>
-          {requiredXp.toLocaleString('zh-TW')} XP
-        </span>
       </motion.div>
     )
   }
