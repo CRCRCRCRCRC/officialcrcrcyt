@@ -174,7 +174,7 @@ const Shop = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
             {PRODUCTS.map((product) => {
               const disabled = !isLoggedIn || (hydrated && typeof balance === 'number' && balance < product.price)
               return (
