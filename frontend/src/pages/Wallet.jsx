@@ -98,7 +98,7 @@ const Wallet = () => {
           <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Coins className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">請先登入</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">請先登入</h2>
           <p className="text-gray-600 mb-6">登入後即可查看您的 CRCRCoin 錢包</p>
           <Link
             to="/"
@@ -138,39 +138,39 @@ const Wallet = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-10 rounded-3xl border border-white/40 bg-gradient-to-r from-amber-100/80 via-orange-100/70 to-pink-100/80 px-6 py-10 sm:px-12 shadow-xl backdrop-blur"
+          className="mb-10 rounded-3xl border border-white/40 bg-gradient-to-r from-amber-100/80 via-orange-100/70 to-pink-100/80 px-6 py-8 sm:px-10 shadow-xl backdrop-blur"
         >
-          <div className="grid gap-8 lg:grid-cols-[260px,1fr] lg:items-center">
+          <div className="grid gap-6 lg:grid-cols-[240px,1fr] lg:items-center">
             <Link
               to="/pass"
-              className="group relative mx-auto flex w-full max-w-[240px] flex-col gap-5 overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-amber-100/80 to-orange-100/80 p-6 text-purple-700 shadow-xl transition-transform hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-purple-300/60"
+              className="group relative mx-auto flex w-full max-w-[220px] flex-col gap-4 overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-amber-100/80 to-orange-100/80 p-5 text-purple-700 shadow-xl transition-transform hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-purple-300/60"
             >
-              <div className="pointer-events-none absolute -right-6 -top-10 h-32 w-32 rounded-full bg-purple-200/40 blur-3xl" />
-              <div className="pointer-events-none absolute left-4 bottom-0 h-20 w-20 rounded-full bg-purple-200/30 blur-2xl" />
+              <div className="pointer-events-none absolute -right-6 -top-10 h-28 w-28 rounded-full bg-purple-200/40 blur-3xl" />
+              <div className="pointer-events-none absolute left-4 bottom-0 h-16 w-16 rounded-full bg-purple-200/30 blur-2xl" />
               <div className="relative flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.35em] text-purple-500">
                 <span>CRCRC PASS</span>
                 <span>進度中心</span>
               </div>
-              <div className="relative space-y-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 shadow-inner">
-                  <Crown className="h-6 w-6" />
+              <div className="relative space-y-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 shadow-inner">
+                  <Crown className="h-5 w-5" />
                 </div>
-                <h3 className="text-2xl font-black leading-tight">查看通行券狀態</h3>
-                <p className="text-sm text-purple-600">
+                <h3 className="text-xl font-black leading-tight">查看通行券狀態</h3>
+                <p className="text-xs text-purple-600">
                   點擊卡片即可前往通行券頁面，追蹤 XP 進度、可領取獎勵與高級通行券福利。
                 </p>
               </div>
-              <div className="relative mt-auto inline-flex items-center justify-center gap-2 self-start rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all group-hover:scale-105">
+              <div className="relative inline-flex items-center justify-center gap-2 self-start rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 px-3 py-2 text-xs font-semibold text-white shadow-lg transition-all group-hover:scale-105">
                 <Crown className="h-4 w-4" />
                 前往通行券頁面
               </div>
             </Link>
 
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4">
               <div className="space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.4em] text-amber-700">本季通行券</p>
                 <h2 className="text-3xl font-bold text-gray-900">解鎖高級獎勵，雙倍收穫</h2>
-                <p className="text-base leading-relaxed text-gray-700">
+                <p className="text-sm leading-relaxed text-gray-700">
                   所有 XP 進度與階段獎勵都集中在通行券頁面。完成任務即可依序領取 {PASS_TOTAL_LEVELS} 階段獎勵，高級通行券也能在同一頁一次領齊。
                 </p>
               </div>
@@ -190,9 +190,6 @@ const Wallet = () => {
                   兌換更多 CRCRCoin
                 </Link>
               </div>
-              <p className="text-xs text-gray-600">
-                每提升一階段需要 {PASS_XP_PER_LEVEL.toLocaleString('zh-TW')} XP，總共 {PASS_TOTAL_LEVELS} 階段；所有進度會即時同步伺服器，方便掌握可領取獎勵。
-              </p>
             </div>
           </div>
         </motion.div>
