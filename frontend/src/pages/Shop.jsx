@@ -159,18 +159,18 @@ const Shop = () => {
       </div>
 
       <div className="mx-auto w-full max-w-[1800px] px-4 py-12 sm:px-14 lg:px-24">
-        <motion.div
+          <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-[44px] border border-white/20 bg-white/95 px-14 py-14 shadow-[0_35px_90px_rgba(79,70,229,0.12)] backdrop-blur-xl lg:px-28"
+          className="rounded-[40px] border border-white/20 bg-white/90 px-10 py-12 shadow-2xl backdrop-blur-xl lg:px-20"
         >
-          <div className="mb-10 flex items-center gap-5 lg:gap-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
-              <ShoppingBag className="h-7 w-7" />
+          <div className="mb-8 flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
+              <ShoppingBag className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold tracking-tight text-gray-900 lg:text-3xl">挑選你想試試看的商品</h2>
-              <p className="mt-2 text-sm text-gray-600 lg:text-base">所有商品都是虛擬體驗，購買後請留意提示訊息。</p>
+              <h2 className="text-xl font-bold text-gray-900">挑選你想試試看的商品</h2>
+              <p className="text-sm text-gray-600">所有商品都是虛擬體驗，購買後請留意提示訊息。</p>
             </div>
           </div>
 
@@ -178,36 +178,36 @@ const Shop = () => {
             {PRODUCTS.map((product) => {
               const disabled = !isLoggedIn || (hydrated && typeof balance === 'number' && balance < product.price)
               return (
-                <div key={product.id} className="rounded-[32px] bg-gradient-to-r from-purple-100/60 via-pink-100/60 to-blue-100/60 p-[2px]">
-                  <div className="rounded-[30px] bg-white px-8 py-7 shadow-lg transition-shadow hover:shadow-2xl lg:px-12">
-                    <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-14">
+                <div key={product.id} className="rounded-2xl bg-gradient-to-r from-purple-100/60 via-pink-100/60 to-blue-100/60 p-[1px]">
+                  <div className="rounded-2xl bg-white px-6 py-6 shadow-sm transition-shadow hover:shadow-lg lg:px-8">
+                    <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
                           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
                             <ShieldCheck className="h-6 w-6" />
                           </div>
                           <h3 className="text-lg font-semibold text-gray-900 md:text-xl">{product.name}</h3>
                         </div>
-                        <p className="mt-4 flex max-w-3xl items-start gap-2 text-sm text-gray-600 lg:text-base">
+                        <p className="mt-3 flex items-center gap-2 text-sm text-gray-600">
                           <MessageCircle className="h-4 w-4 text-gray-400" />
                           {product.description}
                         </p>
                       </div>
-                      <div className="w-full text-center lg:w-auto lg:text-right">
-                        <div className="text-2xl font-extrabold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text lg:text-[32px]">
+                      <div className="w-full text-center md:w-auto md:text-right">
+                        <div className="text-2xl font-extrabold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text md:text-3xl">
                           {product.price.toLocaleString('zh-TW')}
-                          <span className="ml-1 text-base font-semibold text-purple-500 lg:text-lg">CRCRCoin</span>
+                          <span className="ml-1 text-base font-semibold text-purple-500 md:text-lg">CRCRCoin</span>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleBuyClick(product)}
-                          className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-7 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
+                          className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
                           disabled={disabled}
                         >
                           {isLoggedIn ? '購買' : '請先登入'}
                         </button>
                         {isLoggedIn && hydrated && typeof balance === 'number' && balance < product.price && (
-                          <p className="mt-3 text-xs text-red-500 lg:text-right">餘額不足，請先累積更多 CRCRCoin。</p>
+                          <p className="mt-3 text-xs text-red-500 md:text-right">餘額不足，請先累積更多 CRCRCoin。</p>
                         )}
                       </div>
                     </div>
