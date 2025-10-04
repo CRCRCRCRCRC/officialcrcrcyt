@@ -141,37 +141,37 @@ const Wallet = () => {
           className="mb-10 rounded-3xl border border-white/40 bg-gradient-to-r from-amber-100/80 via-orange-100/70 to-pink-100/80 px-6 py-10 sm:px-12 shadow-xl backdrop-blur"
         >
           <div className="grid gap-8 lg:grid-cols-[260px,1fr] lg:items-center">
-            <div className="relative mx-auto w-full max-w-[240px] overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-amber-100/80 to-orange-100/80 p-6 text-purple-700 shadow-xl">
+            <Link
+              to="/pass"
+              className="group relative mx-auto flex w-full max-w-[240px] flex-col gap-5 overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-b from-white/95 via-amber-100/80 to-orange-100/80 p-6 text-purple-700 shadow-xl transition-transform hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-purple-300/60"
+            >
               <div className="pointer-events-none absolute -right-6 -top-10 h-32 w-32 rounded-full bg-purple-200/40 blur-3xl" />
               <div className="pointer-events-none absolute left-4 bottom-0 h-20 w-20 rounded-full bg-purple-200/30 blur-2xl" />
-              <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.35em] text-purple-500">
+              <div className="relative flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.35em] text-purple-500">
                 <span>CRCRC PASS</span>
-                <span>PLUS</span>
+                <span>進度中心</span>
               </div>
-              <div className="mt-8 space-y-4">
+              <div className="relative space-y-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 shadow-inner">
                   <Crown className="h-6 w-6" />
                 </div>
-                <h3 className="text-2xl font-black leading-tight">雙倍獎勵</h3>
-                <p className="text-sm text-purple-600">高級通行券解鎖額外 {PASS_TOTAL_LEVELS} 階段獎勵。</p>
+                <h3 className="text-2xl font-black leading-tight">查看通行券狀態</h3>
+                <p className="text-sm text-purple-600">
+                  點擊卡片即可前往通行券頁面，追蹤 XP 進度、可領取獎勵與高級通行券福利。
+                </p>
               </div>
-              <div className="mt-6 space-y-3">
-                <div className="flex items-center justify-between rounded-2xl bg-white/80 px-4 py-2 text-sm font-semibold text-purple-700 shadow-inner">
-                  <span>費用</span>
-                  <span>{PASS_PREMIUM_PRICE.toLocaleString('zh-TW')} CRCRCoin</span>
-                </div>
-                <div className="rounded-2xl bg-white/70 px-4 py-2 text-xs font-semibold text-purple-600 shadow-inner">
-                  每階段需要 {PASS_XP_PER_LEVEL.toLocaleString('zh-TW')} XP
-                </div>
+              <div className="relative mt-auto inline-flex items-center justify-center gap-2 self-start rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all group-hover:scale-105">
+                <Crown className="h-4 w-4" />
+                前往通行券頁面
               </div>
-            </div>
+            </Link>
 
             <div className="flex flex-col gap-6">
               <div className="space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.4em] text-amber-700">本季通行券</p>
                 <h2 className="text-3xl font-bold text-gray-900">解鎖高級獎勵，雙倍收穫</h2>
                 <p className="text-base leading-relaxed text-gray-700">
-                  完成任務累積 XP 即可依序領取 {PASS_TOTAL_LEVELS} 階段獎勵。購買高級通行券後，可同時領取普通與高級獎勵，回饋直接翻倍。
+                  所有 XP 進度與階段獎勵都集中在通行券頁面。完成任務即可依序領取 {PASS_TOTAL_LEVELS} 階段獎勵，高級通行券也能在同一頁一次領齊。
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -191,7 +191,7 @@ const Wallet = () => {
                 </Link>
               </div>
               <p className="text-xs text-gray-600">
-                每提升一階段需要 {PASS_XP_PER_LEVEL.toLocaleString('zh-TW')} XP，總共 {PASS_TOTAL_LEVELS} 階段，所有進度皆由伺服器即時紀錄。
+                每提升一階段需要 {PASS_XP_PER_LEVEL.toLocaleString('zh-TW')} XP，總共 {PASS_TOTAL_LEVELS} 階段；所有進度會即時同步伺服器，方便掌握可領取獎勵。
               </p>
             </div>
           </div>
