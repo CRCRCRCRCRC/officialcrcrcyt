@@ -174,7 +174,7 @@ const Shop = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {PRODUCTS.map((product) => {
               const disabled = !isLoggedIn || (hydrated && typeof balance === 'number' && balance < product.price)
               return (
@@ -183,32 +183,36 @@ const Shop = () => {
                   className="rounded-2xl bg-gradient-to-r from-purple-100/60 via-pink-100/60 to-blue-100/60 p-[1px]"
                 >
                   <div className="flex h-full flex-col justify-between rounded-2xl bg-white px-6 py-6 shadow-sm transition-shadow hover:shadow-lg lg:px-8">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
                         <ShieldCheck className="h-6 w-6" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 md:text-xl">{product.name}</h3>
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-semibold text-gray-900 md:text-xl">{product.name}</h3>
+                        <p className="flex items-center gap-2 text-sm text-gray-600">
+                          <MessageCircle className="h-4 w-4 text-gray-400" />
+                          {product.description}
+                        </p>
+                      </div>
                     </div>
-                    <p className="mt-3 flex items-center gap-2 text-sm text-gray-600">
-                      <MessageCircle className="h-4 w-4 text-gray-400" />
-                      {product.description}
-                    </p>
-                    <div className="mt-6 space-y-4 text-center">
+                    <div className="mt-6 space-y-4 text-center md:text-left">
                       <div className="text-2xl font-extrabold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text md:text-3xl">
                         {product.price.toLocaleString('zh-TW')}
                         <span className="ml-1 text-base font-semibold text-purple-500 md:text-lg">CRCRCoin</span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleBuyClick(product)}
-                        className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-                        disabled={disabled}
-                      >
-                        {isLoggedIn ? '購買' : '請先登入'}
-                      </button>
-                      {isLoggedIn && hydrated && typeof balance === 'number' && balance < product.price && (
-                        <p className="text-xs text-red-500">餘額不足，請先累積更多 CRCRCoin。</p>
-                      )}
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <button
+                          type="button"
+                          onClick={() => handleBuyClick(product)}
+                          className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+                          disabled={disabled}
+                        >
+                          {isLoggedIn ? '購買' : '請先登入'}
+                        </button>
+                        {isLoggedIn && hydrated && typeof balance === 'number' && balance < product.price && (
+                          <p className="text-xs text-red-500 md:text-right">餘額不足，請先累積更多 CRCRCoin。</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
