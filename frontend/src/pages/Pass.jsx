@@ -287,8 +287,6 @@ const Pass = () => {
 
   const trackLine = (
     <div className='relative'>
-      <div className='pointer-events-none absolute left-0 right-0 top-[118px] h-[3px] rounded-full bg-gradient-to-r from-[#fbbf24]/70 via-[#facc15]/80 to-[#f97316]/70' />
-      <div className='pointer-events-none absolute left-0 right-0 top-[338px] h-[3px] rounded-full bg-gradient-to-r from-[#60a5fa]/70 via-[#6366f1]/70 to-[#a855f7]/70' />
       <div className='flex gap-8 overflow-x-auto pb-8 pt-16'>
         {rewards.map((reward, index) => renderRewardStage(reward, index))}
       </div>
