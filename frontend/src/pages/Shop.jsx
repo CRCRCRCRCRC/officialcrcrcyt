@@ -141,7 +141,7 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       <div className="border-b border-white/20 bg-white/95 backdrop-blur-xl shadow-sm">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-6 sm:px-6 lg:px-8">
           <Link to="/wallet" className="flex items-center text-gray-600 transition hover:text-gray-900">
             <ArrowLeft className="mr-2 h-5 w-5" />
             返回錢包
@@ -158,11 +158,11 @@ const Shop = () => {
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-8 lg:px-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl border border-white/20 bg-white/80 p-8 shadow-xl backdrop-blur-xl"
+          className="rounded-[40px] border border-white/20 bg-white/85 p-10 shadow-2xl backdrop-blur-xl"
         >
           <div className="mb-8 flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white">
