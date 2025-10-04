@@ -192,7 +192,7 @@ const Shop = () => {
                       </div>
                     </div>
                     <div className="mt-6 space-y-4 text-center md:text-left">
-                      <div className="text-2xl font-extrabold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text md:text-3xl">
+                      <div className="text-xl font-extrabold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text md:text-2xl">
                         價格: {product.price.toLocaleString('zh-TW')}
                         <span className="ml-1 text-base font-semibold text-purple-500 md:text-lg">CRCRCoin</span>
                       </div>
