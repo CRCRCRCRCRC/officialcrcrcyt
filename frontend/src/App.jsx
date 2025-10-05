@@ -19,6 +19,7 @@ import AdminAnnouncements from './pages/admin/Announcements'
 import AdminSettings from './pages/admin/Settings'
 import AdminAddCoins from './pages/admin/AddCoins'
 import AdminDiscordApplications from './pages/admin/DiscordApplications'
+import AdminFeaturedVideos from './pages/admin/FeaturedVideos'
 import ProtectedRoute from './components/ProtectedRoute'
 import NotFound from './pages/NotFound'
 
@@ -57,6 +58,10 @@ function App() {
           <Route path="add-coins" element={<AdminAddCoins />} />
           <Route path="discord-applications" element={<AdminDiscordApplications />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="featured-videos" element={<AdminFeaturedVideos />} />
+          <Route path="videos" element={<AdminVideos />} />
+          <Route path="videos/create" element={<AdminVideoForm />} />
+          <Route path="videos/edit/:id" element={<AdminVideoForm />} />
         </Route>
 
         {/* 404 頁面 */}

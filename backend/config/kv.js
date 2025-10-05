@@ -586,6 +586,352 @@ class KVDatabase {
       return [];
     }
   }
+
+  // 生成 slug
+  generateSlug(title) {
+    const slug = title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // 移除特殊字符
+      .replace(/\s+/g, '-') // 空格替換為連字符
+      .replace(/-+/g, '-') // 多個連字符合併為一個
+      .trim('-'); // 移除首尾連字符
+
+    console.log('🔗 生成 slug:', { title, slug });
+    return slug;
+  }
+
+  // 生成隨機 slug（8個字元，包含數字和字母）
+  generateRandomSlug(length = 8) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    console.log('🎲 生成隨機 slug:', result);
+    return result;
+  }
+
+  // 確保 slug 唯一
+  async ensureUniqueSlug(baseSlug) {
+    let slug = baseSlug;
+    let counter = 1;
+
+    // 獲取所有公告
+    const announcementIds = await this.kv.smembers('announcements');
+    const existingSlugs = new Set();
+    
+    for (const announcementId of announcementIds) {
+      const announcement = await this.kv.hgetall(announcementId);
+      if (announcement && announcement.slug) {
+        existingSlugs.add(announcement.slug);
+      }
+    }
+
+    while (existingSlugs.has(slug)) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    return slug;
+  }
+
+  // 公告相關操作
+  async createAnnouncement(announcementData) {
+    const { title, content, slug: customSlug, published = true } = announcementData;
+
+    // 生成 slug
+    let baseSlug;
+    if (customSlug && customSlug.trim()) {
+      // 如果提供了自定義 slug，使用它
+      baseSlug = customSlug.trim();
+    } else {
+      // 如果沒有提供 slug，生成8字元隨機 slug
+      baseSlug = this.generateRandomSlug(8);
+    }
+
+    const uniqueSlug = await this.ensureUniqueSlug(baseSlug);
+    
+    const announcementId = `announcement:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    const now = new Date().toISOString();
+    
+    const announcement = {
+      id: announcementId,
+      title: title.trim(),
+      slug: uniqueSlug,
+      content: content.trim(),
+      published: Boolean(published),
+      created_at: now,
+      updated_at: now
+    };
+
+    await this.kv.hset(announcementId, announcement);
+    await this.kv.sadd('announcements', announcementId);
+
+    console.log('📝 創建的公告數據:', announcement);
+    return announcement;
+  }
+
+  async getAnnouncements(options = {}) {
+    const { published, limit } = options;
+
+    // 獲取所有公告ID
+    const announcementIds = await this.kv.smembers('announcements');
+    
+    // 獲取公告詳情
+    const announcements = [];
+    for (const announcementId of announcementIds) {
+      const announcement = await this.kv.hgetall(announcementId);
+      if (announcement && Object.keys(announcement).length > 0) {
+        // 根據 published 參數過濾
+        if (published !== undefined) {
+          if (published && !announcement.published) continue;
+          if (!published && announcement.published) continue;
+        }
+        
+        announcements.push({
+          id: announcement.id,
+          title: announcement.title,
+          slug: announcement.slug,
+          content: announcement.content,
+          published: announcement.published === 'true' || announcement.published === true,
+          created_at: announcement.created_at,
+          updated_at: announcement.updated_at
+        });
+      }
+    }
+
+    // 按創建時間排序（最新的在前）
+    announcements.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    // 限制數量
+    if (limit) {
+      return announcements.slice(0, parseInt(limit));
+    }
+
+    console.log('📋 資料庫查詢結果:', announcements.map(row => ({
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      published: row.published
+    })));
+    
+    return announcements;
+  }
+
+  async getAnnouncementBySlug(slug) {
+    const announcementIds = await this.kv.smembers('announcements');
+    
+    for (const announcementId of announcementIds) {
+      const announcement = await this.kv.hgetall(announcementId);
+      if (announcement && announcement.slug === slug) {
+        return {
+          id: announcement.id,
+          title: announcement.title,
+          slug: announcement.slug,
+          content: announcement.content,
+          published: announcement.published === 'true' || announcement.published === true,
+          created_at: announcement.created_at,
+          updated_at: announcement.updated_at
+        };
+      }
+    }
+    
+    console.log('📋 按 slug 查詢結果: null');
+    return null;
+  }
+
+  async getAnnouncementById(id) {
+    const announcement = await this.kv.hgetall(id);
+    if (announcement && Object.keys(announcement).length > 0) {
+      return {
+        id: announcement.id,
+        title: announcement.title,
+        slug: announcement.slug,
+        content: announcement.content,
+        published: announcement.published === 'true' || announcement.published === true,
+        created_at: announcement.created_at,
+        updated_at: announcement.updated_at
+      };
+    }
+    
+    console.log('📋 按 ID 查詢結果: null');
+    return null;
+  }
+
+  async updateAnnouncementBySlug(originalSlug, announcementData) {
+    const announcementIds = await this.kv.smembers('announcements');
+    let targetId = null;
+    
+    // 尋找匹配的公告
+    for (const announcementId of announcementIds) {
+      const announcement = await this.kv.hgetall(announcementId);
+      if (announcement && announcement.slug === originalSlug) {
+        targetId = announcementId;
+        break;
+      }
+    }
+    
+    if (!targetId) {
+      throw new Error('公告不存在');
+    }
+
+    const existingAnnouncement = await this.kv.hgetall(targetId);
+    
+    // 決定是否需要更新 slug
+    let newSlug = null;
+    if (announcementData.slug !== undefined || announcementData.title !== undefined) {
+      const baseSlug = announcementData.slug || this.generateSlug(announcementData.title);
+      newSlug = await this.ensureUniqueSlugExcluding(baseSlug, originalSlug);
+    }
+
+    // 準備更新數據
+    const updateData = {
+      title: announcementData.title !== undefined ? announcementData.title.trim() : existingAnnouncement.title,
+      content: announcementData.content !== undefined ? announcementData.content.trim() : existingAnnouncement.content,
+      published: announcementData.published !== undefined ? Boolean(announcementData.published) : existingAnnouncement.published === 'true' || existingAnnouncement.published === true,
+      updated_at: new Date().toISOString()
+    };
+    
+    if (newSlug) {
+      updateData.slug = newSlug;
+    }
+
+    await this.kv.hset(targetId, updateData);
+    
+    const updatedAnnouncement = await this.kv.hgetall(targetId);
+    
+    console.log('📝 更新公告結果:', updatedAnnouncement);
+    return {
+      id: updatedAnnouncement.id,
+      title: updatedAnnouncement.title,
+      slug: updatedAnnouncement.slug,
+      content: updatedAnnouncement.content,
+      published: updatedAnnouncement.published === 'true' || updatedAnnouncement.published === true,
+      created_at: updatedAnnouncement.created_at,
+      updated_at: updatedAnnouncement.updated_at
+    };
+  }
+
+  async updateAnnouncementById(id, announcementData) {
+    const existingAnnouncement = await this.kv.hgetall(id);
+    
+    if (!existingAnnouncement || Object.keys(existingAnnouncement).length === 0) {
+      throw new Error('公告不存在');
+    }
+
+    // 決定是否需要更新 slug
+    let newSlug = null;
+    if (announcementData.slug !== undefined || announcementData.title !== undefined) {
+      const baseSlug = announcementData.slug || this.generateSlug(announcementData.title);
+      newSlug = await this.ensureUniqueSlugExcluding(baseSlug, existingAnnouncement.slug);
+    }
+
+    // 準備更新數據
+    const updateData = {
+      title: announcementData.title !== undefined ? announcementData.title.trim() : existingAnnouncement.title,
+      content: announcementData.content !== undefined ? announcementData.content.trim() : existingAnnouncement.content,
+      published: announcementData.published !== undefined ? Boolean(announcementData.published) : existingAnnouncement.published === 'true' || existingAnnouncement.published === true,
+      updated_at: new Date().toISOString()
+    };
+    
+    if (newSlug) {
+      updateData.slug = newSlug;
+    }
+
+    await this.kv.hset(id, updateData);
+    
+    const updatedAnnouncement = await this.kv.hgetall(id);
+    
+    console.log('📝 按ID更新公告結果:', updatedAnnouncement);
+    return {
+      id: updatedAnnouncement.id,
+      title: updatedAnnouncement.title,
+      slug: updatedAnnouncement.slug,
+      content: updatedAnnouncement.content,
+      published: updatedAnnouncement.published === 'true' || updatedAnnouncement.published === true,
+      created_at: updatedAnnouncement.created_at,
+      updated_at: updatedAnnouncement.updated_at
+    };
+  }
+
+  // 確保 slug 唯一（排除特定 slug）
+  async ensureUniqueSlugExcluding(baseSlug, excludeSlug) {
+    let slug = baseSlug;
+    let counter = 1;
+
+    // 獲取所有公告
+    const announcementIds = await this.kv.smembers('announcements');
+    const existingSlugs = new Set();
+    
+    for (const announcementId of announcementIds) {
+      const announcement = await this.kv.hgetall(announcementId);
+      if (announcement && announcement.slug && announcement.slug !== excludeSlug) {
+        existingSlugs.add(announcement.slug);
+      }
+    }
+
+    while (existingSlugs.has(slug)) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    return slug;
+  }
+
+  async deleteAnnouncementBySlug(slug) {
+    const announcementIds = await this.kv.smembers('announcements');
+    let targetId = null;
+    
+    // 尋找匹配的公告
+    for (const announcementId of announcementIds) {
+      const announcement = await this.kv.hgetall(announcementId);
+      if (announcement && announcement.slug === slug) {
+        targetId = announcementId;
+        break;
+      }
+    }
+    
+    if (!targetId) {
+      return null;
+    }
+
+    const deletedAnnouncement = await this.kv.hgetall(targetId);
+    await this.kv.del(targetId);
+    await this.kv.srem('announcements', targetId);
+    
+    console.log('🗑️ 刪除公告結果:', deletedAnnouncement);
+    return {
+      id: deletedAnnouncement.id,
+      title: deletedAnnouncement.title,
+      slug: deletedAnnouncement.slug,
+      content: deletedAnnouncement.content,
+      published: deletedAnnouncement.published === 'true' || deletedAnnouncement.published === true,
+      created_at: deletedAnnouncement.created_at,
+      updated_at: deletedAnnouncement.updated_at
+    };
+  }
+
+  async deleteAnnouncementById(id) {
+    const deletedAnnouncement = await this.kv.hgetall(id);
+    
+    if (!deletedAnnouncement || Object.keys(deletedAnnouncement).length === 0) {
+      return null;
+    }
+    
+    await this.kv.del(id);
+    await this.kv.srem('announcements', id);
+    
+    console.log('🗑️ 按ID刪除公告結果:', deletedAnnouncement);
+    return {
+      id: deletedAnnouncement.id,
+      title: deletedAnnouncement.title,
+      slug: deletedAnnouncement.slug,
+      content: deletedAnnouncement.content,
+      published: deletedAnnouncement.published === 'true' || deletedAnnouncement.published === true,
+      created_at: deletedAnnouncement.created_at,
+      updated_at: deletedAnnouncement.updated_at
+    };
+  }
 }
 
 module.exports = new KVDatabase();

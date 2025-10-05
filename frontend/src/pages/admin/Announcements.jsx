@@ -147,7 +147,9 @@ const AdminAnnouncements = () => {
       fetchAnnouncements()
     } catch (error) {
       console.error('❌ 保存公告失敗:', error)
-      toast.error('保存失敗')
+      // 顯示更具體的錯誤信息
+      const errorMessage = error.response?.data?.error || error.message || '保存失敗'
+      toast.error(`保存失敗: ${errorMessage}`)
     } finally {
       setSaving(false)
     }
@@ -186,7 +188,9 @@ const AdminAnnouncements = () => {
       fetchAnnouncements()
     } catch (error) {
       console.error('刪除公告失敗:', error)
-      toast.error('刪除失敗')
+      // 顯示更具體的錯誤信息
+      const errorMessage = error.response?.data?.error || error.message || '刪除失敗'
+      toast.error(`刪除失敗: ${errorMessage}`)
     }
   }
 
@@ -224,7 +228,9 @@ const AdminAnnouncements = () => {
       fetchAnnouncements()
     } catch (error) {
       console.error('更新公告狀態失敗:', error)
-      toast.error('更新失敗')
+      // 顯示更具體的錯誤信息
+      const errorMessage = error.response?.data?.error || error.message || '更新失敗'
+      toast.error(`更新失敗: ${errorMessage}`)
     }
   }
 

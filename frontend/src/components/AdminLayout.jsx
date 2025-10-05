@@ -116,7 +116,12 @@ const AdminLayout = () => {
       icon: LayoutDashboard,
       gradient: 'from-blue-500 to-purple-600'
     },
-
+    {
+      name: '熱門影片',
+      href: '/admin/featured-videos',
+      icon: Video,
+      gradient: 'from-red-500 to-pink-600'
+    },
     {
       name: '公告管理',
       href: '/admin/announcements',
