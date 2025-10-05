@@ -547,6 +547,45 @@ class KVDatabase {
     const max = Math.max(1, Math.min(500, parseInt(limit) || 100));
     return orders.slice(0, max);
   }
+
+  // 獲取 CRCRCoin 排行榜
+  async getLeaderboard(limit = 20) {
+    try {
+      // 獲取所有用戶
+      const userIds = await this.kv.smembers('users');
+      
+      // 獲取所有用戶的錢包信息和用戶信息
+      const usersWithBalances = [];
+      
+      for (const userId of userIds) {
+        // 獲取用戶信息
+        const user = await this.kv.hgetall(userId);
+        
+        // 獲取錢包信息
+        const walletKey = this.walletKey(userId);
+        const wallet = await this.kv.hgetall(walletKey);
+        
+        if (user && wallet) {
+          usersWithBalances.push({
+            id: userId,
+            username: user.username,
+            display_name: user.display_name || user.displayName,
+            balance: parseInt(wallet.balance) || 0
+          });
+        }
+      }
+      
+      // 按餘額排序
+      usersWithBalances.sort((a, b) => b.balance - a.balance);
+      
+      // 限制返回數量
+      return usersWithBalances.slice(0, Math.max(1, Math.min(100, parseInt(limit) || 20)));
+    } catch (error) {
+      console.error('獲取排行榜失敗:', error);
+      return [];
+    }
+  }
+}
 }
 
 module.exports = new KVDatabase();

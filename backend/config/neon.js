@@ -999,6 +999,35 @@ class NeonDatabase {
       throw error;
     }
   }
+
+  // 獲取 CRCRCoin 排行榜
+  async getLeaderboard(limit = 20) {
+    try {
+      const max = Math.max(1, Math.min(100, parseInt(limit) || 20));
+      const result = await this.pool.query(`
+        SELECT 
+          u.id,
+          u.username,
+          u.display_name,
+          COALESCE(cw.balance, 0) as balance
+        FROM users u
+        LEFT JOIN coin_wallets cw ON u.id = cw.user_id
+        WHERE COALESCE(cw.balance, 0) > 0
+        ORDER BY COALESCE(cw.balance, 0) DESC
+        LIMIT $1
+      `, [max]);
+
+      return result.rows.map(row => ({
+        id: row.id,
+        username: row.username,
+        display_name: row.display_name,
+        balance: parseInt(row.balance) || 0
+      }));
+    } catch (error) {
+      console.error('獲取排行榜失敗:', error);
+      return [];
+    }
+  }
 }
 
 module.exports = new NeonDatabase();

@@ -197,7 +197,10 @@ export const coinAPI = {
     api.post('/coin/grant', { email, amount }, { headers: authHeaderForCoin() }),
   // 取得商品訂單（管理員）
   getOrders: (params = {}) =>
-    api.get('/coin/orders', { params, headers: authHeaderForCoin() })
+    api.get('/coin/orders', { params, headers: authHeaderForCoin() }),
+  // 獲取排行榜（公開）
+  getLeaderboard: (limit = 20) =>
+    api.get('/coin/leaderboard', { params: { limit } })
 }
 export const announcementAPI = {
   getAll: (params = {}) =>

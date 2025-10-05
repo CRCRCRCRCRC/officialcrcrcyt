@@ -581,4 +581,16 @@ router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
+// 獲取 CRCRCoin 排行榜（公開 API）
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 20));
+    const leaderboard = await database.getLeaderboard(limit);
+    res.json({ leaderboard });
+  } catch (error) {
+    console.error('獲取排行榜失敗:', error);
+    res.status(500).json({ error: '無法獲取排行榜' });
+  }
+});
+
 module.exports = router;

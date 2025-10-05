@@ -41,6 +41,7 @@ const Header = () => {
   const navigation = [
     { name: '首頁', href: '/' },
     { name: '公告', href: '/announcements' },
+    { name: '排行榜', href: '/leaderboard' },
   ]
 
   const isActive = (path) => location.pathname === path
