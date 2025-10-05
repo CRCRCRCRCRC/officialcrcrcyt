@@ -200,6 +200,32 @@ router.get('/youtube-data', authenticateToken, requireAdmin, async (req, res) =>
   }
 });
 
+// 手動更新頻道數據（需要管理員權限）
+router.post('/update-stats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { subscriber_count, total_views } = req.body;
+
+    if (subscriber_count === undefined || total_views === undefined) {
+      return res.status(400).json({ error: '請提供 subscriber_count 和 total_views' });
+    }
+
+    // 更新資料庫中的頻道資訊
+    await database.updateChannelInfo({
+      subscriber_count: parseInt(subscriber_count),
+      total_views: parseInt(total_views)
+    });
+
+    res.json({ 
+      message: '頻道數據更新成功',
+      subscriber_count: parseInt(subscriber_count),
+      total_views: parseInt(total_views)
+    });
+  } catch (error) {
+    console.error('更新頻道數據錯誤:', error);
+    res.status(500).json({ error: '服務器內部錯誤' });
+  }
+});
+
 // 獲取儀表板數據（需要管理員權限）
 router.get('/dashboard', authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -235,22 +261,39 @@ router.get('/public-data', async (req, res) => {
     // 回退到資料庫數據
     const channelInfo = await database.getChannelInfo();
     const dbStats = await database.getStats();
-    const featuredVideos = await database.getVideos({ featured: true, limit: 3 });
+    const featuredVideos = await database.getVideos({ featured: true, limit: 5 });
+
+    // 獲取頻道統計數據
+    const channelStats = await youtubeService.getChannelStats();
 
     const dashboardData = {
-      channelTitle: channelInfo.channel_name || 'CRCRC',
-      subscriberCount: dbStats.subscriber_count || 0,
-      totalViews: dbStats.total_views || 0,
-      totalVideos: dbStats.total_videos || 0,
+      channelStats,
       latestVideos: featuredVideos.map(video => ({
-        id: video.id || video.youtube_id,
+        id: video.youtube_id || video.id,
         title: video.title,
         description: video.description,
         publishedAt: video.published_at,
-        thumbnails: { default: { url: video.thumbnail_url } },
-        view_count: video.view_count || 0,
-        duration: video.duration || ''
-      }))
+        thumbnails: {
+          default: { url: video.thumbnail_url },
+          medium: { url: video.thumbnail_url },
+          high: { url: video.thumbnail_url }
+        },
+        viewCount: video.view_count || 0,
+        likeCount: 0,
+        commentCount: 0,
+        duration: video.duration || '',
+        url: `https://www.youtube.com/watch?v=${video.youtube_id || video.id}`
+      })),
+      totalVideos: channelStats.videoCount,
+      totalViews: channelStats.viewCount,
+      subscriberCount: channelStats.subscriberCount,
+      videoCount: channelStats.videoCount,
+      channelTitle: channelStats.title,
+      channelDescription: channelStats.description,
+      channelThumbnails: channelStats.thumbnails,
+      customUrl: channelStats.customUrl,
+      publishedAt: channelStats.publishedAt,
+      country: channelStats.country
     };
 
     console.log('✅ 使用資料庫數據獲取成功');

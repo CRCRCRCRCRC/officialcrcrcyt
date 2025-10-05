@@ -79,10 +79,15 @@ async function getChannelStats() {
     const channelInfo = await database.getChannelInfo();
     const dbStats = await database.getStats();
     
+    // 使用更有意義的默認值
+    const subscriberCount = dbStats.subscriber_count || 0;
+    const viewCount = dbStats.total_views || 0;
+    const videoCount = dbStats.total_videos || 0;
+    
     return {
-      subscriberCount: dbStats.subscriber_count || 0,
-      viewCount: dbStats.total_views || 0,
-      videoCount: dbStats.total_videos || 0,
+      subscriberCount,
+      viewCount,
+      videoCount,
       title: channelInfo.channel_name || 'CRCRC',
       description: channelInfo.description || '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！',
       thumbnails: {},
