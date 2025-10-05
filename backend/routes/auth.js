@@ -39,19 +39,17 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: '用戶名和密碼為必填項' });
     }
 
-    const ADMIN_USERNAME = 'CRCRC';
-    const ADMIN_PASSWORD = 'admin';
+    await database.initializeData();
 
-    if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    const user = await database.getUserByUsername(username);
+
+    if (!user) {
       return res.status(401).json({ error: '用戶名或密碼錯誤' });
     }
 
-    await database.initializeData();
-
-    const user = await database.getUserByUsername(ADMIN_USERNAME);
-
-    if (!user) {
-      return res.status(401).json({ error: '用戶不存在' });
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: '用戶名或密碼錯誤' });
     }
 
     const token = jwt.sign(
@@ -69,7 +67,7 @@ router.post('/login', async (req, res) => {
     console.error('登入錯誤:', error);
     res.status(500).json({ error: '服務器內部錯誤' });
   }
-});
+}););
 
 // 驗證 token
 router.get('/verify', authenticateToken, async (req, res) => {
