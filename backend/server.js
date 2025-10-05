@@ -58,17 +58,32 @@ app.get('/api/health', async (req, res) => {
   try {
     // 嘗試初始化資料庫
     await database.initializeData();
+    
+    // 檢查使用的資料庫類型
+    let databaseType = 'Unknown';
+    if (process.env.DATABASE_URL) {
+      if (process.env.DATABASE_URL.includes('neon')) {
+        databaseType = 'Neon PostgreSQL';
+      } else if (process.env.DATABASE_URL.includes('supabase')) {
+        databaseType = 'Supabase PostgreSQL';
+      } else {
+        databaseType = 'PostgreSQL';
+      }
+    } else {
+      databaseType = 'Development KV Database';
+    }
+    
     res.json({
       status: 'OK',
       timestamp: new Date().toISOString(),
-      database: 'Neon PostgreSQL Ready'
+      database: databaseType + ' Ready'
     });
   } catch (error) {
     console.error('資料庫初始化失敗:', error);
     res.json({
       status: 'OK',
       timestamp: new Date().toISOString(),
-      database: 'PostgreSQL Error',
+      database: 'Database Error',
       warning: 'Database initialization failed'
     });
   }

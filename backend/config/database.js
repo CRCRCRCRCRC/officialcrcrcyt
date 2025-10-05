@@ -1,13 +1,19 @@
 // 資料庫配置
 // 當提供了 DATABASE_URL 環境變數時使用 PostgreSQL 資料庫，否則使用開發模式的 KV 數據庫
 
+console.log('🔧 環境變數檢查:');
+console.log('  DATABASE_URL:', process.env.DATABASE_URL ? '[SET]' : '[NOT SET]');
+console.log('  NODE_ENV:', process.env.NODE_ENV || '[NOT SET]');
+
 if (process.env.DATABASE_URL) {
   const database = require('./neon');
   console.log('🔗 資料庫: PostgreSQL (Supabase/Neon)');
+  console.log('  連接字串主機:', process.env.DATABASE_URL.split('@')[1]?.split(':')[0] || '未知');
   module.exports = database;
 } else {
   // 開發環境或沒有設置 DATABASE_URL 時使用 KV 數據庫
   console.log('🔗 資料庫: 開發模式 - 使用內存數據庫');
+  console.log('  提示: 要使用 PostgreSQL 資料庫，請設置 DATABASE_URL 環境變數');
 
   // 創建一個模擬的 KV 數據庫
   const mockKV = {

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const youtubeService = require('../services/youtube');
+const database = require('../config/database');
 
 // 使用環境變數進行持久化存儲
 // 注意：在 Vercel 中，需要在環境變數設定中配置 FEATURED_VIDEO_ID 和 THUMBNAIL_QUALITY
@@ -35,8 +36,19 @@ const getCurrentThumbnailQuality = () => {
 // 獲取網站設定
 router.get('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    // 獲取 YouTube 影片列表用於熱門影片選擇
-    const videos = await youtubeService.getChannelVideos(50); // 獲取更多影片供選擇
+    let videos = [];
+    
+    // 檢查是否設置了 YouTube API 金鑰和頻道 ID
+    if (process.env.YOUTUBE_API_KEY && process.env.YOUTUBE_CHANNEL_ID) {
+      try {
+        // 獲取 YouTube 影片列表用於熱門影片選擇
+        videos = await youtubeService.getChannelVideos(50); // 獲取更多影片供選擇
+      } catch (youtubeError) {
+        console.warn('YouTube API 不可用，使用資料庫數據:', youtubeError.message);
+      }
+    } else {
+      console.log('ℹ️ 未設置 YouTube API 金鑰或頻道 ID，使用資料庫數據');
+    }
     
     // 獲取當前熱門影片設定
     const featuredVideoId = getCurrentFeaturedVideoId();
@@ -105,9 +117,29 @@ router.get('/featured-video', async (req, res) => {
       });
     }
 
-    // 從 YouTube API 獲取該影片的詳細信息
-    const videos = await youtubeService.getChannelVideos(50);
-    const featuredVideo = videos.find(video => video.id === featuredVideoId);
+    // 檢查是否設置了 YouTube API 金鑰和頻道 ID
+    if (process.env.YOUTUBE_API_KEY && process.env.YOUTUBE_CHANNEL_ID) {
+      try {
+        // 從 YouTube API 獲取該影片的詳細信息
+        const videos = await youtubeService.getChannelVideos(50);
+        const featuredVideo = videos.find(video => video.id === featuredVideoId);
+
+        if (featuredVideo) {
+          return res.json({
+            featuredVideo,
+            thumbnailQuality
+          });
+        }
+      } catch (youtubeError) {
+        console.warn('YouTube API 不可用，使用資料庫數據:', youtubeError.message);
+      }
+    } else {
+      console.log('ℹ️ 未設置 YouTube API 金鑰或頻道 ID，使用資料庫數據');
+    }
+
+    // 回退到資料庫數據
+    const videos = await database.getVideos({ limit: 50 });
+    const featuredVideo = videos.find(video => video.youtube_id === featuredVideoId);
 
     if (!featuredVideo) {
       return res.json({
@@ -116,8 +148,23 @@ router.get('/featured-video', async (req, res) => {
       });
     }
 
+    // 格式化影片數據以匹配 YouTube API 的格式
+    const formattedVideo = {
+      id: featuredVideo.youtube_id,
+      title: featuredVideo.title,
+      description: featuredVideo.description,
+      publishedAt: featuredVideo.published_at,
+      viewCount: featuredVideo.view_count || 0,
+      duration: featuredVideo.duration || '',
+      thumbnails: {
+        default: { url: featuredVideo.thumbnail_url },
+        medium: { url: featuredVideo.thumbnail_url },
+        high: { url: featuredVideo.thumbnail_url }
+      }
+    };
+
     res.json({
-      featuredVideo,
+      featuredVideo: formattedVideo,
       thumbnailQuality
     });
   } catch (error) {

@@ -74,7 +74,22 @@ async function getChannelId() {
 // 獲取頻道統計數據
 async function getChannelStats() {
   if (!API_KEY) {
-    throw new Error('YouTube API key must be configured.');
+    console.log('ℹ️ 未設置 YouTube API 金鑰，使用資料庫數據');
+    // 回退到資料庫數據
+    const channelInfo = await database.getChannelInfo();
+    const dbStats = await database.getStats();
+    
+    return {
+      subscriberCount: dbStats.subscriber_count || 0,
+      viewCount: dbStats.total_views || 0,
+      videoCount: dbStats.total_videos || 0,
+      title: channelInfo.channel_name || 'CRCRC',
+      description: channelInfo.description || '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！',
+      thumbnails: {},
+      publishedAt: channelInfo.created_at || new Date().toISOString(),
+      customUrl: channelInfo.youtube_url || 'https://youtube.com/@officialcrcrcyt',
+      country: 'TW'
+    };
   }
 
   console.log('🔍 開始獲取頻道統計數據...');
@@ -128,7 +143,26 @@ async function getChannelStats() {
 // 獲取頻道影片
 async function getChannelVideos(maxResults = 10) {
   if (!API_KEY) {
-    throw new Error('YouTube API key must be configured.');
+    console.log('ℹ️ 未設置 YouTube API 金鑰，使用資料庫數據');
+    // 回退到資料庫數據
+    const videos = await database.getVideos({ limit: maxResults });
+    
+    return videos.map(video => ({
+      id: video.youtube_id,
+      title: decodeHtmlEntities(video.title),
+      description: decodeHtmlEntities(video.description),
+      publishedAt: video.published_at,
+      thumbnails: {
+        default: { url: video.thumbnail_url },
+        medium: { url: video.thumbnail_url },
+        high: { url: video.thumbnail_url }
+      },
+      viewCount: parseInt(video.view_count) || 0,
+      likeCount: 0,
+      commentCount: 0,
+      duration: video.duration || '',
+      url: `https://www.youtube.com/watch?v=${video.youtube_id}`
+    }));
   }
 
   const CHANNEL_ID = await getChannelId();
@@ -188,7 +222,25 @@ async function getChannelVideos(maxResults = 10) {
 // 獲取頻道的儀表板數據
 async function getDashboardData() {
   if (!API_KEY) {
-    throw new Error('YouTube API key must be configured.');
+    console.log('ℹ️ 未設置 YouTube API 金鑰，使用資料庫數據');
+    // 回退到資料庫數據
+    const channelStats = await getChannelStats();
+    const latestVideos = await getChannelVideos(5);
+    
+    return {
+      channelStats,
+      latestVideos,
+      totalVideos: channelStats.videoCount,
+      totalViews: channelStats.viewCount,
+      subscriberCount: channelStats.subscriberCount,
+      videoCount: channelStats.videoCount,
+      channelTitle: channelStats.title,
+      channelDescription: channelStats.description,
+      channelThumbnails: channelStats.thumbnails,
+      customUrl: channelStats.customUrl,
+      publishedAt: channelStats.publishedAt,
+      country: channelStats.country
+    };
   }
 
   try {

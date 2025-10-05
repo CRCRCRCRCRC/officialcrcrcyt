@@ -218,8 +218,42 @@ router.get('/public-data', async (req, res) => {
     console.log('API_KEY 存在:', !!process.env.YOUTUBE_API_KEY);
     console.log('CHANNEL_ID:', process.env.YOUTUBE_CHANNEL_ID);
 
-    const dashboardData = await youtubeService.getDashboardData();
-    console.log('✅ 公開頻道數據獲取成功');
+    // 檢查是否設置了 YouTube API 金鑰和頻道 ID
+    if (process.env.YOUTUBE_API_KEY && process.env.YOUTUBE_CHANNEL_ID) {
+      try {
+        const dashboardData = await youtubeService.getDashboardData();
+        console.log('✅ 公開頻道數據獲取成功');
+        res.json(dashboardData);
+        return;
+      } catch (youtubeError) {
+        console.warn('YouTube API 不可用，使用資料庫數據:', youtubeError.message);
+      }
+    } else {
+      console.log('ℹ️ 未設置 YouTube API 金鑰或頻道 ID，使用資料庫數據');
+    }
+
+    // 回退到資料庫數據
+    const channelInfo = await database.getChannelInfo();
+    const dbStats = await database.getStats();
+    const featuredVideos = await database.getVideos({ featured: true, limit: 3 });
+
+    const dashboardData = {
+      channelTitle: channelInfo.channel_name || 'CRCRC',
+      subscriberCount: dbStats.subscriber_count || 0,
+      totalViews: dbStats.total_views || 0,
+      totalVideos: dbStats.total_videos || 0,
+      latestVideos: featuredVideos.map(video => ({
+        id: video.id || video.youtube_id,
+        title: video.title,
+        description: video.description,
+        publishedAt: video.published_at,
+        thumbnails: { default: { url: video.thumbnail_url } },
+        view_count: video.view_count || 0,
+        duration: video.duration || ''
+      }))
+    };
+
+    console.log('✅ 使用資料庫數據獲取成功');
     res.json(dashboardData);
   } catch (error) {
     console.error('❌ 獲取公開頻道數據錯誤:', error.message);
