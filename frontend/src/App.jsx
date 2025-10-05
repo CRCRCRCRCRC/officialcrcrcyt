@@ -20,6 +20,8 @@ import AdminSettings from './pages/admin/Settings'
 import AdminAddCoins from './pages/admin/AddCoins'
 import AdminDiscordApplications from './pages/admin/DiscordApplications'
 import AdminFeaturedVideos from './pages/admin/FeaturedVideos'
+import AdminVideos from './pages/admin/Videos'
+import AdminVideoForm from './pages/admin/VideoForm'
 import ProtectedRoute from './components/ProtectedRoute'
 import NotFound from './pages/NotFound'
 
