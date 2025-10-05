@@ -67,7 +67,7 @@ router.post('/login', async (req, res) => {
     console.error('登入錯誤:', error);
     res.status(500).json({ error: '服務器內部錯誤' });
   }
-}););
+});
 
 // 驗證 token
 router.get('/verify', authenticateToken, async (req, res) => {

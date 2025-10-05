@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard,
   Video,
@@ -40,14 +39,6 @@ const AdminLayout = () => {
     return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-
-  useEffect(() => {
-    // 移除所有與 Ko-Fi 相關的 DOM 操作，避免錯誤
-    // 這些操作不是必要的，而且可能導致白屏問題
-    return () => {
-      // 清理函數保持空，不進行任何 DOM 操作
-    };
-  }, [])
 
   const navigation = [
     { 
@@ -101,27 +92,8 @@ const AdminLayout = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Mobile sidebar backdrop */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
       {/* Sidebar */}
-      <motion.div
-        initial={false}
-        animate={{
-          x: isLargeScreen ? 0 : (sidebarOpen ? 0 : '-100%')
-        }}
-        className="fixed inset-y-0 left-0 z-50 w-64 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-2xl"
-      >
+      <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-2xl">
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-20 items-center justify-between px-6 border-b border-white/10">
@@ -136,12 +108,6 @@ const AdminLayout = () => {
                 <p className="text-xs text-gray-500">管理後台</p>
               </div>
             </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Navigation */}
@@ -153,11 +119,8 @@ const AdminLayout = () => {
                   key={item.name}
                   to={item.href}
                   className="group relative block"
-                  onClick={() => setSidebarOpen(false)}
                 >
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                  <div
                     className={`
                       relative flex items-center px-4 py-3 rounded-xl transition-all duration-300
                       ${active 
@@ -168,16 +131,7 @@ const AdminLayout = () => {
                   >
                     <item.icon className={`w-5 h-5 mr-3 ${active ? 'text-white' : 'text-gray-500'}`} />
                     <span className="font-medium">{item.name}</span>
-                    
-                    {active && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute inset-0 bg-gradient-to-r from-white/20 to-white/10 rounded-xl"
-                        initial={false}
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                      />
-                    )}
-                  </motion.div>
+                  </div>
                 </Link>
               )
             })}
@@ -200,41 +154,27 @@ const AdminLayout = () => {
                 <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              <AnimatePresence>
-                {userMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden"
+              {userMenuOpen && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center px-4 py-3 text-left hover:bg-red-50 text-red-600 transition-colors"
                   >
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center px-4 py-3 text-left hover:bg-red-50 text-red-600 transition-colors"
-                    >
-                      <LogOut className="w-4 h-4 mr-3" />
-                      登出
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <LogOut className="w-4 h-4 mr-3" />
+                    登出
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Main content */}
       <div className="transition-all duration-300" style={{ paddingLeft: isLargeScreen ? '256px' : '0' }}>
         {/* Top bar */}
         <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-white/20">
           <div className="flex h-16 items-center justify-between px-6">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -263,5 +203,3 @@ const AdminLayout = () => {
 }
 
 export default AdminLayout
-
-
