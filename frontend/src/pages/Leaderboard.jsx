@@ -4,11 +4,31 @@ import { Trophy, Medal, Coins, ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { coinAPI } from '../services/api'
 import LoadingSpinner from '../components/LoadingSpinner'
+import defaultAvatar from '../assets/default-avatar.svg'
 
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // 處理用戶頭像
+  const getUserAvatar = (user) => {
+    if (user.avatar_url) {
+      // 如果是完整的 URL，直接返回
+      if (/^(?:https?:)?\/\//i.test(user.avatar_url)) {
+        return user.avatar_url;
+      }
+      // 如果是相對路徑，添加前綴
+      const normalized = user.avatar_url.replace(/^\.?\/+/, '');
+      return normalized ? `/${normalized}` : defaultAvatar;
+    }
+    return defaultAvatar;
+  };
+
+  // 獲取用戶顯示名稱
+  const getUserDisplayName = (user) => {
+    return user.display_name || user.displayName || '匿名用戶';
+  };
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -117,13 +137,23 @@ const Leaderboard = () => {
                         <span className="font-bold">{index + 1}</span>
                       )}
                     </div>
-                    <div className="ml-4">
-                      <h3 className="font-semibold text-gray-900">
-                        {user.displayName || user.username || `用戶${user.id}`}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        {user.username}
-                      </p>
+                    <div className="ml-4 flex items-center">
+                      <img 
+                        src={getUserAvatar(user)} 
+                        alt={getUserDisplayName(user)} 
+                        className="w-10 h-10 rounded-full object-cover border-2 border-white shadow"
+                        onError={(e) => {
+                          e.target.src = defaultAvatar;
+                        }}
+                      />
+                      <div className="ml-3">
+                        <h3 className="font-semibold text-gray-900">
+                          {getUserDisplayName(user)}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          {user.username}
+                        </p>
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center">

@@ -570,6 +570,7 @@ class KVDatabase {
             id: userId,
             username: user.username,
             display_name: user.display_name || user.displayName,
+            avatar_url: user.avatar_url || user.avatarUrl,
             balance: parseInt(wallet.balance) || 0
           });
         }
@@ -585,6 +586,7 @@ class KVDatabase {
       return [];
     }
   }
+}
 }
 }
 

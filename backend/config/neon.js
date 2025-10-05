@@ -1009,6 +1009,7 @@ class NeonDatabase {
           u.id,
           u.username,
           u.display_name,
+          u.avatar_url,
           COALESCE(cw.balance, 0) as balance
         FROM users u
         LEFT JOIN coin_wallets cw ON u.id = cw.user_id
@@ -1021,6 +1022,7 @@ class NeonDatabase {
         id: row.id,
         username: row.username,
         display_name: row.display_name,
+        avatar_url: row.avatar_url,
         balance: parseInt(row.balance) || 0
       }));
     } catch (error) {
