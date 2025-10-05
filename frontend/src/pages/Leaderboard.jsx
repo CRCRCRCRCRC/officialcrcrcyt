@@ -30,6 +30,23 @@ const Leaderboard = () => {
     return user.display_name || user.displayName || '匿名用戶';
   };
 
+  // 遮蔽信箱中間部分
+  const maskEmail = (email) => {
+    if (!email || typeof email !== 'string') return '';
+    
+    const [localPart, domain] = email.split('@');
+    if (!localPart || !domain) return email;
+    
+    // 如果本地部分長度小於等於4，只顯示第一個和最後一個字符
+    if (localPart.length <= 4) {
+      if (localPart.length === 1) return `*${email.substring(1)}`;
+      return `${localPart[0]}***${localPart[localPart.length - 1] || ''}@${domain}`;
+    }
+    
+    // 否則顯示前兩個和後兩個字符
+    return `${localPart.substring(0, 2)}***${localPart.substring(localPart.length - 2)}@${domain}`;
+  };
+
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
@@ -151,7 +168,7 @@ const Leaderboard = () => {
                           {getUserDisplayName(user)}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          {user.username}
+                          {maskEmail(user.username)}
                         </p>
                       </div>
                     </div>
