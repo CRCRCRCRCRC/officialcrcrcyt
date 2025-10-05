@@ -587,7 +587,5 @@ class KVDatabase {
     }
   }
 }
-}
-}
 
 module.exports = new KVDatabase();

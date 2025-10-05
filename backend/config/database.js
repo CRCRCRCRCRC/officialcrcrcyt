@@ -1,9 +1,9 @@
 // 資料庫配置
-// 開發環境使用 KV 數據庫，生產環境使用 Neon PostgreSQL
+// 當提供了 DATABASE_URL 環境變數時使用 PostgreSQL 資料庫，否則使用開發模式的 KV 數據庫
 
-if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
+if (process.env.DATABASE_URL) {
   const database = require('./neon');
-  console.log('🔗 資料庫: Neon PostgreSQL');
+  console.log('🔗 資料庫: PostgreSQL (Supabase/Neon)');
   module.exports = database;
 } else {
   // 開發環境或沒有設置 DATABASE_URL 時使用 KV 數據庫
