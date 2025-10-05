@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import AdminLayout from './components/AdminLayout'
 import Home from './pages/Home'
@@ -27,49 +28,51 @@ import NotFound from './pages/NotFound'
 
 function App() {
   return (
-    <AuthProvider>
-      <Routes>
-        {/* 公開頁面 */}
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="videos/:id" element={<VideoDetail />} />
-          {/* 關於頁面已移除 */}
-          {/* <Route path="about" element={<About />} /> */}
-          <Route path="announcements" element={<Announcements />} />
-          <Route path="announcements/:slug" element={<AnnouncementDetail />} />
-          <Route path="wallet" element={<Wallet />} />
-          <Route path="shop" element={<Shop />} />
-          <Route path="pass" element={<Pass />} />
-          <Route path="leaderboard" element={<Leaderboard />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <Routes>
+          {/* 公開頁面 */}
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="videos/:id" element={<VideoDetail />} />
+            {/* 關於頁面已移除 */}
+            {/* <Route path="about" element={<About />} /> */}
+            <Route path="announcements" element={<Announcements />} />
+            <Route path="announcements/:slug" element={<AnnouncementDetail />} />
+            <Route path="wallet" element={<Wallet />} />
+            <Route path="shop" element={<Shop />} />
+            <Route path="pass" element={<Pass />} />
+            <Route path="leaderboard" element={<Leaderboard />} />
 
-        </Route>
+          </Route>
 
-        {/* 管理員登入頁面 */}
-        <Route path="/admin/login" element={<AdminLogin />} />
+          {/* 管理員登入頁面 */}
+          <Route path="/admin/login" element={<AdminLogin />} />
 
-        {/* 管理員後台 */}
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            <AdminLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<AdminDashboard />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
+          {/* 管理員後台 */}
+          <Route path="/admin" element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<AdminDashboard />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
 
-          <Route path="announcements" element={<AdminAnnouncements />} />
-          <Route path="add-coins" element={<AdminAddCoins />} />
-          <Route path="discord-applications" element={<AdminDiscordApplications />} />
-          <Route path="settings" element={<AdminSettings />} />
-          <Route path="featured-videos" element={<AdminFeaturedVideos />} />
-          <Route path="videos" element={<AdminVideos />} />
-          <Route path="videos/create" element={<AdminVideoForm />} />
-          <Route path="videos/edit/:id" element={<AdminVideoForm />} />
-        </Route>
+            <Route path="announcements" element={<AdminAnnouncements />} />
+            <Route path="add-coins" element={<AdminAddCoins />} />
+            <Route path="discord-applications" element={<AdminDiscordApplications />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="featured-videos" element={<AdminFeaturedVideos />} />
+            <Route path="videos" element={<AdminVideos />} />
+            <Route path="videos/create" element={<AdminVideoForm />} />
+            <Route path="videos/edit/:id" element={<AdminVideoForm />} />
+          </Route>
 
-        {/* 404 頁面 */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AuthProvider>
+          {/* 404 頁面 */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
 
