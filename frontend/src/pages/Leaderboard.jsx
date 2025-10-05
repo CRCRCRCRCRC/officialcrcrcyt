@@ -167,9 +167,6 @@ const Leaderboard = () => {
                         <h3 className="font-semibold text-gray-900">
                           {getUserDisplayName(user)}
                         </h3>
-                        <p className="text-sm text-gray-500">
-                          {maskEmail(user.username)}
-                        </p>
                       </div>
                     </div>
                   </div>
