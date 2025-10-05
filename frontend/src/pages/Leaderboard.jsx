@@ -25,27 +25,27 @@ const Leaderboard = () => {
     return defaultAvatar;
   };
 
-  // 獲取用戶顯示名稱
+  // 獲取用戶顯示名稱並遮蔽中間部分
   const getUserDisplayName = (user) => {
-    return user.display_name || user.displayName || '匿名用戶';
-  };
-
-  // 遮蔽信箱中間部分
-  const maskEmail = (email) => {
-    if (!email || typeof email !== 'string') return '';
+    const displayName = user.display_name || user.displayName || '匿名用戶';
     
-    const [localPart, domain] = email.split('@');
-    if (!localPart || !domain) return email;
-    
-    // 如果本地部分長度小於等於4，只顯示第一個和最後一個字符
-    if (localPart.length <= 4) {
-      if (localPart.length === 1) return `*${email.substring(1)}`;
-      return `${localPart[0]}***${localPart[localPart.length - 1] || ''}@${domain}`;
+    // 如果是匿名用戶，直接返回
+    if (displayName === '匿名用戶') {
+      return displayName;
     }
     
-    // 否則顯示前兩個和後兩個字符
-    return `${localPart.substring(0, 2)}***${localPart.substring(localPart.length - 2)}@${domain}`;
-  };
+    // 如果名稱長度小於等於2，只顯示第一個字符
+    if (displayName.length <= 2) {
+      return `${displayName[0]}*`;
+    }
+    
+    // 否則顯示前一個和後一個字符，中間用星號遮蔽
+    const firstChar = displayName[0];
+    const lastChar = displayName[displayName.length - 1];
+    const maskedLength = displayName.length - 2;
+    
+    return `${firstChar}${'*'.repeat(maskedLength)}${lastChar}`;
+  };;
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
