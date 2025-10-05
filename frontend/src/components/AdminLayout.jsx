@@ -42,71 +42,11 @@ const AdminLayout = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   useEffect(() => {
-    if (!document?.body) {
-      return undefined
-    }
-
-    const style = document.createElement('style')
-    style.dataset.adminHideDonate = 'true'
-    style.textContent = `
-      #kofi-widget-overlay,
-      #kofi-widget-overlay *,
-      .floating-chat,
-      .floating-chat *,
-      [id^="kofiframe"],
-      iframe[src*="ko-fi"],
-      a[href*="ko-fi.com"] {
-        display: none !important;
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
-        width: 0 !important;
-        height: 0 !important;
-      }
-    `
-    document.head.appendChild(style)
-
-    const hideOverlay = () => {
-      const overlay = document.getElementById('kofi-widget-overlay')
-      if (overlay) {
-        overlay.remove()
-      }
-
-      document
-        .querySelectorAll('.floating-chat, [id^="kofiframe"], iframe[src*="ko-fi"], a[href*="ko-fi.com"]')
-        .forEach((node) => {
-          if (node instanceof HTMLElement || node instanceof HTMLIFrameElement) {
-            node.remove()
-          }
-        })
-    }
-
-    hideOverlay()
-
-    const observer = typeof MutationObserver !== 'undefined'
-      ? new MutationObserver(() => hideOverlay())
-      : null
-
-    if (observer) {
-      observer.observe(document.body, { childList: true, subtree: true })
-    }
-
-    const koFiScript = document.querySelector('script[src*="ko-fi.com"]')
-    if (koFiScript) {
-      koFiScript.remove()
-    }
-
-    const intervalId = window.setInterval(hideOverlay, 1500)
-
+    // 移除所有與 Ko-Fi 相關的 DOM 操作，避免錯誤
+    // 這些操作不是必要的，而且可能導致白屏問題
     return () => {
-      if (style.parentNode) {
-        style.parentNode.removeChild(style)
-      }
-      if (observer) {
-        observer.disconnect()
-      }
-      window.clearInterval(intervalId)
-    }
+      // 清理函數保持空，不進行任何 DOM 操作
+    };
   }, [])
 
   const navigation = [

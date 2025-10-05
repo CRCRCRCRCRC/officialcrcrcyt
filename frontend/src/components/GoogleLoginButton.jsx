@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { authAPI } from '../services/api'
 
-const ADMIN_PASSPHRASE = 'howard is a pig'
+const ADMIN_PASSPHRASE = import.meta.env.VITE_ADMIN_PASSPHRASE || 'howard is a pig'
 
 const GoogleLoginButton = ({ onSuccess, className = '' }) => {
   const [showPassphraseModal, setShowPassphraseModal] = useState(false)

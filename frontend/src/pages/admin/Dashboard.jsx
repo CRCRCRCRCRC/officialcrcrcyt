@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
 
 const Dashboard = () => {
@@ -7,11 +6,7 @@ const Dashboard = () => {
       <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-8 text-white">
         <div className="absolute inset-0 bg-black/10"></div>
         <div className="relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
+          <div>
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold mb-2">歡迎回來！ 👋</h1>
@@ -30,7 +25,7 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -translate-y-20 translate-x-20"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full translate-y-16 -translate-x-16"></div>

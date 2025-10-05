@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }) => {
           console.error('❌ Token 驗證失敗:', error)
           localStorage.removeItem('token')
           setToken(null)
+          setUser(null)
         }
       } else {
         console.log('ℹ️  沒有 token，跳過驗證')
