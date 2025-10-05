@@ -10,27 +10,16 @@ export const safeRender = (value) => {
     return value
   }
   
-  // 如果是數組，遞歸處理每個元素
+  // 如果是數組，遞歸處理每個元素並用逗號連接
   if (Array.isArray(value)) {
-    return value.map((item, index) => (
-      <span key={index}>{safeRender(item)}</span>
-    ))
-  }
-  
-  // 如果是 React 元素，直接返回
-  if (value && typeof value === 'object' && value.$$typeof) {
-    return value
+    return value.map(safeRender).join(', ')
   }
   
   // 如果是普通對象，檢查是否包含 code 和 message 屬性（這可能是錯誤對象）
   if (typeof value === 'object' && value !== null) {
     // 特殊處理包含 code 和 message 的對象
     if ('code' in value && 'message' in value) {
-      return (
-        <div className="inline-block bg-red-100 border border-red-400 text-red-700 px-2 py-1 rounded text-sm">
-          錯誤: {value.message} (代碼: {value.code})
-        </div>
-      )
+      return `錯誤: ${value.message} (代碼: ${value.code})`
     }
     
     // 對於其他對象，返回其 JSON 字符串表示
@@ -57,10 +46,6 @@ export const isRenderable = (value) => {
   
   if (Array.isArray(value)) {
     return value.every(isRenderable)
-  }
-  
-  if (value && typeof value === 'object' && value.$$typeof) {
-    return true
   }
   
   return false
