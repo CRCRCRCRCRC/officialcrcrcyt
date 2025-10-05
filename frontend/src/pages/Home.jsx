@@ -92,8 +92,21 @@ const Home = () => {
           console.log('使用最新影片作為熱門影片:', data.latestVideos[0].title)
           setFeaturedVideos([data.latestVideos[0]])
         } else {
-          console.log('沒有可用的影片')
-          setFeaturedVideos([])
+          // 如果還沒有熱門影片，嘗試從數據庫獲取精選影片
+          console.log('沒有可用的影片，嘗試獲取精選影片')
+          try {
+            const featuredVideosResponse = await videoAPI.getFeaturedVideos()
+            if (featuredVideosResponse.data && featuredVideosResponse.data.length > 0) {
+              console.log('使用精選影片作為熱門影片:', featuredVideosResponse.data[0].title)
+              setFeaturedVideos([featuredVideosResponse.data[0]])
+            } else {
+              console.log('沒有精選影片')
+              setFeaturedVideos([])
+            }
+          } catch (videoError) {
+            console.log('獲取精選影片失敗:', videoError)
+            setFeaturedVideos([])
+          }
         }
 
         console.log('YouTube 數據獲取成功:', data)

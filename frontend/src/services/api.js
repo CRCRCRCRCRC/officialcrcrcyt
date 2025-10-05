@@ -119,7 +119,10 @@ export const videoAPI = {
     api.put(`/videos/${id}`, data),
   
   delete: (id) => 
-    api.delete(`/videos/${id}`)
+    api.delete(`/videos/${id}`),
+
+  getFeaturedVideos: (params = {}) =>
+    api.get('/videos/featured', { params })
 }
 
 // 頻道 API
