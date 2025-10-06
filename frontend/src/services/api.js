@@ -215,7 +215,9 @@ export const coinAPI = {
   earn: (amount, reason = '任務獎勵') => api.post('/coin/earn', { amount, reason }),
   // 管理員發放 CRCRCoin
   grantCoins: (email, amount) =>
-    api.post('/coin/grant', { email, amount }),
+    api.post('/coin/grant', { email, amount }, {
+      headers: authHeaderForCoin()
+    }),
   // 取得商品訂單（管理員）
   getOrders: (params = {}) =>
     api.get('/coin/orders', { params }),
