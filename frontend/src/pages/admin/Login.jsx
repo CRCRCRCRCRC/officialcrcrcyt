@@ -83,7 +83,12 @@ const Login = () => {
                     onSuccess={(data) => {
                       if (data?.token && data?.user) {
                         localStorage.setItem('token', data.token)
-                        window.location.href = '/admin'
+                        // 驗證用戶角色
+                        if (data.user.role === 'admin') {
+                          window.location.href = '/admin'
+                        } else {
+                          toast.error('用戶沒有管理員權限')
+                        }
                       }
                     }}
                   />

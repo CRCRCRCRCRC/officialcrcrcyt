@@ -66,11 +66,22 @@ const GoogleLoginButton = ({ onSuccess, className = '' }) => {
             return
           }
 
+          console.log('🔍 發送 Google 授權碼登入請求')
           const res = await authAPI.loginWithGoogleCode(code, passphrase.trim())
+          console.log('✅ Google 授權碼登入響應:', res.data)
+          
+          // 檢查用戶角色
+          if (res.data?.user?.role !== 'admin') {
+            console.error('❌ 用戶角色不是管理員:', res.data?.user?.role)
+            toast.error('用戶沒有管理員權限')
+            return
+          }
+          
           onSuccess?.(res.data)
           toast.success('登入成功')
         } catch (err) {
           const msg = err.response?.data?.error || err.message
+          console.error('❌ Google 授權碼登入錯誤:', err)
           toast.error(msg)
         } finally {
           setSubmitting(false)

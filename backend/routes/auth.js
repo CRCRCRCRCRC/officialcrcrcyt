@@ -396,7 +396,7 @@ router.post('/google-public', async (req, res) => {
     const sanitizedUser = await ensureUserProfile(user, name, picture, email);
 
     const token = jwt.sign(
-      { userId: user.id, username: user.username, role: 'user', name: sanitizedUser.displayName, picture: sanitizedUser.avatarUrl },
+      { userId: user.id, username: user.username, role: user.role || 'user', name: sanitizedUser.displayName, picture: sanitizedUser.avatarUrl },
       process.env.WEBSITE_JWT_SECRET || process.env.JWT_SECRET || 'default-jwt-secret',
       { expiresIn: '7d' }
     );

@@ -26,7 +26,19 @@ export const AuthProvider = ({ children }) => {
           console.log('🔍 驗證 token:', storedToken.substring(0, 20) + '...')
           const response = await authAPI.verify()
           console.log('✅ Token 驗證成功:', response.data.user)
-          setUser(response.data.user)
+          
+          // 確保用戶對象包含所有必要的屬性
+          const userData = response.data.user;
+          const fullUser = {
+            id: userData.id,
+            username: userData.username,
+            role: userData.role || 'user',  // 默認為 'user' 角色
+            display_name: userData.display_name || userData.displayName,
+            avatar_url: userData.avatar_url || userData.avatarUrl,
+            email: userData.email || userData.username
+          };
+          
+          setUser(fullUser)
           setToken(storedToken)
         } catch (error) {
           console.error('❌ Token 驗證失敗:', error)
@@ -54,8 +66,19 @@ export const AuthProvider = ({ children }) => {
       if (newToken && userData) {
         localStorage.setItem('token', newToken)
         setToken(newToken)
-        setUser(userData)
-        console.log('登入成功，用戶數據:', userData)
+        
+        // 確保用戶對象包含所有必要的屬性
+        const fullUser = {
+          id: userData.id,
+          username: userData.username,
+          role: userData.role || 'user',  // 默認為 'user' 角色
+          display_name: userData.display_name || userData.displayName,
+          avatar_url: userData.avatar_url || userData.avatarUrl,
+          email: userData.email || userData.username
+        };
+        
+        setUser(fullUser)
+        console.log('登入成功，用戶數據:', fullUser)
         return true
       } else {
         throw new Error('登入響應數據不完整')
