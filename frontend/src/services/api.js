@@ -8,7 +8,7 @@ const api = axios.create({
 
 // 請求攔截器 - 添加 token（同時支援管理端 token 與網站端 website_token）
 // 規則：
-// - /coin 相關 API 優先使用 website_token（公開網站用戶）
+// - /coin 相關 API 優先使用 adminToken（管理員權限）或 website_token（公開網站用戶）
 // - 其它 API 仍以管理端 token 為優先（後台）
 api.interceptors.request.use(
   (config) => {
@@ -16,9 +16,25 @@ api.interceptors.request.use(
     const websiteToken = localStorage.getItem('website_token')
     const url = String(config.url || '')
     const isCoinApi = url.includes('/coin/')
-    const picked = isCoinApi
-      ? (websiteToken || adminToken)
-      : (adminToken || websiteToken)
+    
+    // 對於 Coin API，需要根據具體的端點來決定使用哪個令牌
+    let picked = null;
+    if (isCoinApi) {
+      // 對於需要管理員權限的 Coin API 端點，優先使用 adminToken
+      const adminOnlyEndpoints = ['/coin/grant', '/coin/earn', '/coin/reset', '/coin/orders'];
+      const isAdminEndpoint = adminOnlyEndpoints.some(endpoint => url.includes(endpoint));
+      
+      if (isAdminEndpoint) {
+        // 管理員端點優先使用 adminToken
+        picked = adminToken || websiteToken;
+      } else {
+        // 普通 Coin API 端點優先使用 websiteToken
+        picked = websiteToken || adminToken;
+      }
+    } else {
+      // 非 Coin API 端點優先使用 adminToken
+      picked = adminToken || websiteToken;
+    }
     
     console.log('🔍 API 請求攔截器:', {
       url,
@@ -80,12 +96,13 @@ api.interceptors.response.use(
   }
 )
  
-// 幫 /coin 系列 API 強制附帶 Authorization（優先 website_token，其次 admin token）
+// 幫 /coin 系列 API 強制附帶 Authorization
 const authHeaderForCoin = () => {
   try {
-    const websiteToken = localStorage.getItem('website_token')
     const adminToken = localStorage.getItem('token')
-    const token = websiteToken || adminToken
+    const websiteToken = localStorage.getItem('website_token')
+    // 對於 Coin API，管理員操作應優先使用 adminToken
+    const token = adminToken || websiteToken
     return token ? { Authorization: `Bearer ${token}` } : {}
   } catch {
     return {}
