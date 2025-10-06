@@ -19,6 +19,16 @@ api.interceptors.request.use(
     const picked = isCoinApi
       ? (websiteToken || adminToken)
       : (adminToken || websiteToken)
+    
+    console.log('🔍 API 請求攔截器:', {
+      url,
+      isCoinApi,
+      adminToken: !!adminToken,
+      websiteToken: !!websiteToken,
+      picked: picked ? '有' : '無',
+      pickedPreview: picked ? picked.substring(0, 20) + '...' : null
+    })
+    
     if (picked) {
       config.headers.Authorization = `Bearer ${picked}`
     }

@@ -18,12 +18,16 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      if (token) {
+      const storedToken = localStorage.getItem('token')
+      console.log('🔍 檢查存儲的令牌:', storedToken ? storedToken.substring(0, 20) + '...' : '無')
+      
+      if (storedToken) {
         try {
-          console.log('🔍 驗證 token:', token.substring(0, 20) + '...')
+          console.log('🔍 驗證 token:', storedToken.substring(0, 20) + '...')
           const response = await authAPI.verify()
           console.log('✅ Token 驗證成功:', response.data.user)
           setUser(response.data.user)
+          setToken(storedToken)
         } catch (error) {
           console.error('❌ Token 驗證失敗:', error)
           localStorage.removeItem('token')
@@ -37,7 +41,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     initAuth()
-  }, [token])
+  }, [])
 
   const login = async (username, password) => {
     try {

@@ -99,6 +99,11 @@ const AdminAnnouncements = () => {
       return
     }
 
+    // 檢查本地存儲中的令牌
+    const adminToken = localStorage.getItem('token')
+    const websiteToken = localStorage.getItem('website_token')
+    console.log('🔍 保存公告時的令牌狀態:', { adminToken: !!adminToken, websiteToken: !!websiteToken })
+
     setSaving(true)
     try {
       if (editingAnnouncement) {
@@ -149,6 +154,12 @@ const AdminAnnouncements = () => {
       console.error('❌ 保存公告失敗:', error)
       // 顯示更具體的錯誤信息
       const errorMessage = error.response?.data?.error || error.message || '保存失敗'
+      console.log('❌ 錯誤詳情:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers
+      })
       toast.error(`保存失敗: ${errorMessage}`)
     } finally {
       setSaving(false)
