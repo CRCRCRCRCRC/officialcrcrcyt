@@ -87,23 +87,6 @@ router.get('/reset-version', async (req, res) => {
   }
 });
 
-// 管理員一鍵重置（需要登入 + admin）
-// 同步重置伺服器錢包（新制）並寫入一個新的 reset 版本（舊制 localStorage 對齊用）
-router.post('/reset', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    // 重置所有伺服器錢包
-    if (typeof database.resetAllCoins === 'function') {
-      await database.resetAllCoins();
-    }
-    // 同步寫入新的 reset 版本（保留舊版機制）
-    const version = Date.now().toString();
-    await database.setSiteSetting('crcrcoin_reset_version', version);
-    res.json({ success: true, version });
-  } catch (error) {
-    console.error('設定 CRCRCoin 重置版本失敗:', error);
-    res.status(500).json({ error: '無法設定重置版本' });
-  }
-});
 
 // 將資料庫回傳的欄位統一成前端所需格式（統一輸出 UTC ISO，避免時區誤差）
 function toISO(v) {
