@@ -227,9 +227,11 @@ class NeonDatabase {
   }
 
   async getUserByUsername(username) {
+    // 將輸入的 username 轉換為小寫進行查詢，以確保不區分大小寫的匹配
+    const lowercasedUsername = username.toLowerCase();
     const result = await this.pool.query(
-      'SELECT * FROM users WHERE username = $1',
-      [username]
+      'SELECT * FROM users WHERE LOWER(username) = $1',
+      [lowercasedUsername]
     );
     return result.rows[0] || null;
   }
