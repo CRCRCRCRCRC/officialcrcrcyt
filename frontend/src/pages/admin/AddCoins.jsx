@@ -29,6 +29,22 @@ const AddCoins = () => {
       return
     }
 
+    // 檢查用戶角色
+    const adminToken = localStorage.getItem('token');
+    if (adminToken) {
+      try {
+        const payload = adminToken.split('.')[1];
+        const decoded = JSON.parse(atob(payload));
+        console.log('🔍 管理員令牌解碼結果:', decoded);
+        if (decoded.role !== 'admin') {
+          toast.error('您的帳號沒有管理員權限');
+          return;
+        }
+      } catch (e) {
+        console.error('❌ 令牌解碼失敗:', e);
+      }
+    }
+
     setLoading(true)
     try {
       console.log('🔍 調用 grantCoins:', { email: trimmedEmail, amount: value })
