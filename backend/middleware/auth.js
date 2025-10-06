@@ -56,7 +56,7 @@ const authenticateToken = async (req, res, next) => {
     const fullUser = {
       id: user.id,
       username: user.username,
-      role: user.role || 'user',  // 默認為 'user' 角色
+      role: decoded.role || user.role || 'user',  // 優先使用 JWT 中的角色，否則使用資料庫角色，默認為 'user'
       display_name: user.display_name || user.displayName,
       avatar_url: user.avatar_url || user.avatarUrl,
       email: user.email || user.username
