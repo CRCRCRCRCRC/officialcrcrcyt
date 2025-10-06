@@ -193,7 +193,7 @@ const AdminLayout = () => {
 
             <div className="flex items-center space-x-3">
               <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-                v1.0.01
+                v1.0.02
               </span>
             </div>
           </div>
