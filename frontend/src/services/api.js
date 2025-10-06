@@ -200,34 +200,34 @@ export const coinAPI = {
   // 取得目前的重置版本（公開，用於舊版 localStorage 清空同步）
   getResetVersion: () => api.get('/coin/reset-version'),
   // 管理員一鍵重置（需要 admin token）
-  adminReset: () => api.post('/coin/reset', undefined, { headers: authHeaderForCoin() }),
+  adminReset: () => api.post('/coin/reset', undefined),
   // 取得商品列表（公開）
   getProducts: () => api.get('/coin/products'),
   // 取得目前用戶的伺服器錢包（需登入）
-  getWallet: () => api.get('/coin/wallet', { headers: authHeaderForCoin() }),
+  getWallet: () => api.get('/coin/wallet'),
   // 取得交易紀錄（需登入）
-  getHistory: (limit = 50) => api.get('/coin/history', { params: { limit }, headers: authHeaderForCoin() }),
+  getHistory: (limit = 50) => api.get('/coin/history', { params: { limit } }),
   // 每日簽到（需登入）
-  claimDaily: () => api.post('/coin/claim-daily', undefined, { headers: authHeaderForCoin() }),
+  claimDaily: () => api.post('/coin/claim-daily', undefined),
   // 通行券資訊
-  getPass: () => api.get('/coin/pass', { headers: authHeaderForCoin() }),
+  getPass: () => api.get('/coin/pass'),
   // 購買高級通行券
-  purchasePass: () => api.post('/coin/pass/purchase', undefined, { headers: authHeaderForCoin() }),
+  purchasePass: () => api.post('/coin/pass/purchase', undefined),
   // 領取通行券獎勵
-  claimPassReward: (payload) => api.post('/coin/pass/claim', payload, { headers: authHeaderForCoin() }),
+  claimPassReward: (payload) => api.post('/coin/pass/claim', payload),
   // 購買商品
   purchaseProduct: (payload) =>
-    api.post('/coin/purchase', payload, { headers: authHeaderForCoin() }),
+    api.post('/coin/purchase', payload),
   // 消費（扣幣，需登入）
-  spend: (amount, reason = '消費') => api.post('/coin/spend', { amount, reason }, { headers: authHeaderForCoin() }),
+  spend: (amount, reason = '消費') => api.post('/coin/spend', { amount, reason }),
   // 加幣（管理員）
-  earn: (amount, reason = '任務獎勵') => api.post('/coin/earn', { amount, reason }, { headers: authHeaderForCoin() }),
+  earn: (amount, reason = '任務獎勵') => api.post('/coin/earn', { amount, reason }),
   // 管理員發放 CRCRCoin
   grantCoins: (email, amount) =>
-    api.post('/coin/grant', { email, amount }, { headers: authHeaderForCoin() }),
+    api.post('/coin/grant', { email, amount }),
   // 取得商品訂單（管理員）
   getOrders: (params = {}) =>
-    api.get('/coin/orders', { params, headers: authHeaderForCoin() }),
+    api.get('/coin/orders', { params }),
   // 獲取排行榜（公開）
   getLeaderboard: (limit = 20) =>
     api.get('/coin/leaderboard', { params: { limit } })
