@@ -610,11 +610,6 @@ class NeonDatabase {
     return res.rows;
   }
 
-  async resetAllCoins() {
-    await this.pool.query(`UPDATE coin_wallets SET balance = 0, last_claim_at = NULL, updated_at = CURRENT_TIMESTAMP`);
-    await this.pool.query(`DELETE FROM coin_transactions`);
-    return true;
-  }
 
   async createCoinOrder(userId, orderData) {
     const {
