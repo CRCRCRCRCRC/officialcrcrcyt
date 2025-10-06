@@ -25,7 +25,10 @@ const AddCoins = () => {
 
     setLoading(true)
     try {
-      await coinAPI.grantCoins(trimmedEmail, value)
+      console.log('🔍 調用 grantCoins:', { email: trimmedEmail, amount: value })
+      const response = await coinAPI.grantCoins(trimmedEmail, value)
+      console.log('✅ grantCoins 響應:', response)
+      
       if (value > 0) {
         toast.success(`已發放 ${value} CRCRCoin 給 ${trimmedEmail}`)
       } else {
@@ -34,6 +37,8 @@ const AddCoins = () => {
       setEmail('')
       setAmount('')
     } catch (error) {
+      console.error('❌ grantCoins 錯誤:', error)
+      console.error('❌ 錯誤響應:', error.response)
       toast.error(error.response?.data?.error || '發放失敗，請稍後再試')
     } finally {
       setLoading(false)
