@@ -17,6 +17,15 @@ api.interceptors.request.use(
     const url = String(config.url || '')
     const isCoinApi = url.includes('/coin/')
     
+    // 添加更多的調試信息
+    console.log('🔍 API 請求攔截器 - 詳細信息:', {
+      url,
+      adminTokenExists: !!adminToken,
+      websiteTokenExists: !!websiteToken,
+      adminTokenLength: adminToken ? adminToken.length : 0,
+      websiteTokenLength: websiteToken ? websiteToken.length : 0
+    })
+    
     // 對於 Coin API，需要根據具體的端點來決定使用哪個令牌
     let picked = null;
     if (isCoinApi) {
@@ -27,22 +36,36 @@ api.interceptors.request.use(
       if (isAdminEndpoint) {
         // 管理員端點優先使用 adminToken
         picked = adminToken || websiteToken;
+        console.log('🔍 管理員端點，選擇令牌:', {
+          adminAvailable: !!adminToken,
+          websiteAvailable: !!websiteToken,
+          selected: adminToken ? 'adminToken' : (websiteToken ? 'websiteToken' : 'none')
+        })
       } else {
         // 普通 Coin API 端點優先使用 websiteToken
         picked = websiteToken || adminToken;
+        console.log('🔍 普通 Coin 端點，選擇令牌:', {
+          websiteAvailable: !!websiteToken,
+          adminAvailable: !!adminToken,
+          selected: websiteToken ? 'websiteToken' : (adminToken ? 'adminToken' : 'none')
+        })
       }
     } else {
       // 非 Coin API 端點優先使用 adminToken
       picked = adminToken || websiteToken;
+      console.log('🔍 非 Coin API 端點，選擇令牌:', {
+        adminAvailable: !!adminToken,
+        websiteAvailable: !!websiteToken,
+        selected: adminToken ? 'adminToken' : (websiteToken ? 'websiteToken' : 'none')
+      })
     }
     
-    console.log('🔍 API 請求攔截器:', {
+    console.log('🔍 API 請求攔截器 - 最終結果:', {
       url,
       isCoinApi,
-      adminToken: !!adminToken,
-      websiteToken: !!websiteToken,
       picked: picked ? '有' : '無',
-      pickedPreview: picked ? picked.substring(0, 20) + '...' : null
+      pickedPreview: picked ? picked.substring(0, 20) + '...' : null,
+      isAdminEndpoint: isCoinApi ? isAdminEndpoint : 'N/A'
     })
     
     if (picked) {
