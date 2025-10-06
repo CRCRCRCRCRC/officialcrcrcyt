@@ -90,18 +90,23 @@ const requireAdmin = (req, res, next) => {
     return res.status(403).json({ error: '需要管理員權限' });
   }
   
+  // 檢查 req.user 對象的完整結構
+  console.log('🔍 用戶對象完整結構:', req.user);
+  
   // 確保用戶有 role 字段，如果沒有則默認為 'user'
   const userRole = req.user.role || 'user';
   
   // 檢查角色是否為 admin
   if (userRole !== 'admin') {
     console.error('❌ 用戶角色不是管理員:', userRole);
+    console.error('❌ 完整用戶對象:', req.user);
     return res.status(403).json({ error: '需要管理員權限' });
   }
   
   // 確保 req.user 對象有所有必要的屬性
   req.user.role = userRole;
   
+  console.log('✅ 管理員權限驗證通過');
   next();
 };
 

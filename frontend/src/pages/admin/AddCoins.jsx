@@ -23,6 +23,12 @@ const AddCoins = () => {
       return
     }
 
+    // 檢查電子郵件格式
+    if (!trimmedEmail.includes('@')) {
+      toast.error('請輸入有效的電子郵件地址')
+      return
+    }
+
     setLoading(true)
     try {
       console.log('🔍 調用 grantCoins:', { email: trimmedEmail, amount: value })
@@ -39,7 +45,8 @@ const AddCoins = () => {
     } catch (error) {
       console.error('❌ grantCoins 錯誤:', error)
       console.error('❌ 錯誤響應:', error.response)
-      toast.error(error.response?.data?.error || '發放失敗，請稍後再試')
+      const errorMessage = error.response?.data?.error || error.message || '發放失敗，請稍後再試'
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
