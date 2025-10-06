@@ -51,13 +51,19 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static('uploads'));
 
 // API 路由
+console.log('🔧 註冊 API 路由...');
 app.use('/api/auth', authRoutes);
-
+console.log('✅ /api/auth 路由已註冊');
 app.use('/api/channel', channelRoutes);
+console.log('✅ /api/channel 路由已註冊');
 app.use('/api/settings', settingsRoutes);
+console.log('✅ /api/settings 路由已註冊');
 app.use('/api/announcements', announcementRoutes);
+console.log('✅ /api/announcements 路由已註冊');
 app.use('/api/coin', coinRoutes);
+console.log('✅ /api/coin 路由已註冊');
 app.use('/api/videos', videoRoutes);
+console.log('✅ /api/videos 路由已註冊');
 
 // 健康檢查和初始化
 app.get('/api/health', async (req, res) => {
@@ -97,7 +103,8 @@ app.get('/api/health', async (req, res) => {
 
 // 404 處理
 app.use('*', (req, res) => {
-  res.status(404).json({ error: 'API endpoint not found' });
+  console.log('❌ 404 - 找不到路由:', req.method, req.originalUrl || req.url);
+  res.status(404).json({ error: 'API endpoint not found', path: req.originalUrl || req.url });
 });
 
 // 錯誤處理中間件

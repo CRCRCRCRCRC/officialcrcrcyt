@@ -539,6 +539,10 @@ router.post('/earn', authenticateToken, requireAdmin, async (req, res) => {
 
 // 管理員發放 CRCRCoin 給指定用戶
 router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
+  console.log('✅ /grant 路由被調用');
+  console.log('🔍 請求方法:', req.method);
+  console.log('🔍 請求路徑:', req.path);
+  console.log('🔍 完整 URL:', req.originalUrl);
   try {
     console.log('🔍 /coin/grant 請求數據:', req.body);
     
