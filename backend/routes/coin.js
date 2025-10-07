@@ -556,7 +556,11 @@ router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
 
     if (!user) {
       console.log('❌ 找不到用戶:', rawEmail);
-      return res.status(404).json({ error: '找不到該用戶，請確認電子郵件是否正確' });
+      console.log('💡 提示：請確認該用戶已經至少登入過一次公開網站');
+      return res.status(404).json({ 
+        error: '找不到該用戶，請確認電子郵件是否正確',
+        hint: '該用戶需要先在公開網站登入一次才能接收 CRCRCoin'
+      });
     }
 
     console.log('🔍 用戶信息:', { id: user.id, username: user.username });
