@@ -579,11 +579,14 @@ router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
 
     return res.json({
       success: true,
+      message: `已${parsedAmount > 0 ? '發放' : '扣除'} ${Math.abs(parsedAmount)} CRCRCoin`,
       target: {
         id: user.id,
-        email: user.username
+        email: user.username,
+        role: user.role
       },
-      wallet: mapWallet(result.wallet)
+      wallet: mapWallet(result.wallet),
+      amount: parsedAmount
     });
   } catch (error) {
     console.error('管理員發放 CRCRCoin 失敗:', error);
