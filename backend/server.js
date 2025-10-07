@@ -71,24 +71,37 @@ app.get('/api/health', async (req, res) => {
     // 嘗試初始化資料庫
     await database.initializeData();
     
+    // 檢查所有可能的資料庫環境變數
+    const dbEnvVars = {
+      DATABASE_URL: !!process.env.DATABASE_URL,
+      POSTGRES_URL: !!process.env.POSTGRES_URL,
+      POSTGRES_PRISMA_URL: !!process.env.POSTGRES_PRISMA_URL,
+      POSTGRES_URL_NON_POOLING: !!process.env.POSTGRES_URL_NON_POOLING,
+      SUPABASE_URL: !!process.env.SUPABASE_URL,
+      SUPABASE_DB_URL: !!process.env.SUPABASE_DB_URL
+    };
+    
     // 檢查使用的資料庫類型
     let databaseType = 'Unknown';
-    if (process.env.DATABASE_URL) {
-      if (process.env.DATABASE_URL.includes('neon')) {
+    const activeDbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL;
+    
+    if (activeDbUrl) {
+      if (activeDbUrl.includes('neon')) {
         databaseType = 'Neon PostgreSQL';
-      } else if (process.env.DATABASE_URL.includes('supabase')) {
+      } else if (activeDbUrl.includes('supabase')) {
         databaseType = 'Supabase PostgreSQL';
       } else {
         databaseType = 'PostgreSQL';
       }
     } else {
-      databaseType = 'Development KV Database';
+      databaseType = 'Development KV Database (記憶體模式 - 會重置)';
     }
     
     res.json({
       status: 'OK',
       timestamp: new Date().toISOString(),
-      database: databaseType + ' Ready'
+      database: databaseType,
+      envVars: dbEnvVars
     });
   } catch (error) {
     console.error('資料庫初始化失敗:', error);
