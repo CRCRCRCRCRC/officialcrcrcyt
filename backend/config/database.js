@@ -1,14 +1,22 @@
 // 資料庫配置
-// 當提供了 DATABASE_URL 環境變數時使用 PostgreSQL 資料庫，否則使用開發模式的 KV 數據庫
+// 支援多種環境變數名稱（Vercel Supabase 整合可能使用不同名稱）
 
 console.log('🔧 環境變數檢查:');
 console.log('  DATABASE_URL:', process.env.DATABASE_URL ? '[SET]' : '[NOT SET]');
+console.log('  POSTGRES_URL:', process.env.POSTGRES_URL ? '[SET]' : '[NOT SET]');
+console.log('  POSTGRES_PRISMA_URL:', process.env.POSTGRES_PRISMA_URL ? '[SET]' : '[NOT SET]');
 console.log('  NODE_ENV:', process.env.NODE_ENV || '[NOT SET]');
 
-if (process.env.DATABASE_URL) {
+// 支援多種 Vercel Supabase 整合的環境變數名稱
+const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL;
+
+if (dbUrl) {
+  // 設定統一的環境變數供 neon.js 使用
+  process.env.DATABASE_URL = dbUrl;
+  
   const database = require('./neon');
   console.log('🔗 資料庫: PostgreSQL (Supabase/Neon)');
-  console.log('  連接字串主機:', process.env.DATABASE_URL.split('@')[1]?.split(':')[0] || '未知');
+  console.log('  連接字串主機:', dbUrl.split('@')[1]?.split(':')[0] || '未知');
   module.exports = database;
 } else {
   // 開發環境或沒有設置 DATABASE_URL 時使用 KV 數據庫
