@@ -108,8 +108,30 @@ export const CoinProvider = ({ children }) => {
     const value = Math.max(0, Math.floor(Number(amount) || 0))
     if (value <= 0) return { success: false, error: '金額無效' }
     try {
-      await coinAPI.earn(value, reason)
-      await refreshWallet()
+      const res = await coinAPI.earn(value, reason)
+      const walletData = res?.data?.wallet
+      
+      // 直接使用服務器返回的錢包數據
+      if (walletData) {
+        const newWallet = {
+          balance: Number(walletData.balance) || 0,
+          lastClaimAt: walletData.lastClaimAt || null,
+          history: wallet.history || []
+        }
+        setWallet(newWallet)
+        
+        // 廣播給其他分頁
+        if (bcRef.current) {
+          bcRef.current.postMessage({ 
+            type: 'wallet:update', 
+            wallet: newWallet,
+            nextClaimInMs: nextClaimInMs
+          })
+        }
+      } else {
+        await refreshWallet()
+      }
+      
       return { success: true }
     } catch (e) {
       return { success: false, error: e?.response?.data?.error || '加幣失敗' }
@@ -121,8 +143,30 @@ export const CoinProvider = ({ children }) => {
     const value = Math.max(0, Math.floor(Number(amount) || 0))
     if (value <= 0) return { success: false, error: '金額無效' }
     try {
-      await coinAPI.spend(value, reason)
-      await refreshWallet()
+      const res = await coinAPI.spend(value, reason)
+      const walletData = res?.data?.wallet
+      
+      // 直接使用服務器返回的錢包數據
+      if (walletData) {
+        const newWallet = {
+          balance: Number(walletData.balance) || 0,
+          lastClaimAt: walletData.lastClaimAt || null,
+          history: wallet.history || []
+        }
+        setWallet(newWallet)
+        
+        // 廣播給其他分頁
+        if (bcRef.current) {
+          bcRef.current.postMessage({ 
+            type: 'wallet:update', 
+            wallet: newWallet,
+            nextClaimInMs: nextClaimInMs
+          })
+        }
+      } else {
+        await refreshWallet()
+      }
+      
       return { success: true }
     } catch (e) {
       return { success: false, error: e?.response?.data?.error || '扣款失敗' }
@@ -134,7 +178,31 @@ export const CoinProvider = ({ children }) => {
     try {
       const res = await coinAPI.claimDaily()
       const amount = Number(res?.data?.amount) || 0
-      await refreshWallet()
+      const walletData = res?.data?.wallet
+      
+      // 直接使用服務器返回的錢包數據，避免再次調用 refreshWallet
+      if (walletData) {
+        const newWallet = {
+          balance: Number(walletData.balance) || 0,
+          lastClaimAt: walletData.lastClaimAt || null,
+          history: wallet.history || [] // 保持現有的歷史記錄
+        }
+        setWallet(newWallet)
+        setNextClaimInMs(0) // 簽到成功後重置下次簽到時間
+        
+        // 廣播給其他分頁
+        if (bcRef.current) {
+          bcRef.current.postMessage({ 
+            type: 'wallet:update', 
+            wallet: newWallet,
+            nextClaimInMs: 0
+          })
+        }
+      } else {
+        // 如果沒有錢包數據，才調用 refreshWallet
+        await refreshWallet()
+      }
+      
       return { success: true, amount }
     } catch (e) {
       const serverNextMs = Number(e?.response?.data?.nextClaimInMs) || 0
