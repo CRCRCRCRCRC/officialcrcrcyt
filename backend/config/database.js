@@ -1,22 +1,39 @@
 // 資料庫配置
-// 支援多種環境變數名稱（Vercel Supabase 整合可能使用不同名稱）
+console.log('========================================');
+console.log('🔧 資料庫配置檢查');
+console.log('========================================');
 
-console.log('🔧 環境變數檢查:');
-console.log('  DATABASE_URL:', process.env.DATABASE_URL ? '[SET]' : '[NOT SET]');
-console.log('  POSTGRES_URL:', process.env.POSTGRES_URL ? '[SET]' : '[NOT SET]');
-console.log('  POSTGRES_PRISMA_URL:', process.env.POSTGRES_PRISMA_URL ? '[SET]' : '[NOT SET]');
-console.log('  NODE_ENV:', process.env.NODE_ENV || '[NOT SET]');
+// 列出所有可能的資料庫環境變數
+const allEnvVars = Object.keys(process.env).filter(key => 
+  key.includes('DATABASE') || 
+  key.includes('POSTGRES') || 
+  key.includes('SUPABASE') ||
+  key.includes('DB')
+);
+
+console.log('📋 找到的資料庫相關環境變數:', allEnvVars.length > 0 ? allEnvVars : '無');
+allEnvVars.forEach(key => {
+  const value = process.env[key];
+  const preview = value ? `${value.substring(0, 30)}...` : '[EMPTY]';
+  console.log(`  ${key}: ${preview}`);
+});
 
 // 支援多種 Vercel Supabase 整合的環境變數名稱
-const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.POSTGRES_PRISMA_URL;
+const dbUrl = process.env.DATABASE_URL || 
+              process.env.POSTGRES_URL || 
+              process.env.POSTGRES_PRISMA_URL ||
+              process.env.POSTGRES_URL_NON_POOLING;
+
+console.log('🎯 選擇的資料庫 URL:', dbUrl ? '已找到' : '未找到');
 
 if (dbUrl) {
   // 設定統一的環境變數供 neon.js 使用
   process.env.DATABASE_URL = dbUrl;
   
   const database = require('./neon');
-  console.log('🔗 資料庫: PostgreSQL (Supabase/Neon)');
-  console.log('  連接字串主機:', dbUrl.split('@')[1]?.split(':')[0] || '未知');
+  console.log('✅ 使用 PostgreSQL 資料庫');
+  console.log('   主機:', dbUrl.split('@')[1]?.split(':')[0] || '未知');
+  console.log('========================================');
   module.exports = database;
 } else {
   // 開發環境或沒有設置 DATABASE_URL 時使用 KV 數據庫
