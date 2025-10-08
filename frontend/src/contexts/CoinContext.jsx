@@ -111,22 +111,37 @@ export const CoinProvider = ({ children }) => {
       const res = await coinAPI.earn(value, reason)
       const walletData = res?.data?.wallet
       
-      // 直接使用服務器返回的錢包數據
+      // 直接使用服務器返回的錢包數據，但需要重新獲取歷史記錄
       if (walletData) {
-        const newWallet = {
-          balance: Number(walletData.balance) || 0,
-          lastClaimAt: walletData.lastClaimAt || null,
-          history: wallet.history || []
-        }
-        setWallet(newWallet)
-        
-        // 廣播給其他分頁
-        if (bcRef.current) {
-          bcRef.current.postMessage({ 
-            type: 'wallet:update', 
-            wallet: newWallet,
-            nextClaimInMs: nextClaimInMs
-          })
+        try {
+          // 獲取最新的交易歷史
+          const historyRes = await coinAPI.getHistory(50)
+          const latestHistory = historyRes?.data?.history || []
+          
+          const newWallet = {
+            balance: Number(walletData.balance) || 0,
+            lastClaimAt: walletData.lastClaimAt || null,
+            history: latestHistory
+          }
+          setWallet(newWallet)
+          
+          // 廣播給其他分頁
+          if (bcRef.current) {
+            bcRef.current.postMessage({ 
+              type: 'wallet:update', 
+              wallet: newWallet,
+              nextClaimInMs: nextClaimInMs
+            })
+          }
+        } catch (historyError) {
+          console.error('獲取交易歷史失敗:', historyError)
+          // 如果獲取歷史失敗，至少更新餘額
+          const newWallet = {
+            balance: Number(walletData.balance) || 0,
+            lastClaimAt: walletData.lastClaimAt || null,
+            history: wallet.history || []
+          }
+          setWallet(newWallet)
         }
       } else {
         await refreshWallet()
@@ -146,22 +161,37 @@ export const CoinProvider = ({ children }) => {
       const res = await coinAPI.spend(value, reason)
       const walletData = res?.data?.wallet
       
-      // 直接使用服務器返回的錢包數據
+      // 直接使用服務器返回的錢包數據，但需要重新獲取歷史記錄
       if (walletData) {
-        const newWallet = {
-          balance: Number(walletData.balance) || 0,
-          lastClaimAt: walletData.lastClaimAt || null,
-          history: wallet.history || []
-        }
-        setWallet(newWallet)
-        
-        // 廣播給其他分頁
-        if (bcRef.current) {
-          bcRef.current.postMessage({ 
-            type: 'wallet:update', 
-            wallet: newWallet,
-            nextClaimInMs: nextClaimInMs
-          })
+        try {
+          // 獲取最新的交易歷史
+          const historyRes = await coinAPI.getHistory(50)
+          const latestHistory = historyRes?.data?.history || []
+          
+          const newWallet = {
+            balance: Number(walletData.balance) || 0,
+            lastClaimAt: walletData.lastClaimAt || null,
+            history: latestHistory
+          }
+          setWallet(newWallet)
+          
+          // 廣播給其他分頁
+          if (bcRef.current) {
+            bcRef.current.postMessage({ 
+              type: 'wallet:update', 
+              wallet: newWallet,
+              nextClaimInMs: nextClaimInMs
+            })
+          }
+        } catch (historyError) {
+          console.error('獲取交易歷史失敗:', historyError)
+          // 如果獲取歷史失敗，至少更新餘額
+          const newWallet = {
+            balance: Number(walletData.balance) || 0,
+            lastClaimAt: walletData.lastClaimAt || null,
+            history: wallet.history || []
+          }
+          setWallet(newWallet)
         }
       } else {
         await refreshWallet()
@@ -180,23 +210,39 @@ export const CoinProvider = ({ children }) => {
       const amount = Number(res?.data?.amount) || 0
       const walletData = res?.data?.wallet
       
-      // 直接使用服務器返回的錢包數據，避免再次調用 refreshWallet
+      // 直接使用服務器返回的錢包數據，並獲取最新的交易歷史
       if (walletData) {
-        const newWallet = {
-          balance: Number(walletData.balance) || 0,
-          lastClaimAt: walletData.lastClaimAt || null,
-          history: wallet.history || [] // 保持現有的歷史記錄
-        }
-        setWallet(newWallet)
-        setNextClaimInMs(0) // 簽到成功後重置下次簽到時間
-        
-        // 廣播給其他分頁
-        if (bcRef.current) {
-          bcRef.current.postMessage({ 
-            type: 'wallet:update', 
-            wallet: newWallet,
-            nextClaimInMs: 0
-          })
+        try {
+          // 獲取最新的交易歷史
+          const historyRes = await coinAPI.getHistory(50)
+          const latestHistory = historyRes?.data?.history || []
+          
+          const newWallet = {
+            balance: Number(walletData.balance) || 0,
+            lastClaimAt: walletData.lastClaimAt || null,
+            history: latestHistory
+          }
+          setWallet(newWallet)
+          setNextClaimInMs(0) // 簽到成功後重置下次簽到時間
+          
+          // 廣播給其他分頁
+          if (bcRef.current) {
+            bcRef.current.postMessage({ 
+              type: 'wallet:update', 
+              wallet: newWallet,
+              nextClaimInMs: 0
+            })
+          }
+        } catch (historyError) {
+          console.error('獲取交易歷史失敗:', historyError)
+          // 如果獲取歷史失敗，至少更新餘額
+          const newWallet = {
+            balance: Number(walletData.balance) || 0,
+            lastClaimAt: walletData.lastClaimAt || null,
+            history: wallet.history || []
+          }
+          setWallet(newWallet)
+          setNextClaimInMs(0)
         }
       } else {
         // 如果沒有錢包數據，才調用 refreshWallet

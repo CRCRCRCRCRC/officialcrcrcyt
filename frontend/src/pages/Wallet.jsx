@@ -339,7 +339,16 @@ const Wallet = () => {
                           {h.reason || (h.type === 'claim' ? '每日簽到' : h.type === 'earn' ? '獲得' : '消費')}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {new Date(h.created_at).toLocaleDateString('zh-TW')}
+                          {(() => {
+                            try {
+                              const dateValue = h.at || h.created_at;
+                              if (!dateValue) return '未知日期';
+                              const date = new Date(dateValue);
+                              return isNaN(date.getTime()) ? '無效日期' : date.toLocaleDateString('zh-TW');
+                            } catch (e) {
+                              return '日期錯誤';
+                            }
+                          })()}
                         </div>
                       </div>
                     </div>
