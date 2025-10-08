@@ -546,13 +546,9 @@ router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
 
     console.log('🔍 查找用戶:', rawEmail);
     let user = await database.getUserByUsername(rawEmail);
-    console.log('🔍 首次查找結果:', user);
+    console.log('🔍 查找結果:', user);
     
-    if (!user && rawEmail.toLowerCase() !== rawEmail) {
-      console.log('🔍 嘗試使用小寫電子郵件查找:', rawEmail.toLowerCase());
-      user = await database.getUserByUsername(rawEmail.toLowerCase());
-      console.log('🔍 第二次查找結果:', user);
-    }
+    // 由於 getUserByUsername 已經支援不區分大小寫匹配，不需要額外嘗試小寫版本
 
     if (!user) {
       console.log('❌ 找不到用戶:', rawEmail);

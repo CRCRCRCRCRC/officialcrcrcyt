@@ -51,7 +51,8 @@ class KVDatabase {
     const userIds = await this.kv.smembers('users');
     for (const userId of userIds) {
       const user = await this.kv.hgetall(userId);
-      if (user.username === username) {
+      // 使用不區分大小寫的匹配，與 PostgreSQL 版本保持一致
+      if (user.username && user.username.toLowerCase() === username.toLowerCase()) {
         return { id: userId, ...user };
       }
     }
