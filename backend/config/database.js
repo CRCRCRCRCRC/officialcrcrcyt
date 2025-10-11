@@ -19,16 +19,54 @@ allEnvVars.forEach(key => {
 });
 
 // 支援多種 Vercel Supabase 整合的環境變數名稱
-const dbUrl = process.env.DATABASE_URL || 
-              process.env.POSTGRES_URL || 
-              process.env.POSTGRES_PRISMA_URL ||
-              process.env.POSTGRES_URL_NON_POOLING;
+const primaryDbKeys = [
+  'DATABASE_URL',
+  'POSTGRES_URL',
+  'POSTGRES_PRISMA_URL',
+  'POSTGRES_URL_NON_POOLING',
+  'DB_CONNECTION_STRING',
+  'DB_URL',
+  'SUPABASE_DB_URL',
+  'SUPABASE_DB_CONNECTION_STRING',
+  'SUPABASE_POSTGRES_URL',
+  'SUPABASE_CONNECTION_STRING',
+  'SUPABASE_PG_URL',
+  'SUPABASE_DB'
+];
 
-console.log('🎯 選擇的資料庫 URL:', dbUrl ? '已找到' : '未找到');
+let dbUrl = null;
+let dbUrlKey = null;
+
+for (const key of primaryDbKeys) {
+  const value = process.env[key];
+  if (typeof value === 'string' && value.trim()) {
+    dbUrl = value.trim();
+    dbUrlKey = key;
+    break;
+  }
+}
+
+if (!dbUrl) {
+  for (const key of allEnvVars) {
+    const value = process.env[key];
+    if (typeof value === 'string' && /^postgres(ql)?:\/\//i.test(value.trim())) {
+      dbUrl = value.trim();
+      dbUrlKey = key;
+      break;
+    }
+  }
+}
+
+const connectionLogMessage = dbUrl && dbUrlKey
+  ? '已找到 (' + dbUrlKey + ')'
+  : '未找到';
+console.log('🎯 選擇的資料庫 URL:', connectionLogMessage);
 
 if (dbUrl) {
-  // 設定統一的環境變數供 neon.js 使用
-  process.env.DATABASE_URL = dbUrl;
+  // 設定統一環境變數供 neon.js 使用
+  if (!process.env.DATABASE_URL) {
+    process.env.DATABASE_URL = dbUrl;
+  }
   
   const database = require('./neon');
   console.log('✅ 使用 PostgreSQL 資料庫');
