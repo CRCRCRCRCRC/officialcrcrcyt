@@ -10,6 +10,18 @@ const PASS_TOTAL_LEVELS = 50
 const PASS_XP_PER_LEVEL = 500
 const PASS_PREMIUM_PRICE = 6000
 
+const normalizeMessage = (value, fallback) => {
+  if (!value) return fallback
+  if (typeof value === 'string') return value
+  if (typeof value?.message === 'string') return value.message
+  if (typeof value?.error === 'string') return value.error
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return fallback
+  }
+}
+
 const Wallet = () => {
   const {
     isLoggedIn,
@@ -83,7 +95,7 @@ const Wallet = () => {
       if (res?.success) {
         toast.success(`簽到成功！獲得 ${res.amount} CRCRCoin`)
       } else {
-        const msg = res?.error || '尚未到下次簽到時間'
+        const msg = normalizeMessage(res?.error, '尚未到下次簽到時間')
         toast.error(msg)
       }
     } finally {
