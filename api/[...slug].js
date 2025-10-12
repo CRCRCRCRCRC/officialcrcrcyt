@@ -1,22 +1,14 @@
-const app = require('../backend/server');
+const path = require('path');
+const app = require(path.join(__dirname, '..', 'backend', 'server'));
 
 module.exports = (req, res) => {
-  // Vercel 會將 /api/coin/grant 路由到這裡
-  // req.url 可能是 /coin/grant 或 /api/coin/grant
+  // Vercel 會把 /api 開頭的路由導到這裡，這裡只是橋接到 Express app
   const originalUrl = req.url || '';
-  
-  console.log('========================================');
-  console.log('🔍 Vercel Serverless Function 被調用');
-  console.log('Method:', req.method);
-  console.log('Original URL:', originalUrl);
-  console.log('========================================');
-  
-  // 確保 URL 有 /api 前綴
+
+  // 補上 /api 前綴，確保跟 Express 設定一致
   if (!originalUrl.startsWith('/api')) {
     req.url = '/api' + originalUrl;
-    console.log('✅ 補上前綴:', req.url);
   }
-  
-  // 將請求傳給 Express app
+
   return app(req, res);
 };
