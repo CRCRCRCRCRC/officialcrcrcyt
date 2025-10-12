@@ -15,7 +15,7 @@ const resolveAvatarSrc = (value) => {
   return normalized ? `/${normalized}` : ''
 }
 
-const APP_VERSION = 'v1.0.00'
+const APP_VERSION = 'v1.0.01'
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
