@@ -4,9 +4,9 @@ console.log('🔧 資料庫配置檢查');
 console.log('========================================');
 
 // 列出所有可能的資料庫環境變數
-const allEnvVars = Object.keys(process.env).filter(key =>
-  key.includes('DATABASE') ||
-  key.includes('POSTGRES') ||
+const allEnvVars = Object.keys(process.env).filter(key => 
+  key.includes('DATABASE') || 
+  key.includes('POSTGRES') || 
   key.includes('SUPABASE') ||
   key.includes('DB')
 );
@@ -63,29 +63,47 @@ const connectionLogMessage = dbUrl && dbUrlKey
 console.log('🎯 選擇的資料庫 URL:', connectionLogMessage);
 
 const allowKvFallback = process.env.ALLOW_KV_FALLBACK === 'true';
-const isProdLike = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+const vercelFlag = (() => {
+  const raw = String(process.env.VERCEL || '').toLowerCase();
+  if (!raw) return false;
+  return raw !== '0' && raw !== 'false';
+})();
+const vercelEnv = String(process.env.VERCEL_ENV || '').toLowerCase();
+const nodeEnv = String(process.env.NODE_ENV || '').toLowerCase();
+const isProdLike = vercelFlag || nodeEnv === 'production' || ['production', 'preview'].includes(vercelEnv);
 
-if (!dbUrl && isProdLike && !allowKvFallback) {
-  console.error('❌ 在 production/VERCEL 環境找不到 PostgreSQL 連線字串，拒絕改用暫存 KV。');
-  throw new Error('Missing PostgreSQL connection string. Set DATABASE_URL or related env.');
+console.log('🧭 環境診斷:', {
+  nodeEnv,
+  vercelFlag,
+  vercelEnv,
+  allowKvFallback
+});
+
+if (!dbUrl) {
+  if (isProdLike && !allowKvFallback) {
+    console.error('❌ 在 production/VERCEL 環境找不到 PostgreSQL 連線字串，拒絕改用暫存 KV。');
+    throw new Error('Missing PostgreSQL connection string. Set DATABASE_URL or related env.');
+  }
+  console.warn('⚠️ 未找到 PostgreSQL 連線字串，將改用暫存 KV（僅建議本地開發）');
 }
 
 if (dbUrl) {
-  // 調整成用真正的資料庫
+  // 設定統一環境變數供 neon.js 使用
   if (!process.env.DATABASE_URL) {
     process.env.DATABASE_URL = dbUrl;
   }
-
+  
   const database = require('./neon');
   console.log('✅ 使用 PostgreSQL 資料庫');
   console.log('   主機:', dbUrl.split('@')[1]?.split(':')[0] || '未知');
   console.log('========================================');
   module.exports = database;
 } else {
-  // 開發環境才允許使用暫存 KV
+  // 開發環境或沒有設置 DATABASE_URL 時使用 KV 數據庫
   console.log('🔗 資料庫: 開發模式 - 使用內存數據庫');
   console.log('  提示: 要使用 PostgreSQL 資料庫，請設置 DATABASE_URL 環境變數');
 
+  // 創建一個模擬的 KV 數據庫
   const mockKV = {
     data: new Map(),
     sets: new Map(),
@@ -105,7 +123,9 @@ if (dbUrl) {
       const hash = this.data.get(key);
       if (!hash) return {};
       const result = {};
-      hash.forEach((value, key) => { result[key] = value; });
+      hash.forEach((value, key) => {
+        result[key] = value;
+      });
       return result;
     },
 
@@ -129,7 +149,9 @@ if (dbUrl) {
 
     async srem(key, value) {
       const set = this.sets.get(key);
-      if (set) set.delete(value);
+      if (set) {
+        set.delete(value);
+      }
       return true;
     },
 
@@ -141,6 +163,7 @@ if (dbUrl) {
   };
 
   const database = require('./kv');
+  // 替換 KV 實例
   database.kv = mockKV;
   module.exports = database;
 }
