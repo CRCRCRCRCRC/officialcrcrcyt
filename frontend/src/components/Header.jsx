@@ -15,6 +15,8 @@ const resolveAvatarSrc = (value) => {
   return normalized ? `/${normalized}` : ''
 }
 
+const APP_VERSION = 'v1.0.00'
+
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -56,7 +58,10 @@ const Header = () => {
               <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">CR</span>
               </div>
-              <span className="text-xl font-display font-bold text-gradient">CRCRC</span>
+              <div className="flex items-center space-x-1">
+                <span className="text-xl font-display font-bold text-gradient">CRCRC</span>
+                <span className="text-[10px] font-medium text-gray-400 tracking-wide">{APP_VERSION}</span>
+              </div>
             </Link>
 
             {/* Desktop Navigation - 水平居中 */}
