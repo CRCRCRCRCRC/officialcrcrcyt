@@ -26,11 +26,27 @@ const sanitizeState = (state = {}) => ({
   claimedPremium: toUniqueList(state.claimedPremium)
 })
 
+const PREMIUM_BENEFITS = [
+  {
+    title: '全線獎勵解鎖',
+    description: '立即開啟所有高級獎勵軌，升級即可領取。'
+  },
+  {
+    title: '額外 CRCRCoin',
+    description: '每個等級都比免費軌多出 50 至 150 CRCRCoin。'
+  },
+  {
+    title: '專屬身份展示',
+    description: '獲得高級徽章與未來額外的視覺強化。'
+  }
+]
+
 const Pass = () => {
   const { isLoggedIn, hydrated, balance, refreshWallet } = useCoin()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState(null)
   const [purchaseLoading, setPurchaseLoading] = useState(false)
+  const [showPremiumModal, setShowPremiumModal] = useState(false)
   const [claimingKey, setClaimingKey] = useState(null)
 
   const rewards = useMemo(() => data?.config?.rewards ?? [], [data?.config?.rewards])
@@ -134,6 +150,24 @@ const Pass = () => {
     } finally {
       setPurchaseLoading(false)
     }
+  }
+
+  const requestPurchase = () => {
+    if (!isLoggedIn) return requireLogin()
+    if (!hydrated) {
+      toast('資料同步中，請稍候')
+      return
+    }
+    if (hasPremium) {
+      toast('已擁有高級通行券')
+      return
+    }
+    setShowPremiumModal(true)
+  }
+
+  const confirmPurchase = async () => {
+    setShowPremiumModal(false)
+    await handlePurchase()
   }
 
   const handleClaim = async (tier, reward) => {
@@ -358,7 +392,7 @@ const Pass = () => {
               ) : (
                 <button
                   type='button'
-                  onClick={handlePurchase}
+                  onClick={requestPurchase}
                   disabled={purchaseLoading || !hydrated}
                   className='inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-purple-700 shadow-lg transition-all hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-80'
                 >
@@ -454,6 +488,56 @@ const Pass = () => {
           </motion.div>
         )}
       </div>
+      {showPremiumModal && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 px-6 py-12 backdrop-blur-sm'>
+          <div className='w-full max-w-lg rounded-3xl bg-white p-6 text-slate-900 shadow-2xl'>
+            <div className='flex items-center justify-between'>
+              <div>
+                <p className='text-xs font-semibold uppercase tracking-[0.35em] text-slate-400'>升級提示</p>
+                <h3 className='mt-2 text-2xl font-black text-slate-900'>購買高級通行券</h3>
+              </div>
+              <button
+                type='button'
+                onClick={() => setShowPremiumModal(false)}
+                className='rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600'
+              >
+                ✕
+              </button>
+            </div>
+            <p className='mt-3 text-sm text-slate-600'>
+              支付 <span className='font-semibold text-slate-900'>{premiumPrice.toLocaleString('zh-TW')} CRCRCoin</span> 後即可解鎖所有 Premium 獎勵。
+            </p>
+            <div className='mt-6 space-y-4'>
+              {PREMIUM_BENEFITS.map((benefit) => (
+                <div key={benefit.title} className='flex gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3'>
+                  <div className='mt-1 h-2 w-2 rounded-full bg-gradient-to-r from-indigo-500 to-rose-500' />
+                  <div>
+                    <p className='text-sm font-semibold text-slate-900'>{benefit.title}</p>
+                    <p className='text-xs text-slate-600'>{benefit.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className='mt-8 flex flex-col gap-3 sm:flex-row'>
+              <button
+                type='button'
+                onClick={() => setShowPremiumModal(false)}
+                className='w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50'
+              >
+                先再考慮
+              </button>
+              <button
+                type='button'
+                onClick={confirmPurchase}
+                disabled={purchaseLoading}
+                className='w-full rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70'
+              >
+                {purchaseLoading ? '購買中…' : '確認購買'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
