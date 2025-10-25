@@ -2,7 +2,15 @@
 
 
 
+
+
+
+
 import { useWebsiteAuth } from './WebsiteAuthContext'
+
+
+
+
 
 
 
@@ -14,7 +22,19 @@ import { coinAPI } from '../services/api'
 
 
 
+
+
+
+
+
+
+
+
 /**
+
+
+
+
 
 
 
@@ -22,7 +42,15 @@ import { coinAPI } from '../services/api'
 
 
 
+
+
+
+
  * - ????敺撩???嚗?雿輻 localStorage 敹怠?
+
+
+
+
 
 
 
@@ -30,7 +58,19 @@ import { coinAPI } from '../services/api'
 
 
 
+
+
+
+
  */
+
+
+
+
+
+
+
+
 
 
 
@@ -46,7 +86,19 @@ const CoinContext = createContext(null)
 
 
 
+
+
+
+
+
+
+
+
 const DEFAULT_WALLET = {
+
+
+
+
 
 
 
@@ -54,11 +106,23 @@ const DEFAULT_WALLET = {
 
 
 
+
+
+
+
   lastClaimAt: null,
 
 
 
+
+
+
+
   history: []
+
+
+
+
 
 
 
@@ -70,11 +134,27 @@ const DEFAULT_WALLET = {
 
 
 
+
+
+
+
+
+
+
+
 export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
   const { user, token } = useWebsiteAuth()
+
+
+
+
 
 
 
@@ -86,11 +166,27 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
+
+
+
+
   const [wallet, setWallet] = useState({ ...DEFAULT_WALLET })
 
 
 
+
+
+
+
   const [hydrated, setHydrated] = useState(false)
+
+
+
+
 
 
 
@@ -102,7 +198,19 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
+
+
+
+
   const bcRef = useRef(null)
+
+
+
+
 
 
 
@@ -114,7 +222,19 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
+
+
+
+
   const refreshWallet = async () => {
+
+
+
+
 
 
 
@@ -122,7 +242,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       setWallet({ ...DEFAULT_WALLET })
+
+
+
+
 
 
 
@@ -130,7 +258,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       setHydrated(true)
+
+
+
+
 
 
 
@@ -138,7 +274,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     }
+
+
+
+
 
 
 
@@ -146,7 +290,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     refreshingRef.current = true
+
+
+
+
 
 
 
@@ -154,7 +306,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       const [wRes, hRes] = await Promise.all([
+
+
+
+
 
 
 
@@ -162,7 +322,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
         coinAPI.getHistory(50)
+
+
+
+
 
 
 
@@ -170,7 +338,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       const w = wRes?.data?.wallet
+
+
+
+
 
 
 
@@ -178,11 +354,23 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       const serverNextMs = Number(wRes?.data?.nextClaimInMs) || 0
 
 
 
+
+
+
+
       
+
+
+
+
 
 
 
@@ -190,7 +378,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
         balance: Number(w?.balance) || 0,
+
+
+
+
 
 
 
@@ -198,7 +394,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
         history: h
+
+
+
+
 
 
 
@@ -206,7 +410,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       
+
+
+
+
 
 
 
@@ -214,7 +426,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       setNextClaimInMs(serverNextMs)
+
+
+
+
 
 
 
@@ -222,7 +442,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       // 撱?蝯血隞???
+
+
+
+
 
 
 
@@ -230,7 +458,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
         bcRef.current.postMessage({ 
+
+
+
+
 
 
 
@@ -238,7 +474,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           wallet: newWallet,
+
+
+
+
 
 
 
@@ -246,7 +490,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
         })
+
+
+
+
 
 
 
@@ -254,7 +506,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     } catch (e) {
+
+
+
+
 
 
 
@@ -262,7 +522,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     } finally {
+
+
+
+
 
 
 
@@ -270,7 +538,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       refreshingRef.current = false
+
+
+
+
 
 
 
@@ -278,7 +554,19 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
   }
+
+
+
+
+
+
+
+
 
 
 
@@ -290,7 +578,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
   useEffect(() => {
+
+
+
+
 
 
 
@@ -298,7 +594,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     bcRef.current = bc
+
+
+
+
 
 
 
@@ -306,7 +610,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       const msg = ev?.data
+
+
+
+
 
 
 
@@ -314,7 +626,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       setWallet(msg.wallet)
+
+
+
+
 
 
 
@@ -322,7 +642,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     }
+
+
+
+
 
 
 
@@ -330,7 +658,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       try { bc.close() } catch {}
+
+
+
+
 
 
 
@@ -338,7 +674,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     }
+
+
+
+
 
 
 
@@ -350,7 +694,19 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
+
+
+
+
   // ??頛
+
+
+
+
 
 
 
@@ -358,7 +714,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     setHydrated(false)
+
+
+
+
 
 
 
@@ -366,11 +730,23 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     setNextClaimInMs(0)
 
 
 
+
+
+
+
     refreshWallet()
+
+
+
+
 
 
 
@@ -382,7 +758,19 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
+
+
+
+
   // ??航????
+
+
+
+
 
 
 
@@ -390,7 +778,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     const onVis = () => {
+
+
+
+
 
 
 
@@ -398,7 +794,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     }
+
+
+
+
 
 
 
@@ -406,7 +810,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     return () => document.removeEventListener('visibilitychange', onVis)
+
+
+
+
 
 
 
@@ -418,7 +830,19 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
+
+
+
+
   const addCoins = async (amount, reason = '隞餃??') => {
+
+
+
+
 
 
 
@@ -426,7 +850,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     const value = Math.max(0, Math.floor(Number(amount) || 0))
+
+
+
+
 
 
 
@@ -434,7 +866,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     try {
+
+
+
+
 
 
 
@@ -442,11 +882,23 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       const walletData = res?.data?.wallet
 
 
 
+
+
+
+
       
+
+
+
+
 
 
 
@@ -454,7 +906,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       if (walletData) {
+
+
+
+
 
 
 
@@ -462,7 +922,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           // ?脣???啁?鈭斗?甇瑕
+
+
+
+
 
 
 
@@ -470,7 +938,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           const latestHistory = historyRes?.data?.history || []
+
+
+
+
 
 
 
@@ -478,7 +954,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           const newWallet = {
+
+
+
+
 
 
 
@@ -486,7 +970,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
             lastClaimAt: walletData.lastClaimAt || null,
+
+
+
+
 
 
 
@@ -494,11 +986,23 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           }
 
 
 
+
+
+
+
           setWallet(newWallet)
+
+
+
+
 
 
 
@@ -506,7 +1010,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           // 撱?蝯血隞???
+
+
+
+
 
 
 
@@ -514,7 +1026,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
             bcRef.current.postMessage({ 
+
+
+
+
 
 
 
@@ -522,7 +1042,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
               wallet: newWallet,
+
+
+
+
 
 
 
@@ -530,11 +1058,23 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
             })
 
 
 
+
+
+
+
           }
+
+
+
+
 
 
 
@@ -542,7 +1082,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           console.error('?脣?鈭斗?甇瑕憭望?:', historyError)
+
+
+
+
 
 
 
@@ -550,7 +1098,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           const newWallet = {
+
+
+
+
 
 
 
@@ -558,7 +1114,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
             lastClaimAt: walletData.lastClaimAt || null,
+
+
+
+
 
 
 
@@ -566,7 +1130,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           }
+
+
+
+
 
 
 
@@ -574,7 +1146,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
         }
+
+
+
+
 
 
 
@@ -582,7 +1162,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
         await refreshWallet()
+
+
+
+
 
 
 
@@ -590,7 +1178,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       
+
+
+
+
 
 
 
@@ -598,7 +1194,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     } catch (e) {
+
+
+
+
 
 
 
@@ -606,11 +1210,27 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     }
 
 
 
+
+
+
+
   }
+
+
+
+
+
+
+
+
 
 
 
@@ -622,7 +1242,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     if (!isLoggedIn) return { success: false, error: '隢??餃' }
+
+
+
+
 
 
 
@@ -630,7 +1258,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     if (value <= 0) return { success: false, error: '???⊥?' }
+
+
+
+
 
 
 
@@ -638,7 +1274,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       const res = await coinAPI.spend(value, reason)
+
+
+
+
 
 
 
@@ -646,7 +1290,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       
+
+
+
+
 
 
 
@@ -654,7 +1306,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       if (walletData) {
+
+
+
+
 
 
 
@@ -662,7 +1322,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           // ?脣???啁?鈭斗?甇瑕
+
+
+
+
 
 
 
@@ -670,7 +1338,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           const latestHistory = historyRes?.data?.history || []
+
+
+
+
 
 
 
@@ -678,7 +1354,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           const newWallet = {
+
+
+
+
 
 
 
@@ -686,7 +1370,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
             lastClaimAt: walletData.lastClaimAt || null,
+
+
+
+
 
 
 
@@ -694,11 +1386,23 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           }
 
 
 
+
+
+
+
           setWallet(newWallet)
+
+
+
+
 
 
 
@@ -706,7 +1410,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           // 撱?蝯血隞???
+
+
+
+
 
 
 
@@ -714,7 +1426,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
             bcRef.current.postMessage({ 
+
+
+
+
 
 
 
@@ -722,7 +1442,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
               wallet: newWallet,
+
+
+
+
 
 
 
@@ -730,11 +1458,23 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
             })
 
 
 
+
+
+
+
           }
+
+
+
+
 
 
 
@@ -742,7 +1482,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           console.error('?脣?鈭斗?甇瑕憭望?:', historyError)
+
+
+
+
 
 
 
@@ -750,7 +1498,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           const newWallet = {
+
+
+
+
 
 
 
@@ -758,7 +1514,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
             lastClaimAt: walletData.lastClaimAt || null,
+
+
+
+
 
 
 
@@ -766,7 +1530,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           }
+
+
+
+
 
 
 
@@ -774,7 +1546,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
         }
+
+
+
+
 
 
 
@@ -782,7 +1562,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
         await refreshWallet()
+
+
+
+
 
 
 
@@ -790,7 +1578,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       
+
+
+
+
 
 
 
@@ -798,7 +1594,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     } catch (e) {
+
+
+
+
 
 
 
@@ -806,11 +1610,27 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     }
 
 
 
+
+
+
+
   }
+
+
+
+
+
+
+
+
 
 
 
@@ -822,7 +1642,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     if (!isLoggedIn) return { success: false, error: '隢??餃?蝪賢' }
+
+
+
+
 
 
 
@@ -830,7 +1658,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       const res = await coinAPI.claimDaily()
+
+
+
+
 
 
 
@@ -838,7 +1674,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       const rawNextClaim = Number(res?.data?.nextClaimInMs)
+
+
+
+
 
 
 
@@ -846,11 +1690,23 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       const walletData = res?.data?.wallet
 
 
 
+
+
+
+
       
+
+
+
+
 
 
 
@@ -858,7 +1714,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       if (walletData) {
+
+
+
+
 
 
 
@@ -866,7 +1730,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           // ?脣???啁?鈭斗?甇瑕
+
+
+
+
 
 
 
@@ -874,7 +1746,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           const latestHistory = historyRes?.data?.history || []
+
+
+
+
 
 
 
@@ -882,7 +1762,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           const newWallet = {
+
+
+
+
 
 
 
@@ -890,7 +1778,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
             lastClaimAt: walletData.lastClaimAt || null,
+
+
+
+
 
 
 
@@ -898,11 +1794,23 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           }
 
 
 
+
+
+
+
           setWallet(newWallet)
+
+
+
+
 
 
 
@@ -910,7 +1818,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           
+
+
+
+
 
 
 
@@ -918,7 +1834,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           if (bcRef.current) {
+
+
+
+
 
 
 
@@ -926,7 +1850,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
               type: 'wallet:update', 
+
+
+
+
 
 
 
@@ -934,7 +1866,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
               nextClaimInMs: nextWindowMs
+
+
+
+
 
 
 
@@ -942,7 +1882,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           }
+
+
+
+
 
 
 
@@ -950,7 +1898,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           console.error('?脣?鈭斗?甇瑕憭望?:', historyError)
+
+
+
+
 
 
 
@@ -958,7 +1914,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           const newWallet = {
+
+
+
+
 
 
 
@@ -966,7 +1930,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
             lastClaimAt: walletData.lastClaimAt || null,
+
+
+
+
 
 
 
@@ -974,7 +1946,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           }
+
+
+
+
 
 
 
@@ -982,7 +1962,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
           setNextClaimInMs(nextWindowMs)
+
+
+
+
 
 
 
@@ -990,7 +1978,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       } else {
+
+
+
+
 
 
 
@@ -998,7 +1994,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
         setNextClaimInMs(nextWindowMs)
+
+
+
+
 
 
 
@@ -1006,7 +2010,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       }
+
+
+
+
 
 
 
@@ -1014,7 +2026,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       return { success: true, amount }
+
+
+
+
 
 
 
@@ -1022,7 +2042,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       const serverNextMs = Number(e?.response?.data?.nextClaimInMs) || 0
+
+
+
+
 
 
 
@@ -1030,7 +2058,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       return {
+
+
+
+
 
 
 
@@ -1038,7 +2074,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
-        error: error: e?.response?.data?.error || '尚未到簽到時間',
+
+
+
+
+        error: e?.response?.data?.error || '尚未到簽到時間',
+
+
+
+
 
 
 
@@ -1046,7 +2090,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
       }
+
+
+
+
 
 
 
@@ -1054,7 +2106,19 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
   }
+
+
+
+
+
+
+
+
 
 
 
@@ -1070,7 +2134,19 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
+
+
+
+
   const value = {
+
+
+
+
 
 
 
@@ -1078,7 +2154,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     hydrated,
+
+
+
+
 
 
 
@@ -1086,7 +2170,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     lastClaimAt: wallet.lastClaimAt,
+
+
+
+
 
 
 
@@ -1094,7 +2186,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     addCoins,
+
+
+
+
 
 
 
@@ -1102,7 +2202,15 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     claimDaily,
+
+
+
+
 
 
 
@@ -1110,11 +2218,23 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
     nextClaimInMs,
 
 
 
+
+
+
+
     refreshWallet
+
+
+
+
 
 
 
@@ -1126,7 +2246,19 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
+
+
+
+
   return (
+
+
+
+
 
 
 
@@ -1134,11 +2266,27 @@ export const CoinProvider = ({ children }) => {
 
 
 
+
+
+
+
   )
 
 
 
+
+
+
+
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -1150,7 +2298,15 @@ export const useCoin = () => {
 
 
 
+
+
+
+
   const ctx = useContext(CoinContext)
+
+
+
+
 
 
 
@@ -1158,11 +2314,28 @@ export const useCoin = () => {
 
 
 
+
+
+
+
   return ctx
 
 
 
+
+
+
+
 }
+
+
+
+
+
+
+
+
+
 
 
 
