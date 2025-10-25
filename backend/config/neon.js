@@ -1,4 +1,4 @@
-﻿const { Pool } = require('pg');
+﻿const { createPool } = require('@vercel/postgres');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
@@ -23,14 +23,25 @@ const msUntilNextTaipeiMidnight = (timestamp, now = Date.now()) => {
   return Math.max(0, next - now);
 };
 
+const getTaipeiDayKey = (value = Date.now()) => {
+  const ts = typeof value === 'number' ? value : toTimestamp(value);
+  if (ts === null) return null;
+  const taipei = new Date(ts + TAIPEI_OFFSET_MS);
+  return taipei.toISOString().slice(0, 10);
+};
+
 class NeonDatabase {
   constructor() {
-    this.pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: {
-        rejectUnauthorized: false
-      }
-    });
+    const connectionString =
+      process.env.POSTGRES_PRISMA_URL ||
+      process.env.POSTGRES_URL ||
+      process.env.DATABASE_URL;
+
+    if (!connectionString) {
+      throw new Error('Missing Postgres connection string. Did you link Vercel Postgres (Neon)?');
+    }
+
+    this.pool = createPool({ connectionString });
     this.initializeTables();
   }
 
@@ -193,6 +204,16 @@ class NeonDatabase {
         )
       `);
       await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS coin_daily_claims (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          claim_key DATE NOT NULL,
+          amount INTEGER NOT NULL DEFAULT 0,
+          claimed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE (user_id, claim_key)
+        )
+      `);
+      await this.pool.query(`
         CREATE TABLE IF NOT EXISTS coin_orders (
           id SERIAL PRIMARY KEY,
           user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -210,9 +231,9 @@ class NeonDatabase {
         ADD COLUMN IF NOT EXISTS user_email VARCHAR(255)
       `);
 
-      console.log('✅ PostgreSQL 資料表初始化完成');
+      console.log('? PostgreSQL 資料表初始化完成');
     } catch (error) {
-      console.error('❌ PostgreSQL 資料表初始化失敗:', error);
+      console.error('? PostgreSQL 資料表初始化失敗:', error);
     }
   }
 
@@ -554,41 +575,63 @@ class NeonDatabase {
       );
 
       const now = Date.now();
-      const walletRes = await client.query(
-        `SELECT balance, last_claim_at FROM coin_wallets WHERE user_id = $1 FOR UPDATE`,
-        [userId]
-      );
-      const row = walletRes.rows[0] || { balance: 0, last_claim_at: null };
-
-      const lastTs = toTimestamp(row.last_claim_at);
-      if (lastTs !== null) {
-        const remaining = msUntilNextTaipeiMidnight(lastTs, now);
-        if (remaining > 0) {
-          await client.query('ROLLBACK');
-          return { success: false, nextClaimInMs: remaining };
-        }
+      const dayKey = getTaipeiDayKey(now);
+      if (!dayKey) {
+        throw new Error('Unable to derive Taipei day key for claim');
       }
 
-      const nextBalance = Number(row.balance || 0) + Math.max(0, Number(reward) || 0);
+      const normalizedReward = Math.max(0, Number(reward) || 0);
+
+      const claimInsert = await client.query(
+        `INSERT INTO coin_daily_claims (user_id, claim_key, amount, claimed_at)
+         VALUES ($1, $2, $3, TO_TIMESTAMP($4 / 1000.0))
+         ON CONFLICT (user_id, claim_key) DO NOTHING
+         RETURNING claimed_at`,
+        [userId, dayKey, normalizedReward, now]
+      );
+
+      if (!claimInsert.rowCount) {
+        const existing = await client.query(
+          `SELECT claimed_at FROM coin_daily_claims
+           WHERE user_id = $1 AND claim_key = $2
+           LIMIT 1`,
+          [userId, dayKey]
+        );
+        const claimedAt = existing.rows[0]?.claimed_at ?? null;
+        const referenceTs = claimedAt ? toTimestamp(claimedAt) : now;
+        const remaining = msUntilNextTaipeiMidnight(referenceTs, now);
+        await client.query('ROLLBACK');
+        return { success: false, nextClaimInMs: remaining };
+      }
+
       const lastClaimISO = new Date(now).toISOString();
 
-      await client.query(
-        `UPDATE coin_wallets SET balance = $1, last_claim_at = $2, updated_at = $2 WHERE user_id = $3`,
-        [nextBalance, lastClaimISO, userId]
+      const walletRes = await client.query(
+        `UPDATE coin_wallets
+         SET balance = balance + $2,
+             last_claim_at = $3,
+             updated_at = $3
+         WHERE user_id = $1
+         RETURNING balance, last_claim_at`,
+        [userId, normalizedReward, lastClaimISO]
       );
 
       await client.query(
         `INSERT INTO coin_transactions (user_id, type, amount, reason, created_at)
          VALUES ($1, 'claim', $2, '每日簽到', $3)`,
-        [userId, reward, lastClaimISO]
+        [userId, normalizedReward, lastClaimISO]
       );
 
       await client.query('COMMIT');
 
       return {
         success: true,
-        amount: Math.max(0, Number(reward) || 0),
-        wallet: { user_id: userId, balance: nextBalance, last_claim_at: lastClaimISO }
+        amount: normalizedReward,
+        wallet: {
+          user_id: userId,
+          balance: walletRes.rows[0]?.balance ?? normalizedReward,
+          last_claim_at: walletRes.rows[0]?.last_claim_at ?? lastClaimISO
+        }
       };
     } catch (error) {
       await client.query('ROLLBACK');
@@ -597,7 +640,6 @@ class NeonDatabase {
       client.release();
     }
   }
-
   async getCoinHistory(userId, limit = 50) {
     const res = await this.pool.query(
       `SELECT type, amount, reason, created_at
@@ -665,7 +707,7 @@ class NeonDatabase {
       .replace(/-+/g, '-') // 多個連字符合併為一個
       .trim('-'); // 移除首尾連字符
 
-    console.log('🔗 生成 slug:', { title, slug });
+    console.log('?? 生成 slug:', { title, slug });
     return slug;
   }
 
@@ -676,7 +718,7 @@ class NeonDatabase {
     for (let i = 0; i < length; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    console.log('🎲 生成隨機 slug:', result);
+    console.log('?? 生成隨機 slug:', result);
     return result;
   }
 
@@ -719,7 +761,7 @@ class NeonDatabase {
       RETURNING id, title, slug, content, published, created_at, updated_at
     `, [title, uniqueSlug, content, published]);
 
-    console.log('🗄️ 資料庫返回的公告數據:', result.rows[0]);
+    console.log('??? 資料庫返回的公告數據:', result.rows[0]);
     return result.rows[0];
   }
 
@@ -745,7 +787,7 @@ class NeonDatabase {
     }
 
     const result = await this.pool.query(query, params);
-    console.log('📋 資料庫查詢結果:', result.rows.map(row => ({
+    console.log('?? 資料庫查詢結果:', result.rows.map(row => ({
       id: row.id,
       title: row.title,
       slug: row.slug,
@@ -759,7 +801,7 @@ class NeonDatabase {
       'SELECT id, title, slug, content, published, created_at, updated_at FROM announcements WHERE slug = $1',
       [slug]
     );
-    console.log('📋 按 slug 查詢結果:', result.rows[0]);
+    console.log('?? 按 slug 查詢結果:', result.rows[0]);
     return result.rows[0] || null;
   }
 
@@ -768,7 +810,7 @@ class NeonDatabase {
       'SELECT id, title, slug, content, published, created_at, updated_at FROM announcements WHERE id = $1',
       [id]
     );
-    console.log('📋 按 ID 查詢結果:', result.rows[0]);
+    console.log('?? 按 ID 查詢結果:', result.rows[0]);
     return result.rows[0] || null;
   }
 
@@ -815,7 +857,7 @@ class NeonDatabase {
     }
 
     const result = await this.pool.query(query, params);
-    console.log('📝 更新公告結果:', result.rows[0]);
+    console.log('?? 更新公告結果:', result.rows[0]);
     return result.rows[0];
   }
 
@@ -862,7 +904,7 @@ class NeonDatabase {
     }
 
     const result = await this.pool.query(query, params);
-    console.log('📝 按ID更新公告結果:', result.rows[0]);
+    console.log('?? 按ID更新公告結果:', result.rows[0]);
     return result.rows[0];
   }
 
@@ -891,7 +933,7 @@ class NeonDatabase {
       'DELETE FROM announcements WHERE slug = $1 RETURNING id, title, slug, content, published, created_at, updated_at',
       [slug]
     );
-    console.log('🗑️ 刪除公告結果:', result.rows[0]);
+    console.log('??? 刪除公告結果:', result.rows[0]);
     return result.rows[0];
   }
 
@@ -900,7 +942,7 @@ class NeonDatabase {
       'DELETE FROM announcements WHERE id = $1 RETURNING id, title, slug, content, published, created_at, updated_at',
       [id]
     );
-    console.log('🗑️ 按ID刪除公告結果:', result.rows[0]);
+    console.log('??? 按ID刪除公告結果:', result.rows[0]);
     return result.rows[0];
   }
 
@@ -926,7 +968,7 @@ class NeonDatabase {
       const userCount = await this.pool.query('SELECT COUNT(*) FROM users');
       
       if (parseInt(userCount.rows[0].count) === 0) {
-        console.log('📝 創建默認管理員用戶...');
+        console.log('?? 創建默認管理員用戶...');
         const bcrypt = require('bcryptjs');
         const hashedPassword = await bcrypt.hash('admin', 10);
         
@@ -936,14 +978,14 @@ class NeonDatabase {
           role: 'admin'
         });
         
-        console.log('✅ 默認管理員用戶創建成功 (用戶名: CRCRC, 密碼: admin)');
+        console.log('? 默認管理員用戶創建成功 (用戶名: CRCRC, 密碼: admin)');
       }
 
       // 檢查是否已有頻道資訊
       const channelInfo = await this.getChannelInfo();
       
       if (!channelInfo.channel_name) {
-        console.log('📝 創建默認頻道資訊...');
+        console.log('?? 創建默認頻道資訊...');
         await this.updateChannelInfo({
           channel_name: 'CRCRC',
           description: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！',
@@ -953,14 +995,14 @@ class NeonDatabase {
           subscriber_count: 0,
           total_views: 0
         });
-        console.log('✅ 默認頻道資訊創建成功');
+        console.log('? 默認頻道資訊創建成功');
       }
 
       // 檢查是否已有示例影片
       const videoCount = await this.pool.query('SELECT COUNT(*) FROM videos');
       
       if (parseInt(videoCount.rows[0].count) === 0) {
-        console.log('📝 創建示例影片數據...');
+        console.log('?? 創建示例影片數據...');
         
         // 不創建示例影片，讓管理員自己添加真實影片
         const sampleVideos = [];
@@ -969,9 +1011,9 @@ class NeonDatabase {
           for (const video of sampleVideos) {
             await this.createVideo(video);
           }
-          console.log('✅ 示例影片數據創建成功');
+          console.log('? 示例影片數據創建成功');
         } else {
-          console.log('ℹ️  跳過示例影片創建，請在管理後台添加真實影片');
+          console.log('??  跳過示例影片創建，請在管理後台添加真實影片');
         }
       }
 
@@ -981,18 +1023,18 @@ class NeonDatabase {
       const siteTitle = await this.getSiteSetting('site_title');
 
       if (!siteTitle) {
-        console.log('📝 創建默認網站設置...');
+        console.log('?? 創建默認網站設置...');
         await this.setSiteSetting('site_title', 'CRCRC 官方網站');
         await this.setSiteSetting('site_description', '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！');
         await this.setSiteSetting('contact_email', 'contact@crcrc.com');
         await this.setSiteSetting('featured_video_count', '6');
-        console.log('✅ 默認網站設置創建成功');
+        console.log('? 默認網站設置創建成功');
       }
 
-      console.log('🎉 PostgreSQL 數據庫初始化完成！');
+      console.log('?? PostgreSQL 數據庫初始化完成！');
       return true;
     } catch (error) {
-      console.error('❌ PostgreSQL 數據庫初始化失敗:', error);
+      console.error('? PostgreSQL 數據庫初始化失敗:', error);
       throw error;
     }
   }
@@ -1030,3 +1072,10 @@ class NeonDatabase {
 }
 
 module.exports = new NeonDatabase();
+
+
+
+
+
+
+

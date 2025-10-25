@@ -1,137 +1,81 @@
-﻿// 資料庫配置
-console.log('========================================');
-console.log('🔧 資料庫配置檢查');
-console.log('========================================');
+const redacted = (value = '') => {
+  if (!value) return '[empty]';
+  if (value.length <= 12) return value;
+  return `${value.slice(0, 6)}…${value.slice(-4)}`;
+};
 
-// 列出所有可能的資料庫環境變數
-const allEnvVars = Object.keys(process.env).filter(key => 
-  key.includes('DATABASE') || 
-  key.includes('POSTGRES') || 
-  key.includes('SUPABASE') ||
-  key.includes('DB')
-);
-
-console.log('📋 找到的資料庫相關環境變數:', allEnvVars.length > 0 ? allEnvVars : '無');
-allEnvVars.forEach(key => {
-  const value = process.env[key];
-  const preview = value ? `${value.substring(0, 30)}...` : '[EMPTY]';
-  console.log(`  ${key}: ${preview}`);
-});
-
-// 支援多種 Vercel Supabase 整合的環境變數名稱
-const primaryDbKeys = [
-  'DATABASE_URL',
-  'POSTGRES_URL',
+const PRIMARY_KEYS = [
   'POSTGRES_PRISMA_URL',
+  'POSTGRES_URL',
   'POSTGRES_URL_NON_POOLING',
-  'DB_CONNECTION_STRING',
-  'DB_URL',
   'SUPABASE_DB_URL',
-  'SUPABASE_DB_CONNECTION_STRING',
   'SUPABASE_POSTGRES_URL',
-  'SUPABASE_CONNECTION_STRING',
-  'SUPABASE_PG_URL',
-  'SUPABASE_DB'
+  'DATABASE_URL'
 ];
 
-let dbUrl = null;
-let dbUrlKey = null;
-
-for (const key of primaryDbKeys) {
-  const value = process.env[key];
-  if (typeof value === 'string' && value.trim()) {
-    dbUrl = value.trim();
-    dbUrlKey = key;
-    break;
-  }
-}
-
-if (!dbUrl) {
-  for (const key of allEnvVars) {
-    const value = process.env[key];
-    if (typeof value === 'string' && /^postgres(ql)?:\/\//i.test(value.trim())) {
-      dbUrl = value.trim();
-      dbUrlKey = key;
-      break;
+const detectConnectionString = () => {
+  for (const key of PRIMARY_KEYS) {
+    const candidate = process.env[key];
+    if (candidate && typeof candidate === 'string' && candidate.trim()) {
+      return { key, value: candidate.trim() };
     }
   }
-}
 
-const connectionLogMessage = dbUrl && dbUrlKey
-  ? '已找到 (' + dbUrlKey + ')'
-  : '未找到';
-console.log('🎯 選擇的資料庫 URL:', connectionLogMessage);
+  const fallbackKey = Object.keys(process.env).find((envKey) =>
+    /^postgres(ql)?:\/\//i.test(process.env[envKey] || '')
+  );
 
+  return fallbackKey
+    ? { key: fallbackKey, value: process.env[fallbackKey].trim() }
+    : null;
+};
+
+const connection = detectConnectionString();
 const allowKvFallback = process.env.ALLOW_KV_FALLBACK === 'true';
-const vercelFlag = (() => {
-  const raw = String(process.env.VERCEL || '').toLowerCase();
-  if (!raw) return false;
-  return raw !== '0' && raw !== 'false';
-})();
-const vercelEnv = String(process.env.VERCEL_ENV || '').toLowerCase();
-const nodeEnv = String(process.env.NODE_ENV || '').toLowerCase();
-const isProdLike = vercelFlag || nodeEnv === 'production' || ['production', 'preview'].includes(vercelEnv);
+const isProdLike =
+  ['production', 'preview'].includes(String(process.env.VERCEL_ENV).toLowerCase()) ||
+  String(process.env.NODE_ENV).toLowerCase() === 'production' ||
+  String(process.env.VERCEL || '').toLowerCase() === '1';
 
-console.log('🧭 環境診斷:', {
-  nodeEnv,
-  vercelFlag,
-  vercelEnv,
-  allowKvFallback
-});
-
-if (!dbUrl) {
-  if (isProdLike && !allowKvFallback) {
-    console.error('❌ 在 production/VERCEL 環境找不到 PostgreSQL 連線字串，拒絕改用暫存 KV。');
-    throw new Error('Missing PostgreSQL connection string. Set DATABASE_URL or related env.');
-  }
-  console.warn('⚠️ 未找到 PostgreSQL 連線字串，將改用暫存 KV（僅建議本地開發）');
+if (!connection && !allowKvFallback) {
+  const message =
+    'No Postgres connection string found. Vercel Storage (Neon) is required for this project. ' +
+    'Please link Postgres and expose POSTGRES_URL / POSTGRES_PRISMA_URL to the deployment.';
+  console.error('[database] ❌', message);
+  throw new Error(message);
 }
 
-if (dbUrl) {
-  // 設定統一環境變數供 neon.js 使用
+if (connection) {
   if (!process.env.DATABASE_URL) {
-    process.env.DATABASE_URL = dbUrl;
+    process.env.DATABASE_URL = connection.value;
   }
-  
-  const database = require('./neon');
-  console.log('✅ 使用 PostgreSQL 資料庫');
-  console.log('   主機:', dbUrl.split('@')[1]?.split(':')[0] || '未知');
-  console.log('========================================');
-  module.exports = database;
-} else {
-  // 開發環境或沒有設置 DATABASE_URL 時使用 KV 數據庫
-  console.log('🔗 資料庫: 開發模式 - 使用內存數據庫');
-  console.log('  提示: 要使用 PostgreSQL 資料庫，請設置 DATABASE_URL 環境變數');
 
-  // 創建一個模擬的 KV 數據庫
+  console.log('[database] ✅ Using Postgres via', connection.key, redacted(connection.value));
+  module.exports = require('./neon');
+} else {
+  if (!isProdLike) {
+    console.warn('[database] ⚠️ Falling back to in-memory KV store (development only).');
+  } else {
+    console.warn('[database] ⚠️ ALLOW_KV_FALLBACK enabled – using in-memory KV as a last resort.');
+  }
+
   const mockKV = {
-    data: new Map(),
+    map: new Map(),
     sets: new Map(),
 
-    async hset(key, data) {
-      if (!this.data.has(key)) {
-        this.data.set(key, new Map());
-      }
-      const hash = this.data.get(key);
-      if (typeof data === 'object') {
-        Object.entries(data).forEach(([k, v]) => hash.set(k, v));
-      }
+    async hset(key, values = {}) {
+      const current = this.map.get(key) || {};
+      this.map.set(key, { ...current, ...values });
       return true;
     },
 
     async hgetall(key) {
-      const hash = this.data.get(key);
-      if (!hash) return {};
-      const result = {};
-      hash.forEach((value, key) => {
-        result[key] = value;
-      });
-      return result;
+      return this.map.get(key) || {};
     },
 
     async hget(key, field) {
-      const hash = this.data.get(key);
-      return hash ? hash.get(field) : null;
+      const obj = this.map.get(key) || {};
+      return obj[field] ?? null;
     },
 
     async sadd(key, value) {
@@ -143,27 +87,22 @@ if (dbUrl) {
     },
 
     async smembers(key) {
-      const set = this.sets.get(key);
-      return set ? Array.from(set) : [];
+      return Array.from(this.sets.get(key) || []);
     },
 
     async srem(key, value) {
-      const set = this.sets.get(key);
-      if (set) {
-        set.delete(value);
-      }
+      this.sets.get(key)?.delete(value);
       return true;
     },
 
     async del(key) {
-      this.data.delete(key);
+      this.map.delete(key);
       this.sets.delete(key);
       return true;
     }
   };
 
-  const database = require('./kv');
-  // 替換 KV 實例
-  database.kv = mockKV;
-  module.exports = database;
+  const kvDatabase = require('./kv');
+  kvDatabase.kv = mockKV;
+  module.exports = kvDatabase;
 }
