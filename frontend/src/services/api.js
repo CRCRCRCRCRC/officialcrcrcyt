@@ -1,8 +1,34 @@
 import axios from 'axios'
 
+const resolveApiBaseUrl = () => {
+  const envBase =
+    import.meta?.env?.VITE_API_BASE_URL ||
+    (typeof window !== 'undefined' ? window.API_BASE_URL : '')
+  const trimmed = (envBase || '').trim()
+  if (trimmed) {
+    if (/^https?:\/\//i.test(trimmed)) {
+      return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed
+    }
+    if (trimmed.startsWith('/')) {
+      return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed
+    }
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      const origin = window.location.origin.replace(/\/$/, '')
+      const path = trimmed.replace(/^\/+/, '')
+      return `${origin}/${path}`
+    }
+    return `/${trimmed.replace(/^\/+/, '')}`
+  }
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    const origin = window.location.origin.replace(/\/$/, '')
+    return `${origin}/api`
+  }
+  return '/api'
+}
+
 // 創建 axios 實例
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: resolveApiBaseUrl(),
   timeout: 60000,
 })
 
