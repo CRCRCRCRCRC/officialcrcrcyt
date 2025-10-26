@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings } from 'lucide-react'
+import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings, Bell } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
+import { useCoin } from '../contexts/CoinContext'
 import GoogleLoginButtonPublic from './GoogleLoginButtonPublic'
 import CRCRCoinWidget from './CRCRCoinWidget'
 import ProfileSettingsModal from './ProfileSettingsModal'
@@ -23,6 +24,7 @@ const Header = () => {
   const [showProfileModal, setShowProfileModal] = useState(false)
   const location = useLocation()
   const { user, logout, updateProfile } = useWebsiteAuth()
+  const { hasNewNotifications } = useCoin()
   const userMenuRef = useRef(null)
 
   const userDisplayName = user?.displayName || user?.name || user?.username || user?.email
@@ -106,6 +108,16 @@ const Header = () => {
                   <MessageCircle className="w-5 h-5" />
                 </a>
 
+                <Link
+                  to="/notifications"
+                  className="relative rounded-full p-2 text-gray-600 hover:text-primary-600 transition-colors duration-200"
+                  aria-label="通知中心"
+                >
+                  <Bell className="w-5 h-5" />
+                  {hasNewNotifications && (
+                    <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
+                  )}
+                </Link>
                 <CRCRCoinWidget compact />
                 {user ? (
                   <div className="relative" ref={userMenuRef}>
@@ -190,6 +202,20 @@ const Header = () => {
                       {item.name}
                     </Link>
                   ))}
+
+                  <Link
+                    to="/notifications"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    <Bell className="w-4 h-4" />
+                    通知中心
+                    {hasNewNotifications && (
+                      <span className="ml-auto inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-600">
+                        新
+                      </span>
+                    )}
+                  </Link>
 
                   {/* Mobile Social Links */}
                   <div className="flex items-center space-x-4 px-4 pt-4 border-t border-gray-200">

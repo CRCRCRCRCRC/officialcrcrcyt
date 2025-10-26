@@ -12,6 +12,7 @@ import Wallet from './pages/Wallet'
 import Shop from './pages/Shop'
 import Pass from './pages/Pass'
 import Leaderboard from './pages/Leaderboard'
+import Notifications from './pages/Notifications'
 
 import AdminLogin from './pages/admin/Login'
 import AdminDashboard from './pages/admin/Dashboard'
@@ -43,6 +44,7 @@ function App() {
             <Route path="shop" element={<Shop />} />
             <Route path="pass" element={<Pass />} />
             <Route path="leaderboard" element={<Leaderboard />} />
+            <Route path="notifications" element={<Notifications />} />
 
           </Route>
 

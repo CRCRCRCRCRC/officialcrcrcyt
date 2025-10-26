@@ -385,6 +385,7 @@ export const CoinProvider = ({ children }) => {
 
 
   const [nextClaimInMs, setNextClaimInMs] = useState(0)
+  const [hasNewNotifications, setHasNewNotifications] = useState(false)
 
 
 
@@ -469,8 +470,11 @@ export const CoinProvider = ({ children }) => {
   const notifyPromotionUpdates = async () => {
     if (!isLoggedIn) return
     try {
-      const res = await coinAPI.getNotifications()
+      const res = await coinAPI.getNotifications('new')
       const notifications = res.data?.notifications || []
+      if (notifications.length > 0) {
+        setHasNewNotifications(true)
+      }
       notifications.forEach((notification) => {
         const message = notification.message || ''
         if (!message) return
@@ -505,6 +509,7 @@ export const CoinProvider = ({ children }) => {
 
     if (!isLoggedIn) {
       notificationFetchedRef.current = false
+      setHasNewNotifications(false)
 
 
 
@@ -4291,6 +4296,7 @@ export const CoinProvider = ({ children }) => {
 
 
   const canClaimNow = isLoggedIn && hydrated && nextClaimInMs <= 0
+  const markNotificationsRead = () => setHasNewNotifications(false)
 
 
 
@@ -4403,6 +4409,8 @@ export const CoinProvider = ({ children }) => {
 
 
     history: wallet.history || [],
+    hasNewNotifications,
+    markNotificationsRead,
 
 
 

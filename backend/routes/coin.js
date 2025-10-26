@@ -709,7 +709,12 @@ router.get('/history', authenticateToken, async (req, res) => {
 
 router.get('/notifications', authenticateToken, async (req, res) => {
   try {
-    const rows = await database.getCoinOrderNotifications(req.user.id);
+    const mode = (req.query.mode || 'new').toString().toLowerCase();
+    const fetcher =
+      mode === 'all'
+        ? database.listCoinOrderNotifications(req.user.id)
+        : database.getCoinOrderNotifications(req.user.id);
+    const rows = await fetcher;
     const notifications = (rows || [])
       .map((order) => {
         const product = SHOP_PRODUCTS.find((item) => item.id === order.product_id);
@@ -729,9 +734,13 @@ router.get('/notifications', authenticateToken, async (req, res) => {
         return {
           id: order.id,
           productId: order.product_id,
+          productName: order.product_name,
           status: order.status,
           message,
-          variant
+          variant,
+          price: Number(order.price) || 0,
+          createdAt: order.created_at || null,
+          notifiedAt: order.notified_at || null
         };
       })
       .filter(Boolean);
@@ -739,6 +748,23 @@ router.get('/notifications', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('取得通知失敗:', error);
     res.status(500).json({ error: '無法取得通知' });
+  }
+});
+
+router.delete('/notifications/:notificationId', authenticateToken, async (req, res) => {
+  try {
+    const notificationId = req.params.notificationId;
+    if (!notificationId) {
+      return res.status(400).json({ error: '缺少通知編號' });
+    }
+    const result = await database.dismissCoinOrderNotification(notificationId, req.user.id);
+    if (!result) {
+      return res.status(404).json({ error: '找不到通知或已刪除' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('刪除通知失敗:', error);
+    res.status(500).json({ error: '無法刪除通知' });
   }
 });
 

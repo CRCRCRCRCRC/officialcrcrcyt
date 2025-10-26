@@ -249,8 +249,10 @@ export const coinAPI = {
     api.get('/coin/orders', { params }),
   decideOrder: (orderId, payload) =>
     api.post(`/coin/orders/${orderId}/decision`, payload),
-  getNotifications: () =>
-    api.get('/coin/notifications'),
+  getNotifications: (mode = 'new') =>
+    api.get('/coin/notifications', { params: { mode } }),
+  dismissNotification: (notificationId) =>
+    api.delete(`/coin/notifications/${notificationId}`),
   // 獲取排行榜（公開）
   getLeaderboard: (limit = 20) =>
     api.get('/coin/leaderboard', { params: { limit } })

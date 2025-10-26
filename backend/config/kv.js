@@ -518,6 +518,7 @@ class KVDatabase {
       resolved_at: orderData.resolved_at || null,
       resolved_by: orderData.resolved_by || null,
       notified_at: orderData.notified_at || null,
+      dismissed_at: orderData.dismissed_at || null,
       decision_note: orderData.decision_note || null,
       created_at: now
     };
@@ -548,6 +549,7 @@ class KVDatabase {
           resolved_at: order.resolved_at || null,
           resolved_by: order.resolved_by || null,
           notified_at: order.notified_at || null,
+          dismissed_at: order.dismissed_at || null,
           decision_note: order.decision_note || null,
           created_at: order.created_at
         });
@@ -591,7 +593,8 @@ class KVDatabase {
       resolved_at: new Date().toISOString(),
       resolved_by: adminId,
       decision_note: note || null,
-      notified_at: null
+      notified_at: null,
+      dismissed_at: null
     };
     await this.kv.hset(orderId, payload);
     return { ...order, ...payload };
@@ -607,19 +610,64 @@ class KVDatabase {
         order.user_id === userId &&
         order.status &&
         ['accepted', 'rejected'].includes(order.status) &&
-        !order.notified_at
+        !order.notified_at &&
+        !order.dismissed_at
       ) {
         notifications.push({
           id: order.id,
           product_id: order.product_id,
           product_name: order.product_name,
           price: Number(order.price) || 0,
-          status: order.status
+          status: order.status,
+          created_at: order.created_at,
+          notified_at: null
         });
         await this.kv.hset(id, { notified_at: new Date().toISOString() });
       }
     }
     return notifications;
+  }
+
+  async listCoinOrderNotifications(userId) {
+    const ids = await this.kv.smembers('coin_orders');
+    const notifications = [];
+    const nowISO = new Date().toISOString();
+    for (const id of ids) {
+      const order = await this.kv.hgetall(id);
+      if (
+        order &&
+        order.user_id === userId &&
+        order.status &&
+        ['accepted', 'rejected'].includes(order.status) &&
+        !order.dismissed_at
+      ) {
+        notifications.push({
+          id: order.id,
+          product_id: order.product_id,
+          product_name: order.product_name,
+          price: Number(order.price) || 0,
+          status: order.status,
+          created_at: order.created_at,
+          notified_at: order.notified_at || null
+        });
+        if (!order.notified_at) {
+          await this.kv.hset(id, { notified_at: nowISO });
+        }
+      }
+    }
+    notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return notifications;
+  }
+
+  async dismissCoinOrderNotification(orderId, userId) {
+    if (!orderId) return null;
+    const order = await this.kv.hgetall(orderId);
+    if (!order || order.user_id !== userId || order.dismissed_at) {
+      return null;
+    }
+    const payload = { dismissed_at: new Date().toISOString() };
+    await this.kv.hset(orderId, payload);
+    return { id: orderId };
   }
 
   // 獲取 CRCRCoin 排行榜

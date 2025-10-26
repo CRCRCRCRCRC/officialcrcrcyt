@@ -227,6 +227,7 @@ class NeonDatabase {
           resolved_at TIMESTAMP,
           resolved_by INTEGER,
           notified_at TIMESTAMP,
+          dismissed_at TIMESTAMP,
           decision_note TEXT,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -254,6 +255,10 @@ class NeonDatabase {
       await this.pool.query(`
         ALTER TABLE coin_orders
         ADD COLUMN IF NOT EXISTS decision_note TEXT
+      `);
+      await this.pool.query(`
+        ALTER TABLE coin_orders
+        ADD COLUMN IF NOT EXISTS dismissed_at TIMESTAMP
       `);
 
       console.log('? PostgreSQL 資料表初始化完成');
@@ -704,6 +709,7 @@ class NeonDatabase {
     const res = await this.pool.query(
       `SELECT o.id, o.user_id, o.product_id, o.product_name, o.price, o.discord_id, o.status,
               o.user_email, o.promotion_content, o.resolved_at, o.resolved_by, o.notified_at,
+              o.dismissed_at,
               o.decision_note, o.created_at, u.username AS current_username
        FROM coin_orders o
        LEFT JOIN users u ON u.id = o.user_id
@@ -725,6 +731,7 @@ class NeonDatabase {
       resolved_at: row.resolved_at || null,
       resolved_by: row.resolved_by || null,
       notified_at: row.notified_at || null,
+      dismissed_at: row.dismissed_at || null,
       decision_note: row.decision_note || null,
       created_at: row.created_at
     }));
@@ -735,7 +742,7 @@ class NeonDatabase {
     const res = await this.pool.query(
       `SELECT id, user_id, product_id, product_name, price, discord_id, status,
               user_email, promotion_content, resolved_at, resolved_by, notified_at,
-              decision_note, created_at
+              dismissed_at, decision_note, created_at
        FROM coin_orders
        WHERE id = $1`,
       [orderId]
@@ -757,6 +764,7 @@ class NeonDatabase {
       resolved_at: row.resolved_at || null,
       resolved_by: row.resolved_by || null,
       notified_at: row.notified_at || null,
+      dismissed_at: row.dismissed_at || null,
       decision_note: row.decision_note || null,
       created_at: row.created_at
     };
@@ -769,7 +777,8 @@ class NeonDatabase {
            resolved_at = CURRENT_TIMESTAMP,
            resolved_by = $3,
            decision_note = $4,
-           notified_at = NULL
+           notified_at = NULL,
+           dismissed_at = NULL
        WHERE id = $1
        RETURNING id`,
       [orderId, status, adminId, note || null]
@@ -782,11 +791,12 @@ class NeonDatabase {
 
   async getCoinOrderNotifications(userId) {
     const res = await this.pool.query(
-      `SELECT id, product_id, product_name, price, status
+      `SELECT id, product_id, product_name, price, status, created_at
        FROM coin_orders
        WHERE user_id = $1
          AND status IN ('accepted', 'rejected')
-         AND notified_at IS NULL`,
+         AND notified_at IS NULL
+         AND dismissed_at IS NULL`,
       [userId]
     );
     const ids = res.rows.map((row) => row.id);
@@ -803,8 +813,52 @@ class NeonDatabase {
       product_id: row.product_id,
       product_name: row.product_name,
       price: Number(row.price) || 0,
-      status: row.status
+      status: row.status,
+      created_at: row.created_at,
+      notified_at: null
     }));
+  }
+
+  async listCoinOrderNotifications(userId) {
+    const res = await this.pool.query(
+      `SELECT id, product_id, product_name, price, status, created_at, notified_at
+       FROM coin_orders
+       WHERE user_id = $1
+         AND status IN ('accepted', 'rejected')
+         AND dismissed_at IS NULL
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+    const ids = res.rows.filter((row) => !row.notified_at).map((row) => row.id);
+    if (ids.length) {
+      await this.pool.query(
+        `UPDATE coin_orders
+         SET notified_at = CURRENT_TIMESTAMP
+         WHERE user_id = $1 AND id = ANY($2::int[])`,
+        [userId, ids]
+      );
+    }
+    return res.rows.map((row) => ({
+      id: row.id,
+      product_id: row.product_id,
+      product_name: row.product_name,
+      price: Number(row.price) || 0,
+      status: row.status,
+      created_at: row.created_at,
+      notified_at: row.notified_at
+    }));
+  }
+
+  async dismissCoinOrderNotification(orderId, userId) {
+    if (!orderId) return null;
+    const res = await this.pool.query(
+      `UPDATE coin_orders
+       SET dismissed_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND user_id = $2 AND dismissed_at IS NULL
+       RETURNING id`,
+      [orderId, userId]
+    );
+    return res.rows[0] || null;
   }
 
   // 生成 slug
