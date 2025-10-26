@@ -22,6 +22,12 @@
   ::selection {
     @apply bg-primary-500/20 text-primary-900;
   }
+
+  :is(button, a).inline-flex,
+  :is(button, a).btn,
+  .force-nowrap {
+    @apply whitespace-nowrap;
+  }
 }
 
 @layer components {
