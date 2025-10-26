@@ -514,6 +514,11 @@ class KVDatabase {
       discord_id: orderData.discord_id,
       status: orderData.status || 'pending',
       user_email: orderData.user_email || null,
+      promotion_content: orderData.promotion_content || null,
+      resolved_at: orderData.resolved_at || null,
+      resolved_by: orderData.resolved_by || null,
+      notified_at: orderData.notified_at || null,
+      decision_note: orderData.decision_note || null,
       created_at: now
     };
 
@@ -539,6 +544,11 @@ class KVDatabase {
           discord_id: order.discord_id,
           status: order.status || 'pending',
           user_email: order.user_email || null,
+          promotion_content: order.promotion_content || null,
+          resolved_at: order.resolved_at || null,
+          resolved_by: order.resolved_by || null,
+          notified_at: order.notified_at || null,
+          decision_note: order.decision_note || null,
           created_at: order.created_at
         });
       }
@@ -547,6 +557,69 @@ class KVDatabase {
     orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     const max = Math.max(1, Math.min(500, parseInt(limit) || 100));
     return orders.slice(0, max);
+  }
+
+  async getCoinOrderById(orderId) {
+    if (!orderId) return null;
+    const order = await this.kv.hgetall(orderId);
+    if (!order || Object.keys(order).length === 0) {
+      return null;
+    }
+    return {
+      id: order.id,
+      user_id: order.user_id,
+      product_id: order.product_id,
+      product_name: order.product_name,
+      price: Number(order.price) || 0,
+      discord_id: order.discord_id,
+      status: order.status || 'pending',
+      user_email: order.user_email || null,
+      promotion_content: order.promotion_content || null,
+      resolved_at: order.resolved_at || null,
+      resolved_by: order.resolved_by || null,
+      notified_at: order.notified_at || null,
+      decision_note: order.decision_note || null,
+      created_at: order.created_at
+    };
+  }
+
+  async updateCoinOrderStatus(orderId, status, { adminId = null, note = null } = {}) {
+    const order = await this.getCoinOrderById(orderId);
+    if (!order) return null;
+    const payload = {
+      status,
+      resolved_at: new Date().toISOString(),
+      resolved_by: adminId,
+      decision_note: note || null,
+      notified_at: null
+    };
+    await this.kv.hset(orderId, payload);
+    return { ...order, ...payload };
+  }
+
+  async getCoinOrderNotifications(userId) {
+    const ids = await this.kv.smembers('coin_orders');
+    const notifications = [];
+    for (const id of ids) {
+      const order = await this.kv.hgetall(id);
+      if (
+        order &&
+        order.user_id === userId &&
+        order.status &&
+        ['accepted', 'rejected'].includes(order.status) &&
+        !order.notified_at
+      ) {
+        notifications.push({
+          id: order.id,
+          product_id: order.product_id,
+          product_name: order.product_name,
+          price: Number(order.price) || 0,
+          status: order.status
+        });
+        await this.kv.hset(id, { notified_at: new Date().toISOString() });
+      }
+    }
+    return notifications;
   }
 
   // 獲取 CRCRCoin 排行榜

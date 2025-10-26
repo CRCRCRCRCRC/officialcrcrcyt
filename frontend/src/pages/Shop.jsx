@@ -9,18 +9,30 @@ import { coinAPI } from '../services/api'
 const PRODUCTS = [
   {
     id: 'discord-role-king',
-    name: 'DC👑｜目前還沒有用的會員',
+    name: 'DC????????????',
     price: 300,
-    description: '購買後請提供 Discord ID，管理員會手動處理身分組。',
+    description: '?????? Discord ID?????????????',
     requireDiscordId: true
   },
   {
     id: 'crcrcoin-pack-50',
     name: '50 CRCRCoin',
     price: 100,
-    description: '來亂用的商品：花 100 CRCRCoin 換 50 CRCRCoin，可一次購買多份。',
+    description:
+      '??????? 100 CRCRCoin ? 50 CRCRCoin??????????????????',
     allowQuantity: true
+  },
+  {
+    id: 'promotion-service',
+    name: '????',
+    price: 650,
+    description:
+      '??????? Discord ID???????????????????????????',
+    requireDiscordId: true,
+    requirePromotionContent: true
   }
+]
+
 ]
 
 const Modal = ({ open, title, description, children, actions, onClose }) => {
@@ -52,11 +64,15 @@ const clampQuantity = (value) => {
   return Math.min(99, Math.max(1, Math.floor(value)))
 }
 
+const PROMOTION_CONTENT_MIN = 10
+const PROMOTION_CONTENT_MAX = 500
+
 const Shop = () => {
   const { isLoggedIn, hydrated, balance, refreshWallet } = useCoin()
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [step, setStep] = useState('idle')
   const [discordId, setDiscordId] = useState('')
+  const [promotionContent, setPromotionContent] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [processing, setProcessing] = useState(false)
 
@@ -64,6 +80,7 @@ const Shop = () => {
     setSelectedProduct(null)
     setStep('idle')
     setDiscordId('')
+    setPromotionContent('')
     setQuantity(1)
     setProcessing(false)
   }
@@ -79,6 +96,8 @@ const Shop = () => {
     }
     setSelectedProduct(product)
     setQuantity(1)
+    setDiscordId('')
+    setPromotionContent('')
     setStep('confirm')
   }
 
@@ -123,6 +142,23 @@ const Shop = () => {
         return
       }
       payload.discordId = trimmed
+    }
+
+    if (selectedProduct.requirePromotionContent) {
+      const trimmedContent = promotionContent.trim()
+      if (!trimmedContent) {
+        toast.error('請輸入想宣傳的內容')
+        return
+      }
+      if (trimmedContent.length < PROMOTION_CONTENT_MIN) {
+        toast.error(`宣傳內容至少 ${PROMOTION_CONTENT_MIN} 個字`)
+        return
+      }
+      if (trimmedContent.length > PROMOTION_CONTENT_MAX) {
+        toast.error(`宣傳內容請控制在 ${PROMOTION_CONTENT_MAX} 個字內`)
+        return
+      }
+      payload.promotionContent = trimmedContent
     }
 
     setProcessing(true)
@@ -189,6 +225,12 @@ const Shop = () => {
                       </div>
                       <div className="space-y-3">
                         <h3 className="text-lg font-semibold text-gray-900 md:text-xl">{product.name}</h3>
+                        {product.requirePromotionContent && (
+                          <div className="inline-flex items-center gap-2 rounded-full bg-pink-50 px-3 py-1 text-xs font-medium text-pink-600">
+                            <MessageCircle className="h-3.5 w-3.5" />
+                            需管理員審核
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="mt-6 space-y-4 text-center md:text-left">
@@ -196,6 +238,7 @@ const Shop = () => {
                         價格: {product.price.toLocaleString('zh-TW')}
                         <span className="ml-1 text-base font-semibold text-purple-500 md:text-lg">CRCRCoin</span>
                       </div>
+                      <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
                       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                         <button
                           type="button"
@@ -240,7 +283,9 @@ const Shop = () => {
               key="confirm"
               type="button"
               onClick={() => {
-                if (selectedProduct?.requireDiscordId) {
+                if (selectedProduct?.requirePromotionContent) {
+                  setStep('promotion')
+                } else if (selectedProduct?.requireDiscordId) {
                   setStep('discord')
                 } else {
                   handlePurchase()
@@ -249,7 +294,9 @@ const Shop = () => {
               className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={processing || insufficientBalance}
             >
-              {selectedProduct?.requireDiscordId ? '下一步' : `確認購買（${totalCost.toLocaleString('zh-TW')} CRCRCoin）`}
+              {selectedProduct?.requireDiscordId || selectedProduct?.requirePromotionContent
+                ? '下一步'
+                : `確認購買（${totalCost.toLocaleString('zh-TW')} CRCRCoin）`}
             </button>
           )
         ]}
@@ -278,6 +325,75 @@ const Shop = () => {
         {!selectedProduct?.allowQuantity && (
           <p className="text-sm text-gray-600">總價：{totalCost.toLocaleString('zh-TW')} CRCRCoin</p>
         )}
+      </Modal>
+
+      <Modal
+        open={step === 'promotion' && !!selectedProduct}
+        title="提交宣傳資訊"
+        description={`請輸入想宣傳的內容（${PROMOTION_CONTENT_MIN}~${PROMOTION_CONTENT_MAX} 字），並留下 Discord ID 方便管理員聯繫。`}
+        onClose={processing ? undefined : closeModals}
+        actions={[
+          (
+            <button
+              key="cancel-promotion"
+              type="button"
+              onClick={closeModals}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
+              disabled={processing}
+            >
+              取消
+            </button>
+          ),
+          (
+            <button
+              key="confirm-promotion"
+              type="button"
+              onClick={handlePurchase}
+              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={processing || insufficientBalance}
+            >
+              {processing ? '處理中…' : `送出申請（${totalCost.toLocaleString('zh-TW')} CRCRCoin）`}
+            </button>
+          )
+        ]}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700" htmlFor="promotion-content">
+              想宣傳的內容
+            </label>
+            <textarea
+              id="promotion-content"
+              rows={5}
+              maxLength={PROMOTION_CONTENT_MAX}
+              value={promotionContent}
+              onChange={(event) => setPromotionContent(event.target.value)}
+              placeholder="請描述想宣傳的活動、連結或服務，管理員會人工審核內容。"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+              disabled={processing}
+            />
+            <div className="mt-1 text-right text-xs text-gray-500">
+              {promotionContent.length}/{PROMOTION_CONTENT_MAX}
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700" htmlFor="promotion-discord">
+              Discord ID
+            </label>
+            <input
+              id="promotion-discord"
+              type="text"
+              value={discordId}
+              onChange={(event) => setDiscordId(event.target.value)}
+              placeholder="例如：123456789012345678"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+              disabled={processing}
+            />
+          </div>
+          {insufficientBalance && (
+            <p className="text-xs text-red-500">餘額不足，請先累積更多 CRCRCoin 再送出申請。</p>
+          )}
+        </div>
       </Modal>
 
       <Modal

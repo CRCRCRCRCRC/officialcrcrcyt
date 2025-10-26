@@ -247,6 +247,10 @@ export const coinAPI = {
   // 取得商品訂單（管理員）
   getOrders: (params = {}) =>
     api.get('/coin/orders', { params }),
+  decideOrder: (orderId, payload) =>
+    api.post(`/coin/orders/${orderId}/decision`, payload),
+  getNotifications: () =>
+    api.get('/coin/notifications'),
   // 獲取排行榜（公開）
   getLeaderboard: (limit = 20) =>
     api.get('/coin/leaderboard', { params: { limit } })
