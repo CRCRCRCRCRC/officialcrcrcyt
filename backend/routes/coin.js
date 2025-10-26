@@ -1300,9 +1300,9 @@ router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
 
     const result = parsedAmount > 0
 
-      ? await database.addCoins(user.id, parsedAmount, `管理員發放 (${req.user.username || req.user.id})`)
+      ? await database.addCoins(user.id, parsedAmount, '管理員發放')
 
-      : await database.spendCoins(user.id, Math.abs(parsedAmount), `管理員扣除 (${req.user.username || req.user.id})`);
+      : await database.spendCoins(user.id, Math.abs(parsedAmount), '管理員扣除');
 
 
 
