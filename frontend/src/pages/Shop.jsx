@@ -9,9 +9,9 @@ import { coinAPI } from '../services/api'
 const PRODUCTS = [
   {
     id: 'discord-role-king',
-    name: 'DC????????????',
+    name: 'DC👑｜目前還沒有用的會員',
     price: 300,
-    description: '?????? Discord ID?????????????',
+    description: '購買後請提供 Discord ID，管理員會手動處理身分組。',
     requireDiscordId: true
   },
   {
@@ -19,20 +19,18 @@ const PRODUCTS = [
     name: '50 CRCRCoin',
     price: 100,
     description:
-      '??????? 100 CRCRCoin ? 50 CRCRCoin??????????????????',
+      '來點惡趣味：花 100 CRCRCoin 換 50 CRCRCoin，可一次購買多份數量，純屬娛樂用途。',
     allowQuantity: true
   },
   {
     id: 'promotion-service',
-    name: '????',
+    name: '幫你宣傳',
     price: 650,
     description:
-      '??????? Discord ID???????????????????????????',
+      '提交宣傳內容與 Discord ID，等待管理員審核。通過後會由管理員主動聯繫並協助曝光。',
     requireDiscordId: true,
     requirePromotionContent: true
   }
-]
-
 ]
 
 const Modal = ({ open, title, description, children, actions, onClose }) => {
