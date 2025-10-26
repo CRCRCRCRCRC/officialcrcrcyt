@@ -148,7 +148,7 @@ const Notifications = () => {
               return (
                 <div
                   key={notification.id}
-                  className="rounded-3xl border border-white/60 bg-white/95 shadow-xl p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                  className="rounded-3xl border border-white/60 bg-white/95 shadow-xl p-6 flex flex-col gap-6"
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
@@ -167,7 +167,7 @@ const Notifications = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
                     <button
                       type="button"
                       onClick={() => handleDismiss(notification.id)}
