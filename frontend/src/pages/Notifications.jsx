@@ -171,7 +171,7 @@ const Notifications = () => {
                     <button
                       type="button"
                       onClick={() => handleDismiss(notification.id)}
-                      className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-60 whitespace-nowrap"
                       disabled={dismissingId === notification.id}
                     >
                       {dismissingId === notification.id ? (
@@ -183,7 +183,7 @@ const Notifications = () => {
                     </button>
                     <Link
                       to="/shop"
-                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:shadow-xl"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:shadow-xl whitespace-nowrap"
                     >
                       前往商店
                     </Link>
