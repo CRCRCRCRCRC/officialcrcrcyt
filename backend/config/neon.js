@@ -233,6 +233,18 @@ class NeonDatabase {
         )
       `);
       await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS coin_pass_task_logs (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          task_id VARCHAR(100) NOT NULL,
+          last_completed_at TIMESTAMP,
+          completed_count INTEGER NOT NULL DEFAULT 0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE (user_id, task_id)
+        )
+      `);
+      await this.pool.query(`
         ALTER TABLE coin_orders
         ADD COLUMN IF NOT EXISTS user_email VARCHAR(255)
       `);
@@ -526,6 +538,43 @@ class NeonDatabase {
     const current = await this.getCoinPass(userId);
     const nextState = { ...current, xp: Math.max(0, (Number(current?.xp) || 0) + value) };
     return await this.saveCoinPass(userId, nextState);
+  }
+
+  async getPassTaskLogs(userId) {
+    const res = await this.pool.query(
+      `SELECT task_id, last_completed_at, completed_count
+       FROM coin_pass_task_logs
+       WHERE user_id = $1`,
+      [userId]
+    );
+    return res.rows.map((row) => ({
+      task_id: row.task_id,
+      last_completed_at: row.last_completed_at,
+      completed_count: Number(row.completed_count) || 0
+    }));
+  }
+
+  async upsertPassTaskLog(userId, taskId, { timestamp = new Date(), increment = 1 } = {}) {
+    const inc = Math.max(1, Math.floor(Number(increment) || 1));
+    const completedAt = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    const res = await this.pool.query(
+      `INSERT INTO coin_pass_task_logs (user_id, task_id, last_completed_at, completed_count)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id, task_id) DO UPDATE
+       SET last_completed_at = EXCLUDED.last_completed_at,
+           completed_count = coin_pass_task_logs.completed_count + EXCLUDED.completed_count,
+           updated_at = CURRENT_TIMESTAMP
+       RETURNING task_id, last_completed_at, completed_count`,
+      [userId, taskId, completedAt.toISOString(), inc]
+    );
+    const row = res.rows[0];
+    return row
+      ? {
+          task_id: row.task_id,
+          last_completed_at: row.last_completed_at,
+          completed_count: Number(row.completed_count) || inc
+        }
+      : null;
   }
 
   async addCoins(userId, amount, reason = '任務獎勵') {

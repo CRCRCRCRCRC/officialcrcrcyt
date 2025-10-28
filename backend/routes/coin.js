@@ -58,6 +58,28 @@ const msUntilNextTaipeiMidnight = (value, now = Date.now()) => {
 
 };
 
+const getTaipeiDayKey = (value = Date.now()) => {
+
+  const ts = typeof value === 'number' ? value : toTimestamp(value);
+
+  if (ts === null) return null;
+
+  const taipei = new Date(ts + TAIPEI_OFFSET_MS);
+
+  return taipei.toISOString().slice(0, 10);
+
+};
+
+const isSameTaipeiDay = (a, b = Date.now()) => {
+
+  const aKey = getTaipeiDayKey(a);
+
+  const bKey = getTaipeiDayKey(b);
+
+  return !!aKey && !!bKey && aKey === bKey;
+
+};
+
 
 
 const PROMOTION_PRODUCT_ID = 'promotion-service';
@@ -96,6 +118,124 @@ const SHOP_PRODUCTS = [
     requirePromotionContent: true
   }
 ];
+
+const PASS_TASKS = [
+
+  {
+
+    id: 'daily-wallet-check',
+
+    title: '每日簽到',
+
+    description: '每天完成錢包簽到或檢視餘額就能獲得 XP。',
+
+    xp: 120,
+
+    frequency: 'daily',
+
+    category: 'daily',
+
+    icon: 'calendar'
+
+  },
+
+  {
+
+    id: 'daily-shop-visit',
+
+    title: '逛逛商城',
+
+    description: '到 CRCRCoin 商店看看今日有什麼驚喜。每天可完成一次。',
+
+    xp: 80,
+
+    frequency: 'daily',
+
+    category: 'daily',
+
+    icon: 'shopping-bag'
+
+  },
+
+  {
+
+    id: 'join-discord',
+
+    title: '加入 Discord 社群',
+
+    description: '加入官方 Discord 並與其他成員互動，僅需完成一次即可獲得大量 XP。',
+
+    xp: 300,
+
+    frequency: 'once',
+
+    category: 'community',
+
+    icon: 'discord'
+
+  }
+
+];
+
+const PASS_TASK_MAP = new Map(PASS_TASKS.map((task) => [task.id, task]));
+
+const serializePassTask = (task, log, now = Date.now()) => {
+
+  const completedCount = Number(log?.completed_count) || 0;
+
+  const lastCompletedAt = log?.last_completed_at ? toISO(log.last_completed_at) : null;
+
+  let status = 'available';
+
+  let nextAvailableAt = null;
+
+  let availableInMs = 0;
+
+  if (task.frequency === 'once' && completedCount > 0) {
+
+    status = 'completed';
+
+  } else if (task.frequency === 'daily' && lastCompletedAt && isSameTaipeiDay(lastCompletedAt, now)) {
+
+    status = 'cooldown';
+
+    const nextTs = getNextTaipeiMidnightTimestamp(now);
+
+    nextAvailableAt = toISO(nextTs);
+
+    availableInMs = Math.max(0, nextTs - now);
+
+  }
+
+  return {
+
+    id: task.id,
+
+    title: task.title,
+
+    description: task.description,
+
+    xp: task.xp,
+
+    frequency: task.frequency,
+
+    category: task.category,
+
+    icon: task.icon || null,
+
+    status,
+
+    lastCompletedAt,
+
+    completedCount,
+
+    nextAvailableAt,
+
+    availableInMs
+
+  };
+
+};
 
 
 const PASS_TOTAL_LEVELS = 50;
@@ -490,6 +630,58 @@ router.post('/pass/purchase', authenticateToken, async (req, res) => {
 });
 
 
+
+router.get('/pass/tasks', authenticateToken, async (req, res) => {
+  try {
+    const logs = await database.getPassTaskLogs(req.user.id);
+    const now = Date.now();
+    const logMap = new Map((logs || []).map((log) => [log.task_id, log]));
+    const tasks = PASS_TASKS.map((task) => serializePassTask(task, logMap.get(task.id), now));
+    res.json({ tasks });
+  } catch (error) {
+    console.error('取得任務列表失敗:', error);
+    res.status(500).json({ error: '無法取得任務列表' });
+  }
+});
+
+router.post('/pass/tasks/:taskId/complete', authenticateToken, async (req, res) => {
+  try {
+    const taskId = String(req.params?.taskId || '').trim();
+    if (!taskId) {
+      return res.status(400).json({ error: '缺少任務編號' });
+    }
+    const task = PASS_TASK_MAP.get(taskId);
+    if (!task) {
+      return res.status(404).json({ error: '找不到任務' });
+    }
+    const logs = await database.getPassTaskLogs(req.user.id);
+    const logMap = new Map((logs || []).map((log) => [log.task_id, log]));
+    const existing = logMap.get(taskId);
+    const now = Date.now();
+    if (task.frequency === 'once' && existing && (Number(existing.completed_count) || 0) > 0) {
+      return res.status(400).json({ error: '缺少任務編號' });
+    }
+    if (task.frequency === 'daily' && existing?.last_completed_at && isSameTaipeiDay(existing.last_completed_at, now)) {
+      const nextTs = getNextTaipeiMidnightTimestamp(now);
+      return res.status(400).json({ error: '??????', nextAvailableAt: toISO(nextTs) });
+    }
+    const updatedLog = await database.upsertPassTaskLog(req.user.id, taskId, { timestamp: now, increment: 1 });
+    const updatedPassState = await database.addPassXp(req.user.id, task.xp);
+    const passPayload = await buildPassPayload(req.user.id, { passStateOverride: updatedPassState });
+    logMap.set(taskId, updatedLog);
+    const tasks = PASS_TASKS.map((item) => serializePassTask(item, logMap.get(item.id), now));
+    res.json({
+      success: true,
+      reward: { xp: task.xp },
+      task: serializePassTask(task, updatedLog, now),
+      tasks,
+      pass: passPayload
+    });
+  } catch (error) {
+    console.error('??????:', error);
+    res.status(500).json({ error: '??????' });
+  }
+});
 
 router.post('/pass/claim', authenticateToken, async (req, res) => {
 

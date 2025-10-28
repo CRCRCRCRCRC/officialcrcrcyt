@@ -312,6 +312,10 @@ class KVDatabase {
     return `coin_pass:${userId}`;
   }
 
+  passTaskKey(userId) {
+    return `coin_pass_task:${userId}`;
+  }
+
   parsePassList(raw) {
     if (!raw) return [];
     if (Array.isArray(raw)) {
@@ -397,6 +401,47 @@ class KVDatabase {
     const current = await this.getCoinPass(userId);
     const nextState = { ...current, xp: Math.max(0, (Number(current?.xp) || 0) + value) };
     return await this.saveCoinPass(userId, nextState);
+  }
+
+  async getPassTaskLogs(userId) {
+    const key = this.passTaskKey(userId);
+    const raw = (await this.kv.hgetall(key)) || {};
+    const entries = [];
+    for (const [taskId, value] of Object.entries(raw)) {
+      try {
+        const parsed = typeof value === 'string' ? JSON.parse(value) : value || {};
+        entries.push({
+          task_id: taskId,
+          last_completed_at: parsed.last_completed_at || null,
+          completed_count: Number(parsed.completed_count) || 0
+        });
+      } catch {
+        entries.push({ task_id: taskId, last_completed_at: null, completed_count: 0 });
+      }
+    }
+    return entries;
+  }
+
+  async upsertPassTaskLog(userId, taskId, { timestamp = new Date(), increment = 1 } = {}) {
+    const key = this.passTaskKey(userId);
+    const inc = Math.max(1, Math.floor(Number(increment) || 1));
+    const completedAt = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    let previous = null;
+    try {
+      const raw = await this.kv.hget(key, taskId);
+      if (raw) {
+        previous = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      }
+    } catch {
+      previous = null;
+    }
+    const completedCount = (Number(previous?.completed_count) || 0) + inc;
+    const payload = {
+      last_completed_at: completedAt.toISOString(),
+      completed_count: completedCount
+    };
+    await this.kv.hset(key, { [taskId]: JSON.stringify(payload) });
+    return { task_id: taskId, ...payload };
   }
 
   async addCoins(userId, amount, reason = '任務獎勵') {

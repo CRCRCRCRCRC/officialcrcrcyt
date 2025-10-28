@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Coins, Calendar, TrendingUp, Wallet as WalletIcon, ShoppingBag, Crown } from 'lucide-react'
+import { ArrowLeft, Coins, Calendar, TrendingUp, Wallet as WalletIcon, ShoppingBag, Crown, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCoin } from '../contexts/CoinContext'
 import toast from 'react-hot-toast'
@@ -186,7 +186,7 @@ const Wallet = () => {
                   所有 XP 進度與階段獎勵都集中在通行券頁面。完成任務即可依序領取 {PASS_TOTAL_LEVELS} 階段獎勵，高級通行券也能在同一頁一次領齊。
                 </p>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <Link
                   to="/pass"
                   className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:from-purple-600 hover:to-pink-600"
@@ -200,6 +200,13 @@ const Wallet = () => {
                 >
                   <ShoppingBag className="h-4 w-4" />
                   兌換更多 CRCRCoin
+                </Link>
+                <Link
+                  to="/tasks"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-purple-200/60 bg-white/80 px-6 py-3 text-sm font-semibold text-purple-700 shadow transition-all hover:bg-white"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  任務中心
                 </Link>
               </div>
             </div>

@@ -232,6 +232,9 @@ export const coinAPI = {
   purchasePass: () => api.post('/coin/pass/purchase', undefined),
   // 領取通行券獎勵
   claimPassReward: (payload) => api.post('/coin/pass/claim', payload),
+  // 任務
+  getPassTasks: () => api.get('/coin/pass/tasks'),
+  completePassTask: (taskId) => api.post(`/coin/pass/tasks/${taskId}/complete`, undefined),
   // 購買商品
   purchaseProduct: (payload) =>
     api.post('/coin/purchase', payload),
