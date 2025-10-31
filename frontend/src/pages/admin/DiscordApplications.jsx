@@ -162,7 +162,7 @@ const DiscordApplications = () => {
                         <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
                           {order.user_email || '未知'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">{order.product_name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">{order.product_name}</td>
                         <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
                           {Number(order.price || 0).toLocaleString('zh-TW')} CRCRCoin
                         </td>
@@ -177,7 +177,7 @@ const DiscordApplications = () => {
                               </p>
                               <button
                                 type="button"
-                                className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800"
+                                className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 whitespace-nowrap"
                                 onClick={() => setPreviewOrder(order)}
                               >
                                 <Eye className="h-3.5 w-3.5" />
@@ -188,7 +188,7 @@ const DiscordApplications = () => {
                             <span className="text-xs text-gray-400">－</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-700">
+                        <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
                           <div className="flex flex-col gap-2">
                             {renderStatusBadge(order.status)}
                             {showActions && (
@@ -196,7 +196,7 @@ const DiscordApplications = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleDecision(order, 'accept')}
-                                  className="flex-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-60"
+                                  className="flex-1 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 disabled:opacity-60 whitespace-nowrap"
                                   disabled={decisionId === order.id}
                                 >
                                   接受
@@ -204,7 +204,7 @@ const DiscordApplications = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleDecision(order, 'reject')}
-                                  className="flex-1 rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-600 disabled:opacity-60"
+                                  className="flex-1 rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-rose-600 disabled:opacity-60 whitespace-nowrap"
                                   disabled={decisionId === order.id}
                                 >
                                   回絕
