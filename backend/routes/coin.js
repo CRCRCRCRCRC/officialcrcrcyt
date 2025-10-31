@@ -1066,6 +1066,13 @@ router.post('/orders/:orderId/decision', authenticateToken, requireAdmin, async 
         adminId: req.user.id,
         note
       });
+
+      // 創建通知：宣傳服務已批准
+      await database.createCoinNotification(
+        order.user_id,
+        PROMOTION_ACCEPTED_MESSAGE
+      );
+
       return res.json({ success: true, order: updated });
     }
 
@@ -1091,6 +1098,12 @@ router.post('/orders/:orderId/decision', authenticateToken, requireAdmin, async 
       adminId: req.user.id,
       note
     });
+
+    // 創建通知：宣傳服務已回絕並退款
+    await database.createCoinNotification(
+      order.user_id,
+      buildPromotionRejectedMessage(refundAmount)
+    );
 
     return res.json({
       success: true,
