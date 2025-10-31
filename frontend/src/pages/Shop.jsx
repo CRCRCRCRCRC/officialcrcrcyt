@@ -92,7 +92,7 @@ const Shop = () => {
     setProcessing(false)
   }
 
-  const handleBuyClick = (product) => {
+  const handleBuyClick = async (product) => {
     if (!isLoggedIn) {
       toast.error('請先使用 Google 登入後再購買')
       return
@@ -101,9 +101,34 @@ const Shop = () => {
       toast('資料同步中，請稍候再試')
       return
     }
+
+    // 檢查是否需要 Discord ID
+    if (product.requireDiscordId) {
+      try {
+        const response = await coinAPI.checkDiscordBinding()
+        const userDiscordId = response.data?.discordId || ''
+
+        if (!userDiscordId) {
+          toast.error('請先至個人資料設定頁面綁定 Discord 帳號，再購買此商品。', {
+            duration: 5000
+          })
+          setTimeout(() => {
+            window.location.href = '/profile'
+          }, 2000)
+          return
+        }
+
+        // 自動填入已綁定的 Discord ID
+        setDiscordId(userDiscordId)
+      } catch (error) {
+        console.error('檢查 Discord 綁定失敗:', error)
+        toast.error('無法檢查 Discord 綁定狀態')
+        return
+      }
+    }
+
     setSelectedProduct(product)
     setQuantity(1)
-    setDiscordId('')
     setPromotionContent('')
     setStep('confirm')
   }

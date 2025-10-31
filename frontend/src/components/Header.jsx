@@ -138,16 +138,14 @@ const Header = () => {
                     </button>
                     {isUserMenuOpen && (
                       <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg p-2 z-50">
-                        <button
+                        <Link
+                          to="/profile"
                           className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-50 rounded"
-                          onClick={() => {
-                            setShowProfileModal(true)
-                            setIsUserMenuOpen(false)
-                          }}
+                          onClick={() => setIsUserMenuOpen(false)}
                         >
                           <Settings className="w-4 h-4" />
                           個人資料設定
-                        </button>
+                        </Link>
                         <button
                           className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-50 rounded"
                           onClick={() => {

@@ -89,6 +89,18 @@ class NeonDatabase {
         ALTER TABLE users
         ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500)
       `);
+      await this.pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS discord_id VARCHAR(100)
+      `);
+      await this.pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS discord_username VARCHAR(100)
+      `);
+      await this.pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS discord_avatar VARCHAR(255)
+      `);
 
       // 創建影片表
       await this.pool.query(`
@@ -330,6 +342,21 @@ class NeonDatabase {
     if (Object.prototype.hasOwnProperty.call(profileData, 'avatarUrl')) {
       fields.push(`avatar_url = $${index++}`);
       values.push(profileData.avatarUrl || null);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(profileData, 'discordId')) {
+      fields.push(`discord_id = $${index++}`);
+      values.push(profileData.discordId || null);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(profileData, 'discordUsername')) {
+      fields.push(`discord_username = $${index++}`);
+      values.push(profileData.discordUsername || null);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(profileData, 'discordAvatar')) {
+      fields.push(`discord_avatar = $${index++}`);
+      values.push(profileData.discordAvatar || null);
     }
 
     if (!fields.length) {
@@ -1323,9 +1350,16 @@ class NeonDatabase {
     }
   }
 
-  // 檢查用戶是否有 Discord 記錄（曾經購買過需要 Discord ID 的商品）
+  // 檢查用戶是否有 Discord 記錄（已綁定 Discord ID 或曾經購買過需要 Discord ID 的商品）
   async hasUserDiscordRecord(userId) {
     try {
+      // 先檢查用戶是否已綁定 Discord ID
+      const user = await this.getUserById(userId);
+      if (user?.discord_id && user.discord_id.trim()) {
+        return true;
+      }
+
+      // 如果沒綁定，檢查是否曾經購買過需要 Discord ID 的商品
       const result = await this.pool.query(
         'SELECT id FROM coin_orders WHERE user_id = $1 AND discord_id IS NOT NULL AND discord_id != \'\' LIMIT 1',
         [userId]

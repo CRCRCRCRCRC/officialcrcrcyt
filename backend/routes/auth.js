@@ -13,6 +13,9 @@ const sanitizeUser = (user, overrides = {}) => {
   const displayName = merged.display_name || merged.displayName || merged.name || merged.username || '';
   const avatarUrl = merged.avatar_url || merged.avatarUrl || merged.picture || '';
   const email = merged.email || merged.username || '';
+  const discordId = merged.discord_id || merged.discordId || '';
+  const discordUsername = merged.discord_username || merged.discordUsername || '';
+  const discordAvatar = merged.discord_avatar || merged.discordAvatar || '';
 
   return {
     id: merged.id,
@@ -21,8 +24,14 @@ const sanitizeUser = (user, overrides = {}) => {
     role: merged.role,
     displayName,
     avatarUrl,
+    discordId,
+    discordUsername,
+    discordAvatar,
     name: displayName,
-    picture: avatarUrl
+    picture: avatarUrl,
+    discord_id: discordId,
+    discord_username: discordUsername,
+    discord_avatar: discordAvatar
   };
 };
 
@@ -99,14 +108,19 @@ router.put('/profile', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const rawDisplayName = typeof req.body.displayName === 'string' ? req.body.displayName.trim() : undefined;
+    const rawDiscordId = typeof req.body.discordId === 'string' ? req.body.discordId.trim() : undefined;
 
     if (rawDisplayName !== undefined) {
       if (!rawDisplayName) {
         return res.status(400).json({ error: '暱稱不可為空白' });
       }
-      if (rawDisplayName.length > 30) {
-        return res.status(400).json({ error: '暱稱長度不得超過 30 個字元' });
+      if (rawDisplayName.length > 50) {
+        return res.status(400).json({ error: '暱稱長度不得超過 50 個字元' });
       }
+    }
+
+    if (rawDiscordId !== undefined && rawDiscordId.length > 100) {
+      return res.status(400).json({ error: 'Discord ID 長度不得超過 100 個字元' });
     }
 
     const existingUser = await database.getUserById(userId);
@@ -117,6 +131,9 @@ router.put('/profile', authenticateToken, async (req, res) => {
     const updates = {};
     if (rawDisplayName !== undefined && rawDisplayName !== (existingUser.display_name || existingUser.displayName)) {
       updates.displayName = rawDisplayName;
+    }
+    if (rawDiscordId !== undefined && rawDiscordId !== (existingUser.discord_id || existingUser.discordId)) {
+      updates.discordId = rawDiscordId;
     }
 
     let updatedUser = existingUser;
@@ -405,6 +422,100 @@ router.post('/google-public', async (req, res) => {
   } catch (error) {
     console.error('Google 公開登入錯誤:', error.response?.data || error.message);
     res.status(401).json({ error: 'Google 公開登入失敗：' + (error.response?.data?.error_description || error.message) });
+  }
+});
+
+// Discord OAuth - 綁定 Discord 帳號
+router.post('/discord-bind', authenticateToken, async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ error: '缺少授權碼' });
+    }
+
+    const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+    const DISCORD_CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+    const DISCORD_REDIRECT_URI = process.env.DISCORD_REDIRECT_URI;
+
+    if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET || !DISCORD_REDIRECT_URI) {
+      console.error('Discord OAuth 環境變數未設定');
+      return res.status(500).json({ error: 'Discord OAuth 未正確配置' });
+    }
+
+    // 交換授權碼取得 access token
+    const tokenResponse = await axios.post(
+      'https://discord.com/api/oauth2/token',
+      new URLSearchParams({
+        client_id: DISCORD_CLIENT_ID,
+        client_secret: DISCORD_CLIENT_SECRET,
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: DISCORD_REDIRECT_URI
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+
+    const { access_token } = tokenResponse.data;
+
+    // 使用 access token 取得用戶資訊
+    const userResponse = await axios.get('https://discord.com/api/users/@me', {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+
+    const discordUser = userResponse.data;
+
+    // 儲存 Discord 資訊到資料庫
+    const updatedUser = await database.updateUserProfile(req.user.id, {
+      discordId: discordUser.id,
+      discordUsername: `${discordUser.username}${discordUser.discriminator !== '0' ? `#${discordUser.discriminator}` : ''}`,
+      discordAvatar: discordUser.avatar
+        ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+        : null
+    });
+
+    res.json({
+      message: 'Discord 帳號綁定成功',
+      discord: {
+        id: discordUser.id,
+        username: `${discordUser.username}${discordUser.discriminator !== '0' ? `#${discordUser.discriminator}` : ''}`,
+        avatar: discordUser.avatar
+          ? `https://cdn.discordapp.com/avatars/${discordUser.id}/${discordUser.avatar}.png`
+          : null
+      },
+      user: sanitizeUser(updatedUser)
+    });
+  } catch (error) {
+    console.error('Discord 綁定失敗:', error.response?.data || error.message);
+    res.status(500).json({
+      error: 'Discord 綁定失敗',
+      details: error.response?.data?.error_description || error.message
+    });
+  }
+});
+
+// Discord 解除綁定
+router.post('/discord-unbind', authenticateToken, async (req, res) => {
+  try {
+    const updatedUser = await database.updateUserProfile(req.user.id, {
+      discordId: null,
+      discordUsername: null,
+      discordAvatar: null
+    });
+
+    res.json({
+      message: 'Discord 帳號已解除綁定',
+      user: sanitizeUser(updatedUser)
+    });
+  } catch (error) {
+    console.error('Discord 解除綁定失敗:', error);
+    res.status(500).json({ error: 'Discord 解除綁定失敗' });
   }
 });
 

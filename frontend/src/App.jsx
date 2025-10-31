@@ -14,6 +14,8 @@ import Pass from './pages/Pass'
 import Leaderboard from './pages/Leaderboard'
 import Tasks from './pages/Tasks'
 import Notifications from './pages/Notifications'
+import Profile from './pages/Profile'
+import DiscordCallback from './pages/DiscordCallback'
 
 import AdminLogin from './pages/admin/Login'
 import AdminDashboard from './pages/admin/Dashboard'
@@ -47,6 +49,8 @@ function App() {
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="tasks" element={<Tasks />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="profile/discord/callback" element={<DiscordCallback />} />
 
           </Route>
 

@@ -520,6 +520,20 @@ router.post('/shop/visit', authenticateToken, async (req, res) => {
   }
 });
 
+// 檢查 Discord 綁定狀態（需要登入）
+router.get('/check-discord', authenticateToken, async (req, res) => {
+  try {
+    const user = await database.getUserById(req.user.id);
+    res.json({
+      discordId: user?.discord_id || user?.discordId || '',
+      isBound: !!(user?.discord_id || user?.discordId)
+    });
+  } catch (error) {
+    console.error('檢查 Discord 綁定失敗:', error);
+    res.status(500).json({ error: '檢查失敗' });
+  }
+});
+
 
 
 // 取得目前用戶的伺服器錢包（需要登入）
@@ -698,11 +712,11 @@ router.post('/pass/tasks/:taskId/complete', authenticateToken, async (req, res) 
       }
     }
 
-    // 加入 Discord 任務：檢查用戶資料中是否有 Discord ID 記錄
+    // 加入 Discord 任務：檢查用戶是否已綁定 Discord ID
     if (taskId === 'join-discord') {
       const hasDiscordRecord = await database.hasUserDiscordRecord(req.user.id);
       if (!hasDiscordRecord) {
-        return res.status(400).json({ error: '請先在商店購買任意需要 Discord ID 的商品以驗證身份' });
+        return res.status(400).json({ error: '請先至個人資料設定頁面綁定 Discord 帳號' });
       }
     }
 
@@ -1174,26 +1188,26 @@ router.post('/purchase', authenticateToken, async (req, res) => {
 
     const requiresPromotionContent = Boolean(product.requirePromotionContent);
 
-
-
-    const trimmedDiscord = (discordId || '').toString().trim();
-    const trimmedPromotion = (promotionContent || '').toString().trim();
-
+    // 如果需要 Discord ID，優先使用用戶綁定的 Discord ID
+    let finalDiscordId = (discordId || '').toString().trim();
     if (requiresDiscord) {
+      const user = await database.getUserById(req.user.id);
+      const userBoundDiscordId = user?.discord_id || user?.discordId || '';
 
-      if (!trimmedDiscord) {
-
-        return res.status(400).json({ error: '請輸入 Discord ID' });
-
+      // 如果用戶已綁定 Discord ID，優先使用綁定的
+      if (userBoundDiscordId) {
+        finalDiscordId = userBoundDiscordId;
+      } else if (!finalDiscordId) {
+        // 如果沒有綁定也沒有提供，則報錯
+        return res.status(400).json({ error: '請先至個人資料頁面綁定 Discord ID' });
       }
 
-      if (trimmedDiscord.length > 100) {
-
+      if (finalDiscordId.length > 100) {
         return res.status(400).json({ error: 'Discord ID 太長，請確認是否正確' });
-
       }
-
     }
+
+    const trimmedPromotion = (promotionContent || '').toString().trim();
 
     if (requiresPromotionContent) {
 
@@ -1295,7 +1309,7 @@ router.post('/purchase', authenticateToken, async (req, res) => {
 
           price: totalPrice,
 
-          discord_id: trimmedDiscord,
+          discord_id: finalDiscordId,
 
           promotion_content: requiresPromotionContent ? trimmedPromotion : null,
 

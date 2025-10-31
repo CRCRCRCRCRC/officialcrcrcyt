@@ -140,11 +140,20 @@ export const authAPI = {
   verify: () => 
     api.get('/auth/verify'),
   
-  changePassword: (currentPassword, newPassword) => 
+  changePassword: (currentPassword, newPassword) =>
     api.post('/auth/change-password', { currentPassword, newPassword }),
-  
-  updateProfile: (payload) => 
-    api.put('/auth/profile', payload)
+
+  getProfile: () =>
+    api.get('/auth/profile'),
+
+  updateProfile: (payload) =>
+    api.put('/auth/profile', payload),
+
+  bindDiscord: (code) =>
+    api.post('/auth/discord-bind', { code }),
+
+  unbindDiscord: () =>
+    api.post('/auth/discord-unbind')
 }
 export const videoAPI = {
   getAll: (params = {}) => 
@@ -260,7 +269,9 @@ export const coinAPI = {
   getLeaderboard: (limit = 20) =>
     api.get('/coin/leaderboard', { params: { limit } }),
   // 記錄商店訪問（需登入）
-  recordShopVisit: () => api.post('/coin/shop/visit', undefined)
+  recordShopVisit: () => api.post('/coin/shop/visit', undefined),
+  // 檢查 Discord 綁定狀態（需登入）
+  checkDiscordBinding: () => api.get('/coin/check-discord')
 }
 export const announcementAPI = {
   getAll: (params = {}) =>
