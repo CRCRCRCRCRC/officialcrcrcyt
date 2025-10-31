@@ -245,6 +245,15 @@ class NeonDatabase {
         )
       `);
       await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS coin_shop_visits (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          last_visit_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          visit_count INTEGER NOT NULL DEFAULT 0,
+          UNIQUE (user_id)
+        )
+      `);
+      await this.pool.query(`
         ALTER TABLE coin_orders
         ADD COLUMN IF NOT EXISTS user_email VARCHAR(255)
       `);
@@ -1256,7 +1265,7 @@ class NeonDatabase {
     try {
       const max = Math.max(1, Math.min(100, parseInt(limit) || 20));
       const result = await this.pool.query(`
-        SELECT 
+        SELECT
           u.id,
           u.username,
           u.display_name,
@@ -1279,6 +1288,52 @@ class NeonDatabase {
     } catch (error) {
       console.error('獲取排行榜失敗:', error);
       return [];
+    }
+  }
+
+  // 記錄商店訪問
+  async recordShopVisit(userId) {
+    try {
+      await this.pool.query(`
+        INSERT INTO coin_shop_visits (user_id, last_visit_at, visit_count)
+        VALUES ($1, CURRENT_TIMESTAMP, 1)
+        ON CONFLICT (user_id)
+        DO UPDATE SET
+          last_visit_at = CURRENT_TIMESTAMP,
+          visit_count = coin_shop_visits.visit_count + 1
+      `, [userId]);
+      return true;
+    } catch (error) {
+      console.error('記錄商店訪問失敗:', error);
+      return false;
+    }
+  }
+
+  // 獲取最後商店訪問時間
+  async getLastShopVisit(userId) {
+    try {
+      const result = await this.pool.query(
+        'SELECT last_visit_at FROM coin_shop_visits WHERE user_id = $1',
+        [userId]
+      );
+      return result.rows[0]?.last_visit_at || null;
+    } catch (error) {
+      console.error('獲取商店訪問記錄失敗:', error);
+      return null;
+    }
+  }
+
+  // 檢查用戶是否有 Discord 記錄（曾經購買過需要 Discord ID 的商品）
+  async hasUserDiscordRecord(userId) {
+    try {
+      const result = await this.pool.query(
+        'SELECT id FROM coin_orders WHERE user_id = $1 AND discord_id IS NOT NULL AND discord_id != \'\' LIMIT 1',
+        [userId]
+      );
+      return result.rows.length > 0;
+    } catch (error) {
+      console.error('檢查 Discord 記錄失敗:', error);
+      return false;
     }
   }
 }

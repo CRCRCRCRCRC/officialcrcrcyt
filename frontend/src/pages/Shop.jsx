@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, ShoppingBag, ShieldCheck, Coins, MessageCircle, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -73,6 +73,15 @@ const Shop = () => {
   const [promotionContent, setPromotionContent] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [processing, setProcessing] = useState(false)
+
+  // 記錄商店訪問（用於任務系統）
+  useEffect(() => {
+    if (isLoggedIn && hydrated) {
+      coinAPI.recordShopVisit().catch(() => {
+        // 靜默失敗，不影響用戶體驗
+      })
+    }
+  }, [isLoggedIn, hydrated])
 
   const closeModals = () => {
     setSelectedProduct(null)

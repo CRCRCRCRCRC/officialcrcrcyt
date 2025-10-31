@@ -509,6 +509,17 @@ router.get('/products', (req, res) => {
   res.json({ products });
 });
 
+// 記錄商店訪問（需要登入）
+router.post('/shop/visit', authenticateToken, async (req, res) => {
+  try {
+    await database.recordShopVisit(req.user.id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('記錄商店訪問失敗:', error);
+    res.status(500).json({ error: '記錄失敗' });
+  }
+});
+
 
 
 // 取得目前用戶的伺服器錢包（需要登入）
@@ -658,13 +669,45 @@ router.post('/pass/tasks/:taskId/complete', authenticateToken, async (req, res) 
     const logMap = new Map((logs || []).map((log) => [log.task_id, log]));
     const existing = logMap.get(taskId);
     const now = Date.now();
+
+    // 檢查任務是否已完成
     if (task.frequency === 'once' && existing && (Number(existing.completed_count) || 0) > 0) {
-      return res.status(400).json({ error: '缺少任務編號' });
+      return res.status(400).json({ error: '此任務已完成' });
     }
     if (task.frequency === 'daily' && existing?.last_completed_at && isSameTaipeiDay(existing.last_completed_at, now)) {
       const nextTs = getNextTaipeiMidnightTimestamp(now);
-      return res.status(400).json({ error: '??????', nextAvailableAt: toISO(nextTs) });
+      return res.status(400).json({ error: '今日已完成此任務', nextAvailableAt: toISO(nextTs) });
     }
+
+    // === 驗證任務是否真的完成 ===
+
+    // 每日簽到任務：檢查今天是否有簽到過
+    if (taskId === 'daily-wallet-check') {
+      const wallet = await database.getCoinWallet(req.user.id);
+      const lastClaimAt = wallet?.last_claim_at ?? wallet?.lastClaimAt ?? null;
+      if (!lastClaimAt || !isSameTaipeiDay(lastClaimAt, now)) {
+        return res.status(400).json({ error: '請先完成今日錢包簽到' });
+      }
+    }
+
+    // 逛逛商城任務：檢查今天是否有訪問過商店
+    if (taskId === 'daily-shop-visit') {
+      const lastShopVisit = await database.getLastShopVisit(req.user.id);
+      if (!lastShopVisit || !isSameTaipeiDay(lastShopVisit, now)) {
+        return res.status(400).json({ error: '請先訪問商店頁面' });
+      }
+    }
+
+    // 加入 Discord 任務：檢查用戶資料中是否有 Discord ID 記錄
+    if (taskId === 'join-discord') {
+      const hasDiscordRecord = await database.hasUserDiscordRecord(req.user.id);
+      if (!hasDiscordRecord) {
+        return res.status(400).json({ error: '請先在商店購買任意需要 Discord ID 的商品以驗證身份' });
+      }
+    }
+
+    // === 驗證通過，發放 XP ===
+
     const updatedLog = await database.upsertPassTaskLog(req.user.id, taskId, { timestamp: now, increment: 1 });
     const updatedPassState = await database.addPassXp(req.user.id, task.xp);
     const passPayload = await buildPassPayload(req.user.id, { passStateOverride: updatedPassState });
@@ -678,8 +721,8 @@ router.post('/pass/tasks/:taskId/complete', authenticateToken, async (req, res) 
       pass: passPayload
     });
   } catch (error) {
-    console.error('??????:', error);
-    res.status(500).json({ error: '??????' });
+    console.error('完成任務失敗:', error);
+    res.status(500).json({ error: '完成任務失敗' });
   }
 });
 

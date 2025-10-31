@@ -258,7 +258,9 @@ export const coinAPI = {
     api.delete(`/coin/notifications/${notificationId}`),
   // 獲取排行榜（公開）
   getLeaderboard: (limit = 20) =>
-    api.get('/coin/leaderboard', { params: { limit } })
+    api.get('/coin/leaderboard', { params: { limit } }),
+  // 記錄商店訪問（需登入）
+  recordShopVisit: () => api.post('/coin/shop/visit', undefined)
 }
 export const announcementAPI = {
   getAll: (params = {}) =>
