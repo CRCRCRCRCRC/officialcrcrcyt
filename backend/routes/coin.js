@@ -240,7 +240,7 @@ const serializePassTask = (task, log, now = Date.now()) => {
 
 const PASS_TOTAL_LEVELS = 50;
 
-const PASS_XP_PER_LEVEL = 500;
+const PASS_XP_PER_LEVEL = 200;
 
 const PASS_PREMIUM_PRICE = 6000;
 
@@ -264,7 +264,7 @@ const createPassReward = (level) => {
 
     description: milestone ? '重大里程碑獎勵' : '完成任務即可領取獎勵',
 
-    requiredXp: level * PASS_XP_PER_LEVEL,
+    requiredXp: 200, // Fixed 200 XP per level
 
     free: {
 
