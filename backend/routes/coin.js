@@ -1067,11 +1067,7 @@ router.post('/orders/:orderId/decision', authenticateToken, requireAdmin, async 
         note
       });
 
-      // 創建通知：宣傳服務已批准
-      await database.createCoinNotification(
-        order.user_id,
-        PROMOTION_ACCEPTED_MESSAGE
-      );
+      // 通知會自動通過訂單狀態系統生成（GET /coin/notifications）
 
       return res.json({ success: true, order: updated });
     }
@@ -1099,11 +1095,7 @@ router.post('/orders/:orderId/decision', authenticateToken, requireAdmin, async 
       note
     });
 
-    // 創建通知：宣傳服務已回絕並退款
-    await database.createCoinNotification(
-      order.user_id,
-      buildPromotionRejectedMessage(refundAmount)
-    );
+    // 通知會自動通過訂單狀態系統生成（GET /coin/notifications）
 
     return res.json({
       success: true,
