@@ -241,7 +241,7 @@ const Tasks = () => {
                           {completing === task.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : task.status === 'available' ? (
-                            '立即完成'
+                            '立即檢查'
                           ) : task.status === 'completed' ? (
                             '已完成'
                           ) : (

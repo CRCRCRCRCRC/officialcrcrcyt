@@ -112,7 +112,7 @@ const SHOP_PRODUCTS = [
   {
     id: PROMOTION_PRODUCT_ID,
     name: '幫你宣傳',
-    price: 650,
+    price: 2000,
     description: '提交想宣傳的內容與 Discord ID，等待管理員審核並聯繫後續合作細節。',
     requireDiscordId: true,
     requirePromotionContent: true
@@ -161,9 +161,9 @@ const PASS_TASKS = [
 
     id: 'join-discord',
 
-    title: '加入 Discord 社群',
+    title: '綁定 DISCORD 帳號',
 
-    description: '加入官方 Discord 並與其他成員互動，僅需完成一次即可獲得大量 XP。',
+    description: '至個人資料設定頁面綁定 Discord 帳號，僅需完成一次即可獲得大量 XP。',
 
     xp: 300,
 

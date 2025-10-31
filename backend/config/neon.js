@@ -1350,23 +1350,14 @@ class NeonDatabase {
     }
   }
 
-  // 檢查用戶是否有 Discord 記錄（已綁定 Discord ID 或曾經購買過需要 Discord ID 的商品）
+  // 檢查用戶是否已透過 OAuth 綁定 Discord 帳號
   async hasUserDiscordRecord(userId) {
     try {
-      // 先檢查用戶是否已綁定 Discord ID
+      // 只檢查用戶是否已透過 OAuth 綁定 Discord ID
       const user = await this.getUserById(userId);
-      if (user?.discord_id && user.discord_id.trim()) {
-        return true;
-      }
-
-      // 如果沒綁定，檢查是否曾經購買過需要 Discord ID 的商品
-      const result = await this.pool.query(
-        'SELECT id FROM coin_orders WHERE user_id = $1 AND discord_id IS NOT NULL AND discord_id != \'\' LIMIT 1',
-        [userId]
-      );
-      return result.rows.length > 0;
+      return !!(user?.discord_id && user.discord_id.trim());
     } catch (error) {
-      console.error('檢查 Discord 記錄失敗:', error);
+      console.error('檢查 Discord 綁定失敗:', error);
       return false;
     }
   }

@@ -202,7 +202,7 @@ const Profile = () => {
           <div className="pb-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Discord 綁定</h2>
             <p className="text-sm text-gray-600 mb-4">
-              使用 Discord 帳號登入綁定後，購買需要 Discord ID 的商品時將自動使用綁定的帳號，並可完成「加入 Discord 社群」任務。
+              使用 Discord 帳號登入綁定後，購買需要 Discord ID 的商品時將自動使用綁定的帳號，並可完成「綁定 DISCORD 帳號」任務。
             </p>
 
             {profile.discordId ? (

@@ -25,7 +25,7 @@ const PRODUCTS = [
   {
     id: 'promotion-service',
     name: '幫你宣傳',
-    price: 650,
+    price: 2000,
     description:
       '提交宣傳內容與 Discord ID，等待管理員審核。通過後會由管理員主動聯繫並協助曝光。',
     requireDiscordId: true,
@@ -163,18 +163,19 @@ const Shop = () => {
       payload.quantity = quantity
     }
 
-    if (selectedProduct.requireDiscordId) {
-      const trimmed = discordId.trim()
-      if (!trimmed) {
-        toast.error('請輸入 Discord ID')
-        return
-      }
-      if (trimmed.length > 100) {
-        toast.error('Discord ID 太長，請確認是否正確')
-        return
-      }
-      payload.discordId = trimmed
-    }
+    // Discord ID 已由後端自動使用綁定的帳號，前端不需要再傳遞
+    // if (selectedProduct.requireDiscordId) {
+    //   const trimmed = discordId.trim()
+    //   if (!trimmed) {
+    //     toast.error('請輸入 Discord ID')
+    //     return
+    //   }
+    //   if (trimmed.length > 100) {
+    //     toast.error('Discord ID 太長，請確認是否正確')
+    //     return
+    //   }
+    //   payload.discordId = trimmed
+    // }
 
     if (selectedProduct.requirePromotionContent) {
       const trimmedContent = promotionContent.trim()
@@ -317,8 +318,6 @@ const Shop = () => {
               onClick={() => {
                 if (selectedProduct?.requirePromotionContent) {
                   setStep('promotion')
-                } else if (selectedProduct?.requireDiscordId) {
-                  setStep('discord')
                 } else {
                   handlePurchase()
                 }
@@ -326,7 +325,7 @@ const Shop = () => {
               className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={processing || insufficientBalance}
             >
-              {selectedProduct?.requireDiscordId || selectedProduct?.requirePromotionContent
+              {selectedProduct?.requirePromotionContent
                 ? '下一步'
                 : `確認購買（${totalCost.toLocaleString('zh-TW')} CRCRCoin）`}
             </button>
@@ -408,19 +407,10 @@ const Shop = () => {
               {promotionContent.length}/{PROMOTION_CONTENT_MAX}
             </div>
           </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700" htmlFor="promotion-discord">
-              Discord ID
-            </label>
-            <input
-              id="promotion-discord"
-              type="text"
-              value={discordId}
-              onChange={(event) => setDiscordId(event.target.value)}
-              placeholder="例如：123456789012345678"
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
-              disabled={processing}
-            />
+          <div className="rounded-lg bg-green-50 border border-green-200 px-4 py-3">
+            <p className="text-sm text-green-800">
+              將使用您已綁定的 Discord 帳號進行購買
+            </p>
           </div>
           {insufficientBalance && (
             <p className="text-xs text-red-500">餘額不足，請先累積更多 CRCRCoin 再送出申請。</p>
@@ -428,48 +418,6 @@ const Shop = () => {
         </div>
       </Modal>
 
-      <Modal
-        open={step === 'discord' && !!selectedProduct}
-        title="輸入 Discord ID"
-        description="請輸入要套用身分組的 Discord ID（開啟 Discord 開發者模式即可複製 ID）。"
-        onClose={processing ? undefined : closeModals}
-        actions={[
-          (
-            <button
-              key="cancel"
-              type="button"
-              onClick={closeModals}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
-              disabled={processing}
-            >
-              取消
-            </button>
-          ),
-          (
-            <button
-              key="confirm"
-              type="button"
-              onClick={handlePurchase}
-              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={processing || insufficientBalance}
-            >
-              {processing ? '處理中…' : `確認購買（${totalCost.toLocaleString('zh-TW')} CRCRCoin）`}
-            </button>
-          )
-        ]}
-      >
-        <input
-          type="text"
-          value={discordId}
-          onChange={(event) => setDiscordId(event.target.value)}
-          placeholder="範例：123456789012345678"
-          className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
-          disabled={processing}
-        />
-        {insufficientBalance && (
-          <p className="mt-3 text-xs text-red-500">餘額不足，請先累積更多 CRCRCoin。</p>
-        )}
-      </Modal>
     </div>
   )
 }
