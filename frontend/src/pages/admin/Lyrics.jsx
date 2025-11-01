@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Music, Plus, Edit2, Trash2, Save, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { lyricsAPI } from '../../services/api'
+import { lyricsAPI, artistsAPI } from '../../services/api'
 
 const Lyrics = () => {
   const [lyrics, setLyrics] = useState([])
+  const [artists, setArtists] = useState([])
   const [loading, setLoading] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [showAddForm, setShowAddForm] = useState(false)
@@ -13,10 +14,21 @@ const Lyrics = () => {
   const [formData, setFormData] = useState({
     category: 'soramimi',
     title: '',
-    artist: '',
+    artist_id: '',
     lyrics: '',
     youtube_url: ''
   })
+
+  // 載入演唱者列表
+  const loadArtists = async () => {
+    try {
+      const response = await artistsAPI.getAll()
+      setArtists(response.data?.artists || [])
+    } catch (error) {
+      console.error('載入演唱者失敗:', error)
+      toast.error('載入演唱者失敗')
+    }
+  }
 
   // 載入歌詞列表
   const loadLyrics = async () => {
@@ -34,6 +46,10 @@ const Lyrics = () => {
   }
 
   useEffect(() => {
+    loadArtists()
+  }, [])
+
+  useEffect(() => {
     loadLyrics()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCategory])
@@ -41,7 +57,7 @@ const Lyrics = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!formData.title || !formData.artist || !formData.lyrics) {
+    if (!formData.title || !formData.artist_id || !formData.lyrics) {
       toast.error('請填寫所有必填欄位')
       return
     }
@@ -55,7 +71,7 @@ const Lyrics = () => {
         toast.success('歌詞已新增')
       }
 
-      setFormData({ category: 'soramimi', title: '', artist: '', lyrics: '', youtube_url: '' })
+      setFormData({ category: 'soramimi', title: '', artist_id: '', lyrics: '', youtube_url: '' })
       setShowAddForm(false)
       setEditingId(null)
       loadLyrics()
@@ -69,7 +85,7 @@ const Lyrics = () => {
     setFormData({
       category: lyric.category,
       title: lyric.title,
-      artist: lyric.artist,
+      artist_id: lyric.artist_id,
       lyrics: lyric.lyrics,
       youtube_url: lyric.youtube_url || ''
     })
@@ -91,7 +107,7 @@ const Lyrics = () => {
   }
 
   const cancelEdit = () => {
-    setFormData({ category: 'soramimi', title: '', artist: '', lyrics: '', youtube_url: '' })
+    setFormData({ category: 'soramimi', title: '', artist_id: '', lyrics: '', youtube_url: '' })
     setEditingId(null)
     setShowAddForm(false)
   }
@@ -213,34 +229,44 @@ const Lyrics = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
-                  歌曲名稱 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="請輸入歌曲名稱"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                  required
-                />
-              </div>
+            {/* 演唱者選擇 */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                演唱者 <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.artist_id}
+                onChange={(e) => setFormData({ ...formData, artist_id: e.target.value })}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                required
+              >
+                <option value="">請選擇演唱者</option>
+                {artists.map((artist) => (
+                  <option key={artist.id} value={artist.id}>
+                    {artist.name}
+                  </option>
+                ))}
+              </select>
+              {artists.length === 0 && (
+                <p className="text-sm text-gray-500 mt-2">
+                  尚無演唱者，請先到演唱者管理新增演唱者
+                </p>
+              )}
+            </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-2">
-                  演唱者 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.artist}
-                  onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-                  placeholder="請輸入演唱者名稱"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                  required
-                />
-              </div>
+            {/* 歌曲名稱 */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                歌曲名稱 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="請輸入歌曲名稱"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                required
+              />
             </div>
 
             <div>
@@ -321,7 +347,7 @@ const Lyrics = () => {
                         {getCategoryLabel(lyric.category)}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{lyric.artist}</p>
+                    <p className="text-sm text-gray-600 mt-1">{lyric.artist_name}</p>
                     {lyric.youtube_url && (
                       <a
                         href={lyric.youtube_url}

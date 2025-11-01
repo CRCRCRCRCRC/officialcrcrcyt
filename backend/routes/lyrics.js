@@ -3,19 +3,23 @@ const router = express.Router();
 const database = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
-// 取得所有歌詞（可依分類篩選）
+// 取得所有歌詞（可依分類篩選）包含演唱者資訊
 router.get('/', async (req, res) => {
   try {
     const { category } = req.query;
-    let query = 'SELECT * FROM lyrics';
+    let query = `
+      SELECT l.*, a.name as artist_name
+      FROM lyrics l
+      LEFT JOIN artists a ON l.artist_id = a.id
+    `;
     const params = [];
 
     if (category && (category === 'soramimi' || category === 'lyrics')) {
-      query += ' WHERE category = $1';
+      query += ' WHERE l.category = $1';
       params.push(category);
     }
 
-    query += ' ORDER BY created_at DESC';
+    query += ' ORDER BY l.created_at DESC';
 
     const result = await database.pool.query(query, params);
     res.json({ lyrics: result.rows });
@@ -30,7 +34,10 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const result = await database.pool.query(
-      'SELECT * FROM lyrics WHERE id = $1',
+      `SELECT l.*, a.name as artist_name
+       FROM lyrics l
+       LEFT JOIN artists a ON l.artist_id = a.id
+       WHERE l.id = $1`,
       [id]
     );
 
@@ -48,10 +55,10 @@ router.get('/:id', async (req, res) => {
 // 新增歌詞（管理員）
 router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { category, title, artist, lyrics, youtube_url } = req.body;
+    const { category, title, artist_id, lyrics, youtube_url } = req.body;
 
     // 驗證必填欄位
-    if (!category || !title || !artist || !lyrics) {
+    if (!category || !title || !artist_id || !lyrics) {
       return res.status(400).json({ error: '請填寫所有必填欄位' });
     }
 
@@ -60,17 +67,36 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(400).json({ error: '分類必須是 soramimi 或 lyrics' });
     }
 
+    // 驗證演唱者是否存在
+    const artistCheck = await database.pool.query(
+      'SELECT id FROM artists WHERE id = $1',
+      [artist_id]
+    );
+
+    if (artistCheck.rows.length === 0) {
+      return res.status(400).json({ error: '找不到該演唱者' });
+    }
+
     const result = await database.pool.query(
-      `INSERT INTO lyrics (category, title, artist, lyrics, youtube_url, created_at, updated_at)
+      `INSERT INTO lyrics (category, title, artist_id, lyrics, youtube_url, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        RETURNING *`,
-      [category, title, artist, lyrics, youtube_url || null]
+      [category, title, artist_id, lyrics, youtube_url || null]
+    );
+
+    // 取得包含演唱者名稱的完整資料
+    const fullResult = await database.pool.query(
+      `SELECT l.*, a.name as artist_name
+       FROM lyrics l
+       LEFT JOIN artists a ON l.artist_id = a.id
+       WHERE l.id = $1`,
+      [result.rows[0].id]
     );
 
     res.status(201).json({
       success: true,
       message: '歌詞已新增',
-      lyric: result.rows[0]
+      lyric: fullResult.rows[0]
     });
   } catch (error) {
     console.error('新增歌詞失敗:', error);
@@ -82,10 +108,10 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { category, title, artist, lyrics, youtube_url } = req.body;
+    const { category, title, artist_id, lyrics, youtube_url } = req.body;
 
     // 驗證必填欄位
-    if (!category || !title || !artist || !lyrics) {
+    if (!category || !title || !artist_id || !lyrics) {
       return res.status(400).json({ error: '請填寫所有必填欄位' });
     }
 
@@ -104,18 +130,36 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(404).json({ error: '找不到該歌詞' });
     }
 
-    const result = await database.pool.query(
+    // 驗證演唱者是否存在
+    const artistCheck = await database.pool.query(
+      'SELECT id FROM artists WHERE id = $1',
+      [artist_id]
+    );
+
+    if (artistCheck.rows.length === 0) {
+      return res.status(400).json({ error: '找不到該演唱者' });
+    }
+
+    await database.pool.query(
       `UPDATE lyrics
-       SET category = $1, title = $2, artist = $3, lyrics = $4, youtube_url = $5, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6
-       RETURNING *`,
-      [category, title, artist, lyrics, youtube_url || null, id]
+       SET category = $1, title = $2, artist_id = $3, lyrics = $4, youtube_url = $5, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $6`,
+      [category, title, artist_id, lyrics, youtube_url || null, id]
+    );
+
+    // 取得包含演唱者名稱的完整資料
+    const fullResult = await database.pool.query(
+      `SELECT l.*, a.name as artist_name
+       FROM lyrics l
+       LEFT JOIN artists a ON l.artist_id = a.id
+       WHERE l.id = $1`,
+      [id]
     );
 
     res.json({
       success: true,
       message: '歌詞已更新',
-      lyric: result.rows[0]
+      lyric: fullResult.rows[0]
     });
   } catch (error) {
     console.error('更新歌詞失敗:', error);

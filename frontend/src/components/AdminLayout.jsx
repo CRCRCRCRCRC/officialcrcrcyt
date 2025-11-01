@@ -73,7 +73,13 @@ const AdminLayout = () => {
       gradient: 'from-indigo-500 to-purple-600'
     },
     {
-      name: '歌詞',
+      name: '演唱者管理',
+      href: '/admin/artists',
+      icon: User,
+      gradient: 'from-indigo-500 to-purple-600'
+    },
+    {
+      name: '歌詞管理',
       href: '/admin/lyrics',
       icon: Music,
       gradient: 'from-pink-500 to-rose-600'

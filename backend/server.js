@@ -17,6 +17,7 @@ const announcementRoutes = require('./routes/announcements');
 const coinRoutes = require('./routes/coin');
 const videoRoutes = require('./routes/videos');
 const lyricsRoutes = require('./routes/lyrics');
+const artistsRoutes = require('./routes/artists');
 const database = require('./config/database');
 
 const app = express();
@@ -65,6 +66,8 @@ app.use('/api/coin', coinRoutes);
 console.log('✅ /api/coin 路由已註冊');
 app.use('/api/videos', videoRoutes);
 console.log('✅ /api/videos 路由已註冊');
+app.use('/api/artists', artistsRoutes);
+console.log('✅ /api/artists 路由已註冊');
 app.use('/api/lyrics', lyricsRoutes);
 console.log('✅ /api/lyrics 路由已註冊');
 

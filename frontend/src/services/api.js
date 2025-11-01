@@ -302,6 +302,28 @@ export const announcementAPI = {
     api.post('/announcements/reset')
 }
 
+export const artistsAPI = {
+  // 取得所有演唱者
+  getAll: () =>
+    api.get('/artists'),
+
+  // 取得單一演唱者
+  getById: (id) =>
+    api.get(`/artists/${id}`),
+
+  // 新增演唱者（管理員）
+  create: (data) =>
+    api.post('/artists', data),
+
+  // 更新演唱者（管理員）
+  update: (id, data) =>
+    api.put(`/artists/${id}`, data),
+
+  // 刪除演唱者（管理員）
+  delete: (id) =>
+    api.delete(`/artists/${id}`)
+}
+
 export const lyricsAPI = {
   // 取得所有歌詞（可依分類篩選）
   getAll: (category = '') =>
