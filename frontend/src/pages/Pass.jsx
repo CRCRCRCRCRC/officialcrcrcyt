@@ -171,12 +171,20 @@ const Pass = () => {
       toast('資料同步中，請稍候')
       return
     }
+
+    // 防止重複點擊 - 如果正在處理任何領取，就不允許新的領取
+    if (claimingKey) {
+      return
+    }
+
     if (tier === 'premium' && !hasPremium) {
       toast.error('尚未購買高級通行券')
       return
     }
+
     const key = `${tier}:${reward.id}`
     setClaimingKey(key)
+
     try {
       const res = await coinAPI.claimPassReward({ rewardId: reward.id, tier })
       const rewardInfo = res?.data?.reward
