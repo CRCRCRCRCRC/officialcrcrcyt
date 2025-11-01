@@ -16,6 +16,7 @@ const settingsRoutes = require('./routes/settings');
 const announcementRoutes = require('./routes/announcements');
 const coinRoutes = require('./routes/coin');
 const videoRoutes = require('./routes/videos');
+const lyricsRoutes = require('./routes/lyrics');
 const database = require('./config/database');
 
 const app = express();
@@ -64,6 +65,8 @@ app.use('/api/coin', coinRoutes);
 console.log('✅ /api/coin 路由已註冊');
 app.use('/api/videos', videoRoutes);
 console.log('✅ /api/videos 路由已註冊');
+app.use('/api/lyrics', lyricsRoutes);
+console.log('✅ /api/lyrics 路由已註冊');
 
 // 健康檢查和初始化
 app.get('/api/health', async (req, res) => {

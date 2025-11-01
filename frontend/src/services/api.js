@@ -302,6 +302,28 @@ export const announcementAPI = {
     api.post('/announcements/reset')
 }
 
+export const lyricsAPI = {
+  // 取得所有歌詞（可依分類篩選）
+  getAll: (category = '') =>
+    api.get('/lyrics', { params: category ? { category } : {} }),
+
+  // 取得單一歌詞
+  getById: (id) =>
+    api.get(`/lyrics/${id}`),
+
+  // 新增歌詞（管理員）
+  create: (data) =>
+    api.post('/lyrics', data),
+
+  // 更新歌詞（管理員）
+  update: (id, data) =>
+    api.put(`/lyrics/${id}`, data),
+
+  // 刪除歌詞（管理員）
+  delete: (id) =>
+    api.delete(`/lyrics/${id}`)
+}
+
 
 
 // 通用 API 函數

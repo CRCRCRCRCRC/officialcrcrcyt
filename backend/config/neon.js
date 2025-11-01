@@ -182,6 +182,20 @@ class NeonDatabase {
         console.log(`為公告 "${announcement.title}" 生成 slug: ${uniqueSlug}`);
       }
 
+      // 創建歌詞表
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS lyrics (
+          id SERIAL PRIMARY KEY,
+          category VARCHAR(50) NOT NULL,
+          title VARCHAR(500) NOT NULL,
+          artist VARCHAR(255) NOT NULL,
+          lyrics TEXT NOT NULL,
+          youtube_url VARCHAR(500),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
       // CRCRCoin 資料表
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS coin_wallets (

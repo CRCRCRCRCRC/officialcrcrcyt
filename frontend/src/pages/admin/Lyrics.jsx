@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Music, Plus, Edit2, Trash2, Save, X } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { lyricsAPI } from '../../services/api'
 
 const Lyrics = () => {
   const [lyrics, setLyrics] = useState([])
   const [loading, setLoading] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [activeCategory, setActiveCategory] = useState('all') // all, soramimi, lyrics
   const [formData, setFormData] = useState({
+    category: 'soramimi',
     title: '',
     artist: '',
     lyrics: '',
@@ -19,10 +22,9 @@ const Lyrics = () => {
   const loadLyrics = async () => {
     setLoading(true)
     try {
-      // TODO: 實作 API 呼叫
-      // const response = await lyricsAPI.getAll()
-      // setLyrics(response.data)
-      setLyrics([])
+      const category = activeCategory === 'all' ? '' : activeCategory
+      const response = await lyricsAPI.getAll(category)
+      setLyrics(response.data?.lyrics || [])
     } catch (error) {
       console.error('載入歌詞失敗:', error)
       toast.error('載入歌詞失敗')
@@ -33,7 +35,8 @@ const Lyrics = () => {
 
   useEffect(() => {
     loadLyrics()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -45,25 +48,26 @@ const Lyrics = () => {
 
     try {
       if (editingId) {
-        // TODO: 實作更新 API
+        await lyricsAPI.update(editingId, formData)
         toast.success('歌詞已更新')
       } else {
-        // TODO: 實作新增 API
+        await lyricsAPI.create(formData)
         toast.success('歌詞已新增')
       }
 
-      setFormData({ title: '', artist: '', lyrics: '', youtube_url: '' })
+      setFormData({ category: 'soramimi', title: '', artist: '', lyrics: '', youtube_url: '' })
       setShowAddForm(false)
       setEditingId(null)
       loadLyrics()
     } catch (error) {
       console.error('儲存歌詞失敗:', error)
-      toast.error('儲存歌詞失敗')
+      toast.error(error.response?.data?.error || '儲存歌詞失敗')
     }
   }
 
   const handleEdit = (lyric) => {
     setFormData({
+      category: lyric.category,
       title: lyric.title,
       artist: lyric.artist,
       lyrics: lyric.lyrics,
@@ -77,20 +81,35 @@ const Lyrics = () => {
     if (!confirm('確定要刪除這首歌詞嗎？')) return
 
     try {
-      // TODO: 實作刪除 API
+      await lyricsAPI.delete(id)
       toast.success('歌詞已刪除')
       loadLyrics()
     } catch (error) {
       console.error('刪除歌詞失敗:', error)
-      toast.error('刪除歌詞失敗')
+      toast.error(error.response?.data?.error || '刪除歌詞失敗')
     }
   }
 
   const cancelEdit = () => {
-    setFormData({ title: '', artist: '', lyrics: '', youtube_url: '' })
+    setFormData({ category: 'soramimi', title: '', artist: '', lyrics: '', youtube_url: '' })
     setEditingId(null)
     setShowAddForm(false)
   }
+
+  const getCategoryLabel = (category) => {
+    return category === 'soramimi' ? '空耳歌詞' : '歌詞'
+  }
+
+  const getCategoryColor = (category) => {
+    return category === 'soramimi'
+      ? 'bg-gradient-to-r from-purple-500 to-pink-600'
+      : 'bg-gradient-to-r from-blue-500 to-cyan-600'
+  }
+
+  // 篩選顯示的歌詞
+  const filteredLyrics = activeCategory === 'all'
+    ? lyrics
+    : lyrics.filter(l => l.category === activeCategory)
 
   return (
     <div className="space-y-6">
@@ -104,7 +123,7 @@ const Lyrics = () => {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
               歌詞管理
             </h1>
-            <p className="text-sm text-gray-600">管理歌曲歌詞內容</p>
+            <p className="text-sm text-gray-600">管理空耳歌詞與一般歌詞內容</p>
           </div>
         </div>
 
@@ -114,6 +133,40 @@ const Lyrics = () => {
         >
           {showAddForm ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
           {showAddForm ? '取消' : '新增歌詞'}
+        </button>
+      </div>
+
+      {/* 分類切換 */}
+      <div className="flex gap-3">
+        <button
+          onClick={() => setActiveCategory('all')}
+          className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${
+            activeCategory === 'all'
+              ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+          }`}
+        >
+          全部
+        </button>
+        <button
+          onClick={() => setActiveCategory('soramimi')}
+          className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${
+            activeCategory === 'soramimi'
+              ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+          }`}
+        >
+          空耳歌詞
+        </button>
+        <button
+          onClick={() => setActiveCategory('lyrics')}
+          className={`px-6 py-2.5 rounded-xl font-semibold transition-all ${
+            activeCategory === 'lyrics'
+              ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+          }`}
+        >
+          歌詞
         </button>
       </div>
 
@@ -129,6 +182,37 @@ const Lyrics = () => {
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* 分類選擇 */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                分類 <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, category: 'soramimi' })}
+                  className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
+                    formData.category === 'soramimi'
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  空耳歌詞
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, category: 'lyrics' })}
+                  className={`flex-1 px-4 py-3 rounded-xl font-semibold transition-all ${
+                    formData.category === 'lyrics'
+                      ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  歌詞
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-800 mb-2">
@@ -214,7 +298,7 @@ const Lyrics = () => {
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-pink-500 border-t-transparent"></div>
             <p className="mt-4 text-gray-600">載入中...</p>
           </div>
-        ) : lyrics.length === 0 ? (
+        ) : filteredLyrics.length === 0 ? (
           <div className="p-12 text-center">
             <Music className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <p className="text-gray-600">目前沒有歌詞資料</p>
@@ -222,7 +306,7 @@ const Lyrics = () => {
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
-            {lyrics.map((lyric) => (
+            {filteredLyrics.map((lyric) => (
               <motion.div
                 key={lyric.id}
                 initial={{ opacity: 0 }}
@@ -231,7 +315,12 @@ const Lyrics = () => {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="text-lg font-bold text-gray-900">{lyric.title}</h3>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-lg font-bold text-gray-900">{lyric.title}</h3>
+                      <span className={`${getCategoryColor(lyric.category)} text-white text-xs font-bold px-3 py-1 rounded-full`}>
+                        {getCategoryLabel(lyric.category)}
+                      </span>
+                    </div>
                     <p className="text-sm text-gray-600 mt-1">{lyric.artist}</p>
                     {lyric.youtube_url && (
                       <a
