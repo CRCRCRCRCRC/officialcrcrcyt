@@ -519,4 +519,46 @@ router.post('/discord-unbind', authenticateToken, async (req, res) => {
   }
 });
 
+// 管理員取得用戶列表（用於搜尋）
+router.get('/users', authenticateToken, async (req, res) => {
+  try {
+    // 檢查是否為管理員
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: '需要管理員權限' });
+    }
+
+    const { search } = req.query;
+
+    // 如果搜尋字串太短，返回空陣列
+    if (!search || search.trim().length < 2) {
+      return res.json({ users: [] });
+    }
+
+    const searchTerm = `%${search.trim()}%`;
+
+    // 從資料庫搜尋用戶（依 email 或 display_name）
+    const result = await database.pool.query(
+      `SELECT id, username, email, display_name, discord_id
+       FROM users
+       WHERE (email ILIKE $1 OR display_name ILIKE $1)
+       ORDER BY display_name, email
+       LIMIT 20`,
+      [searchTerm]
+    );
+
+    const users = result.rows.map(row => ({
+      id: row.id,
+      email: row.email || row.username,
+      display_name: row.display_name,
+      username: row.username,
+      discord_id: row.discord_id
+    }));
+
+    res.json({ users });
+  } catch (error) {
+    console.error('搜尋用戶失敗:', error);
+    res.status(500).json({ error: '搜尋用戶失敗' });
+  }
+});
+
 module.exports = router;

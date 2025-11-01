@@ -52,6 +52,7 @@ const AddCoins = () => {
       searchUsers(searchQuery)
     }, 300)
     return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery])
 
   // 選擇用戶

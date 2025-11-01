@@ -1608,6 +1608,120 @@ router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
 
 
 
+// 管理員發放通行券 XP（需要管理員權限）
+
+router.post('/pass/grant-xp', authenticateToken, requireAdmin, async (req, res) => {
+
+  console.log('✅ /pass/grant-xp 路由被調用');
+
+  console.log('🔍 請求數據:', req.body);
+
+
+
+  try {
+
+    const rawEmail = (req.body?.email || '').toString().trim();
+
+    const parsedXP = Math.floor(Number(req.body?.xp));
+
+
+
+    console.log('🔍 解析後的數據:', { email: rawEmail, xp: parsedXP });
+
+
+
+    if (!Number.isFinite(parsedXP) || parsedXP === 0) {
+
+      console.log('❌ XP 數量無效:', parsedXP);
+
+      return res.status(400).json({ error: 'XP 數量無效' });
+
+    }
+
+
+
+    if (!rawEmail) {
+
+      console.log('❌ 電子郵件為空');
+
+      return res.status(400).json({ error: '請輸入用戶電子郵件' });
+
+    }
+
+
+
+    console.log('🔍 查找用戶:', rawEmail);
+
+    let user = await database.getUserByUsername(rawEmail);
+
+    console.log('🔍 查找結果:', user);
+
+
+
+    if (!user) {
+
+      console.log('❌ 找不到用戶:', rawEmail);
+
+      return res.status(404).json({
+
+        error: '找不到該用戶，請確認電子郵件是否正確',
+
+        hint: '該用戶需要先在公開網站登入一次'
+
+      });
+
+    }
+
+
+
+    console.log('🔍 用戶信息:', { id: user.id, username: user.username });
+
+    console.log('🔍 管理員信息:', { id: req.user.id, username: req.user.username });
+
+
+
+    // 使用 addPassXp 來增加或減少 XP（支援正負數）
+
+    const updatedState = await database.addPassXp(user.id, parsedXP);
+
+
+
+    console.log('🔍 更新後的通行券狀態:', updatedState);
+
+
+
+    return res.json({
+
+      success: true,
+
+      message: `已${parsedXP > 0 ? '發放' : '扣除'} ${Math.abs(parsedXP)} XP`,
+
+      target: {
+
+        id: user.id,
+
+        email: user.username,
+
+        role: user.role
+
+      },
+
+      xp: updatedState?.xp || 0
+
+    });
+
+  } catch (error) {
+
+    console.error('管理員發放通行券 XP 失敗:', error);
+
+    res.status(500).json({ error: '發放失敗' });
+
+  }
+
+});
+
+
+
 // 獲取 CRCRCoin 排行榜（公開 API）
 
 router.get('/leaderboard', async (req, res) => {
