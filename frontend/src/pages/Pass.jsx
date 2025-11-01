@@ -165,7 +165,52 @@ const Pass = () => {
     await handlePurchase()
   }
 
-  const handleClaim = async (tier, reward) => {
+  // 全部領取功能
+  const handleClaimAll = async () => {
+    if (!isLoggedIn) return requireLogin()
+    if (!hydrated) {
+      toast('資料同步中，請稍候')
+      return
+    }
+
+    // 找出所有可以領取的獎勵
+    const claimableRewards = []
+    rewards.forEach(reward => {
+      const stageUnlocked = xp >= reward.xp
+
+      // 免費獎勵
+      if (stageUnlocked && !claimedFreeSet.has(String(reward.id))) {
+        claimableRewards.push({ tier: 'free', reward })
+      }
+
+      // 高級獎勵（如果有購買通行券）
+      if (hasPremium && stageUnlocked && !claimedPremiumSet.has(String(reward.id))) {
+        claimableRewards.push({ tier: 'premium', reward })
+      }
+    })
+
+    if (claimableRewards.length === 0) {
+      toast('目前沒有可領取的獎勵')
+      return
+    }
+
+    toast.loading(`正在領取 ${claimableRewards.length} 個獎勵...`, { id: 'claim-all' })
+
+    // 依序領取所有獎勵
+    for (const { tier, reward } of claimableRewards) {
+      try {
+        await handleClaim(tier, reward, true) // true 表示是批次領取，不顯示個別 toast
+        // 等待一小段時間避免請求過快
+        await new Promise(resolve => setTimeout(resolve, 100))
+      } catch (error) {
+        console.error(`領取獎勵失敗 ${tier}:${reward.id}`, error)
+      }
+    }
+
+    toast.success(`成功領取 ${claimableRewards.length} 個獎勵！`, { id: 'claim-all' })
+  }
+
+  const handleClaim = async (tier, reward, skipToast = false) => {
     if (!isLoggedIn) return requireLogin()
     if (!hydrated) {
       toast('資料同步中，請稍候')
@@ -180,7 +225,7 @@ const Pass = () => {
     }
 
     if (tier === 'premium' && !hasPremium) {
-      toast.error('尚未購買高級通行券')
+      if (!skipToast) toast.error('尚未購買高級通行券')
       return
     }
 
@@ -207,23 +252,42 @@ const Pass = () => {
       const res = await coinAPI.claimPassReward({ rewardId: reward.id, tier })
       const rewardInfo = res?.data?.reward
 
-      // 更新完整數據
+      // 合併伺服器回應的狀態，保留本地已領取的獎勵
       if (res?.data) {
-        updatePassData(res.data)
+        setData((prev) => {
+          if (!prev) return res.data
+          const currentState = prev.state || sanitizeState({})
+          const serverState = res.data.state || sanitizeState({})
+
+          // 合併已領取的獎勵列表
+          const mergedClaimedFree = [...new Set([...(currentState.claimedFree || []), ...(serverState.claimedFree || [])])]
+          const mergedClaimedPremium = [...new Set([...(currentState.claimedPremium || []), ...(serverState.claimedPremium || [])])]
+
+          return {
+            ...res.data,
+            state: {
+              ...serverState,
+              claimedFree: mergedClaimedFree,
+              claimedPremium: mergedClaimedPremium
+            }
+          }
+        })
       }
 
       // 後台更新錢包，不等待
       refreshWallet().catch(console.error)
 
-      // 顯示成功訊息
-      if (rewardInfo?.coins) {
-        toast.success(`獲得 ${Number(rewardInfo.coins).toLocaleString('zh-TW')} CRCRCoin`, {
-          duration: 2000
-        })
-      } else {
-        toast.success('成功領取獎勵！', {
-          duration: 2000
-        })
+      // 顯示成功訊息（批次領取時不顯示）
+      if (!skipToast) {
+        if (rewardInfo?.coins) {
+          toast.success(`獲得 ${Number(rewardInfo.coins).toLocaleString('zh-TW')} CRCRCoin`, {
+            duration: 2000
+          })
+        } else {
+          toast.success('成功領取獎勵！', {
+            duration: 2000
+          })
+        }
       }
     } catch (error) {
       console.error('領取通行券獎勵失敗:', error)
@@ -255,7 +319,8 @@ const Pass = () => {
     const info = isPremiumTier ? reward.premium || {} : reward.free || {}
     const coins = Number(info?.coins) || 0
     const claimedSet = isPremiumTier ? claimedPremiumSet : claimedFreeSet
-    const claimed = claimedSet.has(reward.id)
+    // 確保 reward.id 轉成字串進行比對
+    const claimed = claimedSet.has(String(reward.id))
     const lockedByPremium = isPremiumTier && !hasPremium
     const lockedByXp = !stageUnlocked
     const locked = lockedByPremium || lockedByXp
@@ -438,6 +503,18 @@ const Pass = () => {
                 <span className="text-xs font-black text-white drop-shadow-lg">{xpBarPercent}%</span>
               </div>
             </div>
+          </div>
+
+          {/* 全部領取按鈕 */}
+          <div className="mt-4">
+            <button
+              onClick={handleClaimAll}
+              disabled={!hydrated || claimingKey}
+              className='w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white px-6 py-3 rounded-xl font-black shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-green-300/50'
+            >
+              <Sparkles className="h-5 w-5" />
+              全部領取
+            </button>
           </div>
 
           {/* 高級通行券購買按鈕 (手機版) */}
