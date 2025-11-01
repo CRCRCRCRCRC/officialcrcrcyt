@@ -41,17 +41,11 @@ const AdminLayout = () => {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   const navigation = [
-    { 
-      name: '儀表板', 
-      href: '/admin/dashboard', 
+    {
+      name: '儀表板',
+      href: '/admin/dashboard',
       icon: LayoutDashboard,
       gradient: 'from-blue-500 to-purple-600'
-    },
-    {
-      name: '熱門影片',
-      href: '/admin/featured-videos',
-      icon: Video,
-      gradient: 'from-red-500 to-pink-600'
     },
     {
       name: '公告管理',
@@ -64,6 +58,12 @@ const AdminLayout = () => {
       href: '/admin/add-coins',
       icon: Coins,
       gradient: 'from-yellow-500 to-orange-500'
+    },
+    {
+      name: '通行券XP發放',
+      href: '/admin/add-xp',
+      icon: Zap,
+      gradient: 'from-purple-500 to-pink-600'
     },
     {
       name: 'Discord 申請',

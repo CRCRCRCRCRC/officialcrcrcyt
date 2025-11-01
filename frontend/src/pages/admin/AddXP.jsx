@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Coins, Send, Search, X } from 'lucide-react'
+import { Zap, Send, Search, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { coinAPI, authAPI } from '../../services/api'
 
-const AddCoins = () => {
+const AddXP = () => {
   const [email, setEmail] = useState('')
   const [amount, setAmount] = useState('')
   const [loading, setLoading] = useState(false)
@@ -78,7 +78,7 @@ const AddCoins = () => {
       return
     }
     if (!Number.isFinite(value) || value === 0) {
-      toast.error('請輸入正確的 CRCRCoin 數量（可正負整數）')
+      toast.error('請輸入正確的 XP 數量（可正負整數）')
       return
     }
 
@@ -106,19 +106,19 @@ const AddCoins = () => {
 
     setLoading(true)
     try {
-      console.log('🔍 調用 grantCoins:', { email: trimmedEmail, amount: value })
-      const response = await coinAPI.grantCoins(trimmedEmail, value)
-      console.log('✅ grantCoins 響應:', response)
-      
+      console.log('🔍 調用 grantPassXP:', { email: trimmedEmail, xp: value })
+      const response = await coinAPI.grantPassXP(trimmedEmail, value)
+      console.log('✅ grantPassXP 響應:', response)
+
       if (value > 0) {
-        toast.success(`已發放 ${value} CRCRCoin 給 ${trimmedEmail}`)
+        toast.success(`已發放 ${value} XP 給 ${trimmedEmail}`)
       } else {
-        toast.success(`已扣除 ${Math.abs(value)} CRCRCoin，目標：${trimmedEmail}`)
+        toast.success(`已扣除 ${Math.abs(value)} XP，目標：${trimmedEmail}`)
       }
       setEmail('')
       setAmount('')
     } catch (error) {
-      console.error('❌ grantCoins 錯誤:', error)
+      console.error('❌ grantPassXP 錯誤:', error)
       console.error('❌ 錯誤響應:', error.response)
       const errorMessage = error.response?.data?.error || error.message || '發放失敗，請稍後再試'
       toast.error(errorMessage)
@@ -132,15 +132,15 @@ const AddCoins = () => {
       <div className="bg-white bg-opacity-80 backdrop-blur-xl border-b border-white/20 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 py-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl flex items-center justify-center text-white">
-              <Coins className="w-6 h-6" />
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center text-white">
+              <Zap className="w-6 h-6" />
             </div>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                管理員發放 CRCRCoin
+                管理員發放通行券 XP
               </h1>
               <p className="text-sm text-gray-600">
-                直接依電子郵件搜尋用戶，支援發放或扣除 CRCRCoin 餘額
+                直接依電子郵件搜尋用戶，支援發放或扣除通行券 XP
               </p>
             </div>
           </div>
@@ -167,7 +167,7 @@ const AddCoins = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="輸入名稱或電子郵件搜尋..."
-                    className="w-full pl-12 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-12 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     disabled={loading}
                   />
                   {searchQuery && (
@@ -194,7 +194,7 @@ const AddCoins = () => {
                           key={user.id}
                           type="button"
                           onClick={() => selectUser(user)}
-                          className="w-full px-4 py-3 text-left hover:bg-blue-50 transition border-b border-gray-100 last:border-b-0"
+                          className="w-full px-4 py-3 text-left hover:bg-purple-50 transition border-b border-gray-100 last:border-b-0"
                         >
                           <div className="font-medium text-gray-900">
                             {user.display_name || user.username || '未命名'}
@@ -217,7 +217,7 @@ const AddCoins = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="user@example.com 或從上方搜尋選擇"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 disabled={loading}
                 required
               />
@@ -226,7 +226,7 @@ const AddCoins = () => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-800 mb-2">
-              發放數量（CRCRCoin）
+              發放數量（XP）
             </label>
             <input
               type="number"
@@ -234,13 +234,13 @@ const AddCoins = () => {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="例如：100 或 -50"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               disabled={loading}
               required
             />
           </div>
 
-          <div className="bg-blue-50 border border-blue-100 text-blue-700 text-sm rounded-xl p-4 space-y-1">
+          <div className="bg-purple-50 border border-purple-100 text-purple-700 text-sm rounded-xl p-4 space-y-1">
             <p>注意：僅會發放給已經登入過的用戶（Google 登入時使用的電子郵件）。</p>
             <p>提示：輸入正數等於發放，輸入負數等於扣除。</p>
           </div>
@@ -248,7 +248,7 @@ const AddCoins = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-lg hover:shadow-xl transition disabled:opacity-60"
+            className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold shadow-lg hover:shadow-xl transition disabled:opacity-60"
           >
             <Send className="w-5 h-5" />
             {loading ? '發放中…' : '立即發放'}
@@ -259,4 +259,4 @@ const AddCoins = () => {
   )
 }
 
-export default AddCoins
+export default AddXP

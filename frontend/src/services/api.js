@@ -136,10 +136,10 @@ export const authAPI = {
     api.post('/auth/google-code', { code, passphrase }),
   loginWithGooglePublic: (code) =>
     api.post('/auth/google-public', { code }),
-  
-  verify: () => 
+
+  verify: () =>
     api.get('/auth/verify'),
-  
+
   changePassword: (currentPassword, newPassword) =>
     api.post('/auth/change-password', { currentPassword, newPassword }),
 
@@ -153,7 +153,11 @@ export const authAPI = {
     api.post('/auth/discord-bind', { code }),
 
   unbindDiscord: () =>
-    api.post('/auth/discord-unbind')
+    api.post('/auth/discord-unbind'),
+
+  // 管理員取得用戶列表（用於搜尋）
+  getUsers: (search = '') =>
+    api.get('/auth/users', { params: { search } })
 }
 export const videoAPI = {
   getAll: (params = {}) => 
@@ -254,6 +258,11 @@ export const coinAPI = {
   // 管理員發放 CRCRCoin
   grantCoins: (email, amount) =>
     api.post('/coin/grant', { email, amount }, {
+      headers: authHeaderForCoin()
+    }),
+  // 管理員發放通行券 XP
+  grantPassXP: (email, xp) =>
+    api.post('/coin/pass/grant-xp', { email, xp }, {
       headers: authHeaderForCoin()
     }),
   // 取得商品訂單（管理員）
