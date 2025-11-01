@@ -1282,6 +1282,50 @@ class NeonDatabase {
   // 初始化數據
   async initializeData() {
     try {
+      // 執行歌詞表遷移 (從舊的 artist 欄位到 artist_id)
+      try {
+        const checkOldColumn = await this.pool.query(`
+          SELECT column_name
+          FROM information_schema.columns
+          WHERE table_name = 'lyrics' AND column_name = 'artist'
+        `);
+
+        if (checkOldColumn.rows.length > 0) {
+          console.log('🔄 偵測到舊的 artist 欄位,開始遷移...');
+
+          // 添加新的 artist_id 欄位
+          await this.pool.query(`
+            ALTER TABLE lyrics
+            ADD COLUMN IF NOT EXISTS artist_id INTEGER
+          `);
+
+          // 刪除舊的 artist 欄位
+          await this.pool.query(`
+            ALTER TABLE lyrics
+            DROP COLUMN IF EXISTS artist
+          `);
+
+          // 添加外鍵約束
+          await this.pool.query(`
+            DO $$
+            BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'lyrics_artist_id_fkey'
+              ) THEN
+                ALTER TABLE lyrics
+                ADD CONSTRAINT lyrics_artist_id_fkey
+                FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE;
+              END IF;
+            END $$;
+          `);
+
+          console.log('✅ 歌詞表遷移完成');
+        }
+      } catch (migrationError) {
+        console.error('⚠️ 歌詞表遷移失敗:', migrationError);
+      }
+
       // 檢查是否已有用戶
       const userCount = await this.pool.query('SELECT COUNT(*) FROM users');
       
