@@ -16,6 +16,7 @@ import Tasks from './pages/Tasks'
 import Notifications from './pages/Notifications'
 import Profile from './pages/Profile'
 import DiscordCallback from './pages/DiscordCallback'
+import LyricsPage from './pages/LyricsPage'
 
 import AdminLogin from './pages/admin/Login'
 import AdminDashboard from './pages/admin/Dashboard'
@@ -51,6 +52,7 @@ function App() {
             <Route path="tasks" element={<Tasks />} />
             <Route path="profile" element={<Profile />} />
             <Route path="profile/discord/callback" element={<DiscordCallback />} />
+            <Route path="lyrics" element={<LyricsPage />} />
 
           </Route>
 
