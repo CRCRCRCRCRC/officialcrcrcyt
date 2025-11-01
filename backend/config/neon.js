@@ -1296,6 +1296,27 @@ class NeonDatabase {
   // 初始化數據
   async initializeData() {
     try {
+      // 添加 slug 欄位(如果不存在)
+      try {
+        console.log('🔄 檢查並添加 slug 欄位...');
+
+        // 為演唱者表添加 slug 欄位
+        await this.pool.query(`
+          ALTER TABLE artists
+          ADD COLUMN IF NOT EXISTS slug VARCHAR(255) UNIQUE
+        `);
+
+        // 為歌詞表添加 slug 欄位
+        await this.pool.query(`
+          ALTER TABLE lyrics
+          ADD COLUMN IF NOT EXISTS slug VARCHAR(255) UNIQUE
+        `);
+
+        console.log('✅ Slug 欄位檢查完成');
+      } catch (slugError) {
+        console.error('⚠️ 添加 slug 欄位失敗:', slugError);
+      }
+
       // 執行歌詞表遷移 (從舊的 artist 欄位到 artist_id)
       try {
         const checkOldColumn = await this.pool.query(`
