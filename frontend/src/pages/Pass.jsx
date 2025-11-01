@@ -210,68 +210,70 @@ const Pass = () => {
     const isMilestone = reward.level % 5 === 0
 
     return (
-      <button
-        onClick={() => handleClaim(tier, reward)}
-        disabled={locked || claimed || processing}
-        className={`relative w-full rounded-2xl flex flex-col items-center justify-center p-3 transition-all duration-200 border-4 ${
-          isPremiumTier
-            ? 'bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-500 border-yellow-500/50'
-            : 'bg-gradient-to-br from-cyan-300 via-blue-400 to-indigo-500 border-cyan-500/50'
-        } ${
-          claimed
-            ? 'ring-4 ring-green-400 shadow-xl shadow-green-400/50'
-            : locked
-              ? 'opacity-30 grayscale'
-              : processing
-                ? 'opacity-60 cursor-wait'
-                : 'hover:scale-105 hover:shadow-2xl shadow-lg active:scale-95'
-        } ${
-          isMilestone ? 'min-h-[110px]' : 'min-h-[90px]'
-        }`}
-      >
-        {/* 處理中動畫 */}
-        {processing && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl">
-            <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
-          </div>
-        )}
-
-        {/* 已領取勾勾 */}
-        {claimed && (
-          <div className="absolute -top-2 -right-2 bg-green-500 rounded-full p-1.5 shadow-lg ring-4 ring-white z-10">
-            <CheckCircle2 className='h-6 w-6 text-white' />
-          </div>
-        )}
-
-        {/* 鎖定圖標 */}
-        {locked && !claimed && !processing && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl">
-            <Lock className='h-8 w-8 text-white drop-shadow-lg' />
-          </div>
-        )}
-
-        {/* 里程碑標記 */}
-        {isMilestone && !locked && !processing && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-black px-2.5 py-0.5 rounded-full shadow-lg z-10 whitespace-nowrap">
+      <div className="relative w-full">
+        {/* 里程碑標記 - 放在按鈕外層 */}
+        {isMilestone && !locked && !processing && !claimed && (
+          <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-20 whitespace-nowrap">
             里程碑
           </div>
         )}
 
-        {/* 獎勵圖標 */}
-        <Coins className={`${isMilestone ? 'h-10 w-10' : 'h-8 w-8'} text-white drop-shadow-lg mb-1`} />
-
-        {/* 金額 */}
-        <div className={`${isMilestone ? 'text-2xl' : 'text-xl'} font-black text-white drop-shadow-lg`}>
-          {coins}
-        </div>
-
-        {/* Premium 標籤 */}
-        {isPremiumTier && !processing && (
-          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
-            PREMIUM
+        {/* 已領取勾勾 - 放在按鈕外層 */}
+        {claimed && (
+          <div className="absolute -top-1.5 -right-1.5 bg-green-500 rounded-full p-1 shadow-lg ring-2 ring-white z-20">
+            <CheckCircle2 className='h-5 w-5 text-white' />
           </div>
         )}
-      </button>
+
+        <button
+          onClick={() => handleClaim(tier, reward)}
+          disabled={locked || claimed || processing}
+          className={`relative w-full rounded-xl flex flex-col items-center justify-center py-3 px-2 transition-all duration-200 border-3 overflow-hidden ${
+            isPremiumTier
+              ? 'bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-500 border-yellow-500/50'
+              : 'bg-gradient-to-br from-cyan-300 via-blue-400 to-indigo-500 border-cyan-500/50'
+          } ${
+            claimed
+              ? 'ring-2 ring-green-400 shadow-lg shadow-green-400/30'
+              : locked
+                ? 'opacity-30 grayscale'
+                : processing
+                  ? 'opacity-60 cursor-wait'
+                  : 'hover:scale-105 hover:shadow-xl shadow-md active:scale-95'
+          } ${
+            isMilestone ? 'min-h-[100px]' : 'min-h-[85px]'
+          }`}
+        >
+          {/* 處理中動畫 */}
+          {processing && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-xl z-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent"></div>
+            </div>
+          )}
+
+          {/* 鎖定圖標 */}
+          {locked && !claimed && !processing && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-xl z-10">
+              <Lock className='h-7 w-7 text-white drop-shadow-lg' />
+            </div>
+          )}
+
+          {/* 獎勵圖標 */}
+          <Coins className={`${isMilestone ? 'h-9 w-9' : 'h-7 w-7'} text-white drop-shadow-lg ${isPremiumTier ? 'mb-0.5' : 'mb-1'}`} />
+
+          {/* 金額 */}
+          <div className={`${isMilestone ? 'text-xl' : 'text-lg'} font-black text-white drop-shadow-lg ${isPremiumTier ? 'mb-3' : ''}`}>
+            {coins}
+          </div>
+
+          {/* Premium 標籤 */}
+          {isPremiumTier && !processing && !locked && (
+            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap">
+              PREMIUM
+            </div>
+          )}
+        </button>
+      </div>
     )
   }
 
@@ -444,9 +446,9 @@ const Pass = () => {
 
                       {/* 等級數字 */}
                       <div
-                        className={`mb-2.5 flex h-12 items-center justify-center rounded-2xl text-xl font-black transition-all border-4 shadow-lg ${
+                        className={`mb-2.5 flex h-11 items-center justify-center rounded-xl text-lg font-black transition-all border-3 shadow-md ${
                           isCurrentLevel
-                            ? 'bg-gradient-to-br from-white to-gray-100 text-purple-600 ring-4 ring-white shadow-2xl scale-110 border-white'
+                            ? 'bg-gradient-to-br from-white to-gray-100 text-purple-600 ring-2 ring-white shadow-lg scale-105 border-white'
                             : stageUnlocked
                               ? 'bg-gradient-to-br from-yellow-300 to-amber-500 text-purple-900 border-yellow-400/50'
                               : 'bg-purple-900/30 text-white/40 border-white/20'
