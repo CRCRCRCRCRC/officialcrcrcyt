@@ -264,13 +264,6 @@ const Pass = () => {
 
     return (
       <div className="relative w-full">
-        {/* 里程碑標記 - 放在按鈕外層 */}
-        {isMilestone && !locked && !processing && !claimed && (
-          <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-20 whitespace-nowrap">
-            里程碑
-          </div>
-        )}
-
         {/* 已領取勾勾 - 放在按鈕外層 */}
         {claimed && (
           <div className="absolute -top-1.5 -right-1.5 bg-green-500 rounded-full p-1 shadow-lg ring-2 ring-white z-20">

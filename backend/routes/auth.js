@@ -536,12 +536,12 @@ router.get('/users', authenticateToken, async (req, res) => {
 
     const searchTerm = `%${search.trim()}%`;
 
-    // 從資料庫搜尋用戶（依 email 或 display_name）
+    // 從資料庫搜尋用戶（依 username/email 或 display_name）
     const result = await database.pool.query(
       `SELECT id, username, email, display_name, discord_id
        FROM users
-       WHERE (email ILIKE $1 OR display_name ILIKE $1)
-       ORDER BY display_name, email
+       WHERE (username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1)
+       ORDER BY display_name, username
        LIMIT 20`,
       [searchTerm]
     );
