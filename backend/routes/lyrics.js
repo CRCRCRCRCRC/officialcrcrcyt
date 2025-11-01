@@ -3,12 +3,22 @@ const router = express.Router();
 const database = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
+// 生成 slug 的輔助函數
+const generateSlug = (title) => {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+};
+
 // 取得所有歌詞（可依分類篩選）包含演唱者資訊
 router.get('/', async (req, res) => {
   try {
     const { category } = req.query;
     let query = `
-      SELECT l.*, a.name as artist_name
+      SELECT l.*, a.name as artist_name, a.slug as artist_slug
       FROM lyrics l
       LEFT JOIN artists a ON l.artist_id = a.id
     `;
@@ -34,12 +44,63 @@ router.get('/', async (req, res) => {
   }
 });
 
-// 取得單一歌詞
+// 根據分類和演唱者 slug 取得歌詞列表
+router.get('/category/:category/artist/:artistSlug', async (req, res) => {
+  try {
+    const { category, artistSlug } = req.params;
+
+    if (category !== 'soramimi' && category !== 'lyrics') {
+      return res.status(400).json({ error: '分類必須是 soramimi 或 lyrics' });
+    }
+
+    const result = await database.pool.query(`
+      SELECT l.*, a.name as artist_name, a.slug as artist_slug
+      FROM lyrics l
+      INNER JOIN artists a ON l.artist_id = a.id
+      WHERE l.category = $1 AND a.slug = $2
+      ORDER BY l.title ASC
+    `, [category, artistSlug]);
+
+    res.json({ lyrics: result.rows });
+  } catch (error) {
+    console.error('取得歌詞列表失敗:', error);
+    res.status(500).json({ error: '取得歌詞列表失敗' });
+  }
+});
+
+// 根據分類、演唱者 slug 和歌曲 slug 取得單一歌詞
+router.get('/category/:category/artist/:artistSlug/song/:songSlug', async (req, res) => {
+  try {
+    const { category, artistSlug, songSlug } = req.params;
+
+    if (category !== 'soramimi' && category !== 'lyrics') {
+      return res.status(400).json({ error: '分類必須是 soramimi 或 lyrics' });
+    }
+
+    const result = await database.pool.query(`
+      SELECT l.*, a.name as artist_name, a.slug as artist_slug
+      FROM lyrics l
+      INNER JOIN artists a ON l.artist_id = a.id
+      WHERE l.category = $1 AND a.slug = $2 AND l.slug = $3
+    `, [category, artistSlug, songSlug]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '找不到該歌詞' });
+    }
+
+    res.json({ lyric: result.rows[0] });
+  } catch (error) {
+    console.error('取得歌詞失敗:', error);
+    res.status(500).json({ error: '取得歌詞失敗' });
+  }
+});
+
+// 取得單一歌詞 (by ID, for admin)
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const result = await database.pool.query(
-      `SELECT l.*, a.name as artist_name
+      `SELECT l.*, a.name as artist_name, a.slug as artist_slug
        FROM lyrics l
        LEFT JOIN artists a ON l.artist_id = a.id
        WHERE l.id = $1`,
@@ -88,19 +149,21 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(400).json({ error: '找不到該演唱者' });
     }
 
+    const slug = generateSlug(title);
+
     console.log('[lyrics] POST / - 插入歌詞...');
     const result = await database.pool.query(
-      `INSERT INTO lyrics (category, title, artist_id, lyrics, youtube_url, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `INSERT INTO lyrics (category, title, slug, artist_id, lyrics, youtube_url, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        RETURNING *`,
-      [category, title, artist_id, lyrics, youtube_url || null]
+      [category, title, slug, artist_id, lyrics, youtube_url || null]
     );
 
     console.log('[lyrics] POST / - 歌詞已插入, id:', result.rows[0].id);
 
     // 取得包含演唱者名稱的完整資料
     const fullResult = await database.pool.query(
-      `SELECT l.*, a.name as artist_name
+      `SELECT l.*, a.name as artist_name, a.slug as artist_slug
        FROM lyrics l
        LEFT JOIN artists a ON l.artist_id = a.id
        WHERE l.id = $1`,
@@ -156,16 +219,18 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(400).json({ error: '找不到該演唱者' });
     }
 
+    const slug = generateSlug(title);
+
     await database.pool.query(
       `UPDATE lyrics
-       SET category = $1, title = $2, artist_id = $3, lyrics = $4, youtube_url = $5, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6`,
-      [category, title, artist_id, lyrics, youtube_url || null, id]
+       SET category = $1, title = $2, slug = $3, artist_id = $4, lyrics = $5, youtube_url = $6, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $7`,
+      [category, title, slug, artist_id, lyrics, youtube_url || null, id]
     );
 
     // 取得包含演唱者名稱的完整資料
     const fullResult = await database.pool.query(
-      `SELECT l.*, a.name as artist_name
+      `SELECT l.*, a.name as artist_name, a.slug as artist_slug
        FROM lyrics l
        LEFT JOIN artists a ON l.artist_id = a.id
        WHERE l.id = $1`,

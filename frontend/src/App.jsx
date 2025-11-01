@@ -16,7 +16,10 @@ import Tasks from './pages/Tasks'
 import Notifications from './pages/Notifications'
 import Profile from './pages/Profile'
 import DiscordCallback from './pages/DiscordCallback'
-import LyricsPage from './pages/LyricsPage'
+import CategoryPage from './pages/lyrics/CategoryPage'
+import ArtistsPage from './pages/lyrics/ArtistsPage'
+import SongsPage from './pages/lyrics/SongsPage'
+import LyricDetailPage from './pages/lyrics/LyricDetailPage'
 
 import AdminLogin from './pages/admin/Login'
 import AdminDashboard from './pages/admin/Dashboard'
@@ -52,7 +55,12 @@ function App() {
             <Route path="tasks" element={<Tasks />} />
             <Route path="profile" element={<Profile />} />
             <Route path="profile/discord/callback" element={<DiscordCallback />} />
-            <Route path="lyrics" element={<LyricsPage />} />
+
+            {/* 歌詞階層式路由 */}
+            <Route path="lyrics" element={<CategoryPage />} />
+            <Route path="lyrics/:category" element={<ArtistsPage />} />
+            <Route path="lyrics/:category/:artistSlug" element={<SongsPage />} />
+            <Route path="lyrics/:category/:artistSlug/:songSlug" element={<LyricDetailPage />} />
 
           </Route>
 

@@ -187,9 +187,16 @@ class NeonDatabase {
         CREATE TABLE IF NOT EXISTS artists (
           id SERIAL PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
+          slug VARCHAR(255) UNIQUE,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
+      `);
+
+      // 添加 slug 欄位到演唱者表(如果不存在)
+      await this.pool.query(`
+        ALTER TABLE artists
+        ADD COLUMN IF NOT EXISTS slug VARCHAR(255) UNIQUE
       `);
 
       // 創建歌詞表
@@ -198,12 +205,19 @@ class NeonDatabase {
           id SERIAL PRIMARY KEY,
           category VARCHAR(50) NOT NULL,
           title VARCHAR(500) NOT NULL,
+          slug VARCHAR(255) UNIQUE,
           artist_id INTEGER REFERENCES artists(id) ON DELETE CASCADE,
           lyrics TEXT NOT NULL,
           youtube_url VARCHAR(500),
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
+      `);
+
+      // 添加 slug 欄位到歌詞表(如果不存在)
+      await this.pool.query(`
+        ALTER TABLE lyrics
+        ADD COLUMN IF NOT EXISTS slug VARCHAR(255) UNIQUE
       `);
 
       // 遷移舊的 artist 欄位到 artist_id (如果存在舊欄位)

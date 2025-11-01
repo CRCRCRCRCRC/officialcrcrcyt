@@ -3,12 +3,38 @@ const router = express.Router();
 const database = require('../config/database');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
+// 生成 slug 的輔助函數
+const generateSlug = (name) => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+};
+
 // 取得所有演唱者
 router.get('/', async (req, res) => {
   try {
-    const result = await database.pool.query(
-      'SELECT * FROM artists ORDER BY name ASC'
-    );
+    const { category } = req.query;
+    let query = 'SELECT * FROM artists';
+    const params = [];
+
+    // 如果指定分類,只返回該分類下有歌詞的演唱者
+    if (category && (category === 'soramimi' || category === 'lyrics')) {
+      query = `
+        SELECT DISTINCT a.*
+        FROM artists a
+        INNER JOIN lyrics l ON a.id = l.artist_id
+        WHERE l.category = $1
+        ORDER BY a.name ASC
+      `;
+      params.push(category);
+    } else {
+      query += ' ORDER BY name ASC';
+    }
+
+    const result = await database.pool.query(query, params);
     res.json({ artists: result.rows });
   } catch (error) {
     console.error('取得演唱者失敗:', error);
@@ -45,11 +71,13 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       return res.status(400).json({ error: '請輸入演唱者名稱' });
     }
 
+    const slug = generateSlug(name);
+
     const result = await database.pool.query(
-      `INSERT INTO artists (name, created_at, updated_at)
-       VALUES ($1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `INSERT INTO artists (name, slug, created_at, updated_at)
+       VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        RETURNING *`,
-      [name.trim()]
+      [name.trim(), slug]
     );
 
     res.status(201).json({

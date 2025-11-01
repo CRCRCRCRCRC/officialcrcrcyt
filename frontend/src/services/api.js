@@ -303,9 +303,9 @@ export const announcementAPI = {
 }
 
 export const artistsAPI = {
-  // 取得所有演唱者
-  getAll: () =>
-    api.get('/artists'),
+  // 取得所有演唱者（可依分類篩選）
+  getAll: (category = '') =>
+    api.get('/artists', { params: category ? { category } : {} }),
 
   // 取得單一演唱者
   getById: (id) =>
@@ -329,7 +329,15 @@ export const lyricsAPI = {
   getAll: (category = '') =>
     api.get('/lyrics', { params: category ? { category } : {} }),
 
-  // 取得單一歌詞
+  // 根據分類和演唱者 slug 取得歌詞列表
+  getByArtist: (category, artistSlug) =>
+    api.get(`/lyrics/category/${category}/artist/${artistSlug}`),
+
+  // 根據分類、演唱者 slug 和歌曲 slug 取得單一歌詞
+  getBySlugs: (category, artistSlug, songSlug) =>
+    api.get(`/lyrics/category/${category}/artist/${artistSlug}/song/${songSlug}`),
+
+  // 取得單一歌詞 (by ID, for admin)
   getById: (id) =>
     api.get(`/lyrics/${id}`),
 
