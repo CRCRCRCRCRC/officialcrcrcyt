@@ -17,7 +17,8 @@ import {
   Zap,
   TrendingUp,
   Megaphone,
-  Coins
+  Coins,
+  Music
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -70,6 +71,12 @@ const AdminLayout = () => {
       href: '/admin/discord-applications',
       icon: Users,
       gradient: 'from-indigo-500 to-purple-600'
+    },
+    {
+      name: '歌詞',
+      href: '/admin/lyrics',
+      icon: Music,
+      gradient: 'from-pink-500 to-rose-600'
     },
     {
       name: '系統設定',
