@@ -206,6 +206,52 @@ class NeonDatabase {
         )
       `);
 
+      // 遷移舊的 artist 欄位到 artist_id (如果存在舊欄位)
+      try {
+        // 檢查是否存在舊的 artist 欄位
+        const checkOldColumn = await this.pool.query(`
+          SELECT column_name
+          FROM information_schema.columns
+          WHERE table_name = 'lyrics' AND column_name = 'artist'
+        `);
+
+        if (checkOldColumn.rows.length > 0) {
+          console.log('🔄 偵測到舊的 artist 欄位,開始遷移...');
+
+          // 1. 添加新的 artist_id 欄位 (如果不存在)
+          await this.pool.query(`
+            ALTER TABLE lyrics
+            ADD COLUMN IF NOT EXISTS artist_id INTEGER
+          `);
+
+          // 2. 刪除舊的 artist 欄位
+          await this.pool.query(`
+            ALTER TABLE lyrics
+            DROP COLUMN IF EXISTS artist
+          `);
+
+          // 3. 添加外鍵約束
+          await this.pool.query(`
+            DO $$
+            BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'lyrics_artist_id_fkey'
+              ) THEN
+                ALTER TABLE lyrics
+                ADD CONSTRAINT lyrics_artist_id_fkey
+                FOREIGN KEY (artist_id) REFERENCES artists(id) ON DELETE CASCADE;
+              END IF;
+            END $$;
+          `);
+
+          console.log('✅ 歌詞表遷移完成');
+        }
+      } catch (migrationError) {
+        console.error('⚠️ 歌詞表遷移失敗:', migrationError);
+        // 不拋出錯誤,讓應用繼續運行
+      }
+
       // CRCRCoin 資料表
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS coin_wallets (
