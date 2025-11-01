@@ -172,8 +172,10 @@ const Pass = () => {
       return
     }
 
-    // 防止重複點擊 - 如果正在處理任何領取，就不允許新的領取
-    if (claimingKey) {
+    const key = `${tier}:${reward.id}`
+
+    // 防止重複點擊同一個獎勵
+    if (claimingKey === key) {
       return
     }
 
@@ -182,24 +184,67 @@ const Pass = () => {
       return
     }
 
-    const key = `${tier}:${reward.id}`
     setClaimingKey(key)
+
+    // 立即標記為已領取，提供即時反饋
+    setData((prev) => {
+      if (!prev) return prev
+      const currentState = prev.state || sanitizeState({})
+      const claimedSet = tier === 'premium' ? new Set(currentState.claimedPremium || []) : new Set(currentState.claimedFree || [])
+      claimedSet.add(reward.id)
+
+      return {
+        ...prev,
+        state: {
+          ...currentState,
+          claimedFree: tier === 'free' ? Array.from(claimedSet) : currentState.claimedFree,
+          claimedPremium: tier === 'premium' ? Array.from(claimedSet) : currentState.claimedPremium
+        }
+      }
+    })
 
     try {
       const res = await coinAPI.claimPassReward({ rewardId: reward.id, tier })
       const rewardInfo = res?.data?.reward
-      if (rewardInfo?.coins) {
-        toast.success(`獲得 ${Number(rewardInfo.coins).toLocaleString('zh-TW')} CRCRCoin`)
-      } else {
-        toast.success('成功領取獎勵！')
-      }
+
+      // 更新完整數據
       if (res?.data) {
         updatePassData(res.data)
       }
-      await refreshWallet()
+
+      // 後台更新錢包，不等待
+      refreshWallet().catch(console.error)
+
+      // 顯示成功訊息
+      if (rewardInfo?.coins) {
+        toast.success(`獲得 ${Number(rewardInfo.coins).toLocaleString('zh-TW')} CRCRCoin`, {
+          duration: 2000
+        })
+      } else {
+        toast.success('成功領取獎勵！', {
+          duration: 2000
+        })
+      }
     } catch (error) {
       console.error('領取通行券獎勵失敗:', error)
       toast.error(error?.response?.data?.error || '領取失敗，請稍後再試')
+
+      // 失敗時恢復狀態
+      setData((prev) => {
+        if (!prev) return prev
+        const currentState = prev.state || sanitizeState({})
+        const claimedSet = tier === 'premium' ? new Set(currentState.claimedPremium || []) : new Set(currentState.claimedFree || [])
+        claimedSet.delete(reward.id)
+
+        return {
+          ...prev,
+          state: {
+            ...currentState,
+            claimedFree: tier === 'free' ? Array.from(claimedSet) : currentState.claimedFree,
+            claimedPremium: tier === 'premium' ? Array.from(claimedSet) : currentState.claimedPremium
+          }
+        }
+      })
     } finally {
       setClaimingKey(null)
     }
