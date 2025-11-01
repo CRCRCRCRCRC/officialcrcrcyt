@@ -21,11 +21,16 @@ router.get('/', async (req, res) => {
 
     query += ' ORDER BY l.created_at DESC';
 
+    console.log('[lyrics] GET / - Query:', query);
+    console.log('[lyrics] GET / - Params:', params);
+
     const result = await database.pool.query(query, params);
+    console.log('[lyrics] GET / - Success, rows:', result.rows.length);
     res.json({ lyrics: result.rows });
   } catch (error) {
-    console.error('取得歌詞失敗:', error);
-    res.status(500).json({ error: '取得歌詞失敗' });
+    console.error('[lyrics] GET / - 取得歌詞失敗:', error);
+    console.error('[lyrics] GET / - Error details:', error.message, error.stack);
+    res.status(500).json({ error: '取得歌詞失敗', details: error.message });
   }
 });
 
@@ -57,32 +62,41 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { category, title, artist_id, lyrics, youtube_url } = req.body;
 
+    console.log('[lyrics] POST / - Request body:', { category, title, artist_id, youtube_url });
+
     // 驗證必填欄位
     if (!category || !title || !artist_id || !lyrics) {
+      console.log('[lyrics] POST / - 缺少必填欄位');
       return res.status(400).json({ error: '請填寫所有必填欄位' });
     }
 
     // 驗證分類
     if (category !== 'soramimi' && category !== 'lyrics') {
+      console.log('[lyrics] POST / - 分類無效:', category);
       return res.status(400).json({ error: '分類必須是 soramimi 或 lyrics' });
     }
 
     // 驗證演唱者是否存在
+    console.log('[lyrics] POST / - 檢查演唱者:', artist_id);
     const artistCheck = await database.pool.query(
       'SELECT id FROM artists WHERE id = $1',
       [artist_id]
     );
 
     if (artistCheck.rows.length === 0) {
+      console.log('[lyrics] POST / - 找不到演唱者:', artist_id);
       return res.status(400).json({ error: '找不到該演唱者' });
     }
 
+    console.log('[lyrics] POST / - 插入歌詞...');
     const result = await database.pool.query(
       `INSERT INTO lyrics (category, title, artist_id, lyrics, youtube_url, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
        RETURNING *`,
       [category, title, artist_id, lyrics, youtube_url || null]
     );
+
+    console.log('[lyrics] POST / - 歌詞已插入, id:', result.rows[0].id);
 
     // 取得包含演唱者名稱的完整資料
     const fullResult = await database.pool.query(
@@ -93,14 +107,16 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
       [result.rows[0].id]
     );
 
+    console.log('[lyrics] POST / - 成功, 返回完整資料');
     res.status(201).json({
       success: true,
       message: '歌詞已新增',
       lyric: fullResult.rows[0]
     });
   } catch (error) {
-    console.error('新增歌詞失敗:', error);
-    res.status(500).json({ error: '新增歌詞失敗' });
+    console.error('[lyrics] POST / - 新增歌詞失敗:', error);
+    console.error('[lyrics] POST / - Error details:', error.message, error.stack);
+    res.status(500).json({ error: '新增歌詞失敗', details: error.message });
   }
 });
 
