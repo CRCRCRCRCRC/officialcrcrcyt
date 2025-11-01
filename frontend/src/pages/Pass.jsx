@@ -213,7 +213,7 @@ const Pass = () => {
       <button
         onClick={() => handleClaim(tier, reward)}
         disabled={locked || claimed || processing}
-        className={`relative w-full rounded-2xl flex flex-col items-center justify-center p-4 transition-all duration-200 border-4 ${
+        className={`relative w-full rounded-2xl flex flex-col items-center justify-center p-3 transition-all duration-200 border-4 ${
           isPremiumTier
             ? 'bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-500 border-yellow-500/50'
             : 'bg-gradient-to-br from-cyan-300 via-blue-400 to-indigo-500 border-cyan-500/50'
@@ -222,43 +222,52 @@ const Pass = () => {
             ? 'ring-4 ring-green-400 shadow-xl shadow-green-400/50'
             : locked
               ? 'opacity-30 grayscale'
-              : 'hover:scale-105 hover:shadow-2xl shadow-lg active:scale-95'
+              : processing
+                ? 'opacity-60 cursor-wait'
+                : 'hover:scale-105 hover:shadow-2xl shadow-lg active:scale-95'
         } ${
-          isMilestone ? 'min-h-[120px]' : 'min-h-[100px]'
+          isMilestone ? 'min-h-[110px]' : 'min-h-[90px]'
         }`}
       >
+        {/* 處理中動畫 */}
+        {processing && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-white border-t-transparent"></div>
+          </div>
+        )}
+
         {/* 已領取勾勾 */}
         {claimed && (
-          <div className="absolute -top-2 -right-2 bg-green-500 rounded-full p-1.5 shadow-lg ring-4 ring-white">
-            <CheckCircle2 className='h-7 w-7 text-white' />
+          <div className="absolute -top-2 -right-2 bg-green-500 rounded-full p-1.5 shadow-lg ring-4 ring-white z-10">
+            <CheckCircle2 className='h-6 w-6 text-white' />
           </div>
         )}
 
         {/* 鎖定圖標 */}
-        {locked && !claimed && (
+        {locked && !claimed && !processing && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl">
-            <Lock className='h-10 w-10 text-white drop-shadow-lg' />
+            <Lock className='h-8 w-8 text-white drop-shadow-lg' />
           </div>
         )}
 
         {/* 里程碑標記 */}
-        {isMilestone && !locked && (
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-black px-3 py-1 rounded-full shadow-lg">
+        {isMilestone && !locked && !processing && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-black px-2.5 py-0.5 rounded-full shadow-lg z-10 whitespace-nowrap">
             里程碑
           </div>
         )}
 
         {/* 獎勵圖標 */}
-        <Coins className={`${isMilestone ? 'h-12 w-12' : 'h-10 w-10'} text-white drop-shadow-lg mb-2`} />
+        <Coins className={`${isMilestone ? 'h-10 w-10' : 'h-8 w-8'} text-white drop-shadow-lg mb-1`} />
 
         {/* 金額 */}
-        <div className={`${isMilestone ? 'text-3xl' : 'text-2xl'} font-black text-white drop-shadow-lg`}>
+        <div className={`${isMilestone ? 'text-2xl' : 'text-xl'} font-black text-white drop-shadow-lg`}>
           {coins}
         </div>
 
         {/* Premium 標籤 */}
-        {isPremiumTier && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+        {isPremiumTier && !processing && (
+          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
             PREMIUM
           </div>
         )}
@@ -321,15 +330,11 @@ const Pass = () => {
                 </div>
                 <div>
                   <h1 className='text-3xl sm:text-4xl font-black text-white drop-shadow-lg'>
-                    GODS VS MONSTERS!
+                    通行券【測試階段】
                   </h1>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="bg-white/30 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm border border-white/40">
-                      SEASON 28
-                    </span>
-                    <span className="bg-white/30 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm border border-white/40 flex items-center gap-1">
-                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                      14 天 15 小時
+                      SEASON 1
                     </span>
                   </div>
                 </div>
@@ -430,16 +435,16 @@ const Pass = () => {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.03 }}
-                      className='inline-block w-40 shrink-0'
+                      className='inline-block w-36 shrink-0'
                     >
                       {/* 高級獎勵 */}
-                      <div className='mb-3'>
+                      <div className='mb-2.5'>
                         {renderRewardBox('premium', reward, stageUnlocked)}
                       </div>
 
                       {/* 等級數字 */}
                       <div
-                        className={`mb-3 flex h-14 items-center justify-center rounded-2xl text-2xl font-black transition-all border-4 shadow-lg ${
+                        className={`mb-2.5 flex h-12 items-center justify-center rounded-2xl text-xl font-black transition-all border-4 shadow-lg ${
                           isCurrentLevel
                             ? 'bg-gradient-to-br from-white to-gray-100 text-purple-600 ring-4 ring-white shadow-2xl scale-110 border-white'
                             : stageUnlocked
@@ -458,9 +463,9 @@ const Pass = () => {
 
                     {/* 連接線 */}
                     {showConnector && (
-                      <div className="flex-shrink-0 w-8 flex flex-col items-center justify-center gap-3 px-2">
+                      <div className="flex-shrink-0 w-6 flex flex-col items-center justify-center gap-2.5 px-1">
                         <div className={`h-1 w-full rounded-full ${stageUnlocked ? 'bg-yellow-400' : 'bg-white/20'}`}></div>
-                        <div className="h-14"></div>
+                        <div className="h-12"></div>
                         <div className={`h-1 w-full rounded-full ${stageUnlocked ? 'bg-cyan-400' : 'bg-white/20'}`}></div>
                       </div>
                     )}
