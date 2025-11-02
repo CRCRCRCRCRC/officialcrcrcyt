@@ -1296,23 +1296,51 @@ class NeonDatabase {
   // 初始化數據
   async initializeData() {
     try {
-      // 添加 slug 欄位(如果不存在)
+      // 添加 slug 欄位並修改約束(如果不存在)
       try {
         console.log('🔄 檢查並添加 slug 欄位...');
 
         // 為演唱者表添加 slug 欄位
         await this.pool.query(`
           ALTER TABLE artists
-          ADD COLUMN IF NOT EXISTS slug VARCHAR(255) UNIQUE
+          ADD COLUMN IF NOT EXISTS slug VARCHAR(255)
         `);
 
         // 為歌詞表添加 slug 欄位
         await this.pool.query(`
           ALTER TABLE lyrics
-          ADD COLUMN IF NOT EXISTS slug VARCHAR(255) UNIQUE
+          ADD COLUMN IF NOT EXISTS slug VARCHAR(255)
         `);
 
-        console.log('✅ Slug 欄位檢查完成');
+        // 移除舊的 UNIQUE 約束(如果存在)
+        await this.pool.query(`
+          DO $$
+          BEGIN
+            IF EXISTS (
+              SELECT 1 FROM pg_constraint
+              WHERE conname = 'lyrics_slug_key'
+            ) THEN
+              ALTER TABLE lyrics DROP CONSTRAINT lyrics_slug_key;
+            END IF;
+          END $$;
+        `);
+
+        // 添加新的複合 UNIQUE 約束: category + artist_id + slug
+        await this.pool.query(`
+          DO $$
+          BEGIN
+            IF NOT EXISTS (
+              SELECT 1 FROM pg_constraint
+              WHERE conname = 'lyrics_category_artist_slug_key'
+            ) THEN
+              ALTER TABLE lyrics
+              ADD CONSTRAINT lyrics_category_artist_slug_key
+              UNIQUE (category, artist_id, slug);
+            END IF;
+          END $$;
+        `);
+
+        console.log('✅ Slug 欄位和約束檢查完成');
       } catch (slugError) {
         console.error('⚠️ 添加 slug 欄位失敗:', slugError);
       }
