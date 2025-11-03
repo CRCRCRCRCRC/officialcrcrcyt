@@ -131,7 +131,7 @@ const LyricDetailPage = () => {
               {lyric.lyrics.split('\n').map((line, index) => (
                 <p
                   key={index}
-                  className="my-2 text-gray-700 leading-normal transition-all hover:text-purple-600 hover:translate-x-1 cursor-default"
+                  className="my-1 text-gray-700 text-base leading-relaxed transition-all hover:text-purple-600 hover:translate-x-1 cursor-default"
                 >
                   {line || '\u00A0'}
                 </p>
