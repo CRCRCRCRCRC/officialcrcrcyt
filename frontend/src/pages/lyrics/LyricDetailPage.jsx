@@ -103,7 +103,7 @@ const LyricDetailPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
         <div className="flex gap-8 relative z-10">
           {/* 主內容區 */}
-          <main className="flex-1 bg-white/98 backdrop-blur-xl rounded-3xl shadow-2xl p-8 transition-all hover:shadow-3xl hover:-translate-y-1 overflow-hidden">
+          <main className="flex-1 bg-white rounded-3xl shadow-2xl p-8 transition-all hover:shadow-3xl hover:-translate-y-1 overflow-hidden">
             {/* 頂部漸變條 */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 bg-[length:200%_100%] animate-[gradientShift_3s_ease_infinite]"></div>
 
@@ -148,7 +148,7 @@ const LyricDetailPage = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="搜尋演唱者..."
-                className="w-full px-5 py-3 pr-12 rounded-2xl border-2 border-transparent bg-white/98 backdrop-blur-xl shadow-xl focus:border-purple-400 focus:shadow-2xl focus:-translate-y-0.5 transition-all outline-none"
+                className="w-full px-5 py-3 pr-12 rounded-2xl border-2 border-transparent bg-white shadow-xl focus:border-purple-400 focus:shadow-2xl focus:-translate-y-0.5 transition-all outline-none"
               />
               <span className="absolute right-5 top-1/2 -translate-y-1/2 text-xl opacity-50">
                 🔍
@@ -156,7 +156,7 @@ const LyricDetailPage = () => {
             </div>
 
             {/* 演唱者列表 */}
-            <div className="bg-white/98 backdrop-blur-xl rounded-3xl shadow-2xl p-6 transition-all hover:shadow-3xl hover:-translate-y-1">
+            <div className="bg-white rounded-3xl shadow-2xl p-6 transition-all hover:shadow-3xl hover:-translate-y-1">
               <h3 className="text-lg font-bold mb-4 pb-3 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent border-b-2 border-gradient-to-r from-purple-600 to-pink-600">
                 {getCategoryLabel()} 演唱者
               </h3>
