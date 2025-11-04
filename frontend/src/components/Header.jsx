@@ -90,25 +90,6 @@ const Header = () => {
             <div className="flex items-center space-x-4">
               {/* Social Links */}
               <div className="hidden sm:flex items-center space-x-3">
-                <a
-                  href="https://youtube.com/@officialcrcrcyt"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 text-gray-600 hover:text-primary-600 transition-colors duration-200"
-                  aria-label="YouTube"
-                >
-                  <Youtube className="w-5 h-5" />
-                </a>
-                <a
-                  href="https://discord.gg/FyrNaF6Nbj"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 text-gray-600 hover:text-primary-600 transition-colors duration-200"
-                  aria-label="Discord"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                </a>
-
                 <Link
                   to="/notifications"
                   className="relative rounded-full p-2 text-gray-600 hover:text-primary-600 transition-colors duration-200"
@@ -219,24 +200,6 @@ const Header = () => {
                   {/* Mobile Social Links */}
                   <div className="flex items-center space-x-4 px-4 pt-4 border-t border-gray-200">
                     <CRCRCoinWidget />
-                    <a
-                      href="https://youtube.com/@officialcrcrcyt"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center space-x-2 text-sm text-gray-600 hover:text-primary-600 transition-colors duration-200"
-                    >
-                      <Youtube className="w-4 h-4" />
-                      <span>YouTube</span>
-                    </a>
-                    <a
-                      href="https://discord.gg/FyrNaF6Nbj"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center space-x-2 text-sm text-gray-600 hover:text-primary-600 transition-colors duration-200"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      <span>Discord</span>
-                    </a>
                   </div>
                 </div>
               </motion.div>
