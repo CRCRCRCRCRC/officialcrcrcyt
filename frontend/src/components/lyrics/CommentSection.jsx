@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { lyricCommentsAPI } from '../../services/api'
 import { useWebsiteAuth } from '../../contexts/WebsiteAuthContext'
+import defaultAvatar from '../../assets/default-avatar.svg'
 
 const CommentSection = ({ lyricId }) => {
   const [comments, setComments] = useState([])
@@ -10,6 +11,31 @@ const CommentSection = ({ lyricId }) => {
   const [submitting, setSubmitting] = useState(false)
   const { user } = useWebsiteAuth()
   const isLoggedIn = !!user
+
+  // 獲取用戶頭像
+  const getUserAvatar = (avatarUrl) => {
+    if (!avatarUrl) return defaultAvatar
+    if (/^(?:https?:)?\/\//i.test(avatarUrl) || avatarUrl.startsWith('data:')) {
+      return avatarUrl
+    }
+    const normalized = avatarUrl.replace(/^\.?\/+/, '')
+    return normalized ? `/${normalized}` : defaultAvatar
+  }
+
+  // 遮蔽用戶名稱中間部分
+  const maskUsername = (name) => {
+    if (!name || name === '匿名用戶') return name
+
+    if (name.length <= 2) {
+      return `${name[0]}*`
+    }
+
+    const firstChar = name[0]
+    const lastChar = name[name.length - 1]
+    const maskedLength = name.length - 2
+
+    return `${firstChar}${'*'.repeat(maskedLength)}${lastChar}`
+  }
 
   useEffect(() => {
     loadComments()
@@ -147,10 +173,15 @@ const CommentSection = ({ lyricId }) => {
               key={comment.id}
               className="p-4 rounded-xl bg-gradient-to-r from-purple-50/50 to-pink-50/50 hover:from-purple-50 hover:to-pink-50 transition-all"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
+              <div className="flex items-start gap-3">
+                <img
+                  src={getUserAvatar(comment.avatar_url)}
+                  alt={comment.username}
+                  className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                />
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-semibold text-purple-700">{comment.username}</span>
+                    <span className="font-semibold text-purple-700">{maskUsername(comment.username)}</span>
                     <span className="text-xs text-gray-500">{formatDate(comment.created_at)}</span>
                   </div>
                   <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
