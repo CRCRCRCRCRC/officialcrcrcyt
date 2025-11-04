@@ -16,7 +16,7 @@ const generateSlug = (title) => {
 // 取得所有歌詞（可依分類篩選）包含演唱者資訊
 router.get('/', async (req, res) => {
   try {
-    const { category } = req.query;
+    const { category, limit } = req.query;
     let query = `
       SELECT l.*, a.name as artist_name, a.slug as artist_slug
       FROM lyrics l
@@ -30,6 +30,13 @@ router.get('/', async (req, res) => {
     }
 
     query += ' ORDER BY l.created_at DESC';
+
+    // 如果有 limit 參數，添加限制
+    if (limit && !isNaN(parseInt(limit))) {
+      const paramIndex = params.length + 1;
+      query += ` LIMIT $${paramIndex}`;
+      params.push(parseInt(limit));
+    }
 
     console.log('[lyrics] GET / - Query:', query);
     console.log('[lyrics] GET / - Params:', params);
@@ -92,6 +99,37 @@ router.get('/category/:category/artist/:artistSlug/song/:songSlug', async (req, 
   } catch (error) {
     console.error('取得歌詞失敗:', error);
     res.status(500).json({ error: '取得歌詞失敗' });
+  }
+});
+
+// 增加歌詞瀏覽次數
+router.post('/category/:category/artist/:artistSlug/song/:songSlug/view', async (req, res) => {
+  try {
+    const { category, artistSlug, songSlug } = req.params;
+
+    if (category !== 'soramimi' && category !== 'lyrics') {
+      return res.status(400).json({ error: '分類必須是 soramimi 或 lyrics' });
+    }
+
+    const result = await database.pool.query(`
+      UPDATE lyrics l
+      SET view_count = COALESCE(view_count, 0) + 1
+      FROM artists a
+      WHERE l.artist_id = a.id
+        AND l.category = $1
+        AND a.slug = $2
+        AND l.slug = $3
+      RETURNING l.view_count
+    `, [category, artistSlug, songSlug]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: '找不到該歌詞' });
+    }
+
+    res.json({ view_count: result.rows[0].view_count });
+  } catch (error) {
+    console.error('增加瀏覽次數失敗:', error);
+    res.status(500).json({ error: '增加瀏覽次數失敗' });
   }
 });
 

@@ -266,6 +266,33 @@ class NeonDatabase {
         // 不拋出錯誤,讓應用繼續運行
       }
 
+      // 歌詞評論表
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS lyric_comments (
+          id SERIAL PRIMARY KEY,
+          lyric_id INTEGER NOT NULL REFERENCES lyrics(id) ON DELETE CASCADE,
+          user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          username VARCHAR(255) NOT NULL,
+          content TEXT NOT NULL,
+          likes INTEGER DEFAULT 0,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // 評論按讚表
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS comment_likes (
+          id SERIAL PRIMARY KEY,
+          comment_id INTEGER NOT NULL REFERENCES lyric_comments(id) ON DELETE CASCADE,
+          user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          ip_address VARCHAR(45),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(comment_id, user_id),
+          UNIQUE(comment_id, ip_address)
+        )
+      `);
+
       // CRCRCoin 資料表
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS coin_wallets (
@@ -1310,6 +1337,12 @@ class NeonDatabase {
         await this.pool.query(`
           ALTER TABLE lyrics
           ADD COLUMN IF NOT EXISTS slug VARCHAR(255)
+        `);
+
+        // 添加 view_count 欄位
+        await this.pool.query(`
+          ALTER TABLE lyrics
+          ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0
         `);
 
         // 移除舊的 UNIQUE 約束(如果存在)

@@ -337,6 +337,10 @@ export const lyricsAPI = {
   getBySlugs: (category, artistSlug, songSlug) =>
     api.get(`/lyrics/category/${category}/artist/${artistSlug}/song/${songSlug}`),
 
+  // 增加歌詞瀏覽次數
+  incrementView: (category, artistSlug, songSlug) =>
+    api.post(`/lyrics/category/${category}/artist/${artistSlug}/song/${songSlug}/view`),
+
   // 取得單一歌詞 (by ID, for admin)
   getById: (id) =>
     api.get(`/lyrics/${id}`),
@@ -354,7 +358,23 @@ export const lyricsAPI = {
     api.delete(`/lyrics/${id}`)
 }
 
+export const lyricCommentsAPI = {
+  // 取得指定歌詞的所有評論
+  getComments: (lyricId) =>
+    api.get(`/lyrics/${lyricId}/comments`),
 
+  // 新增評論
+  createComment: (lyricId, data) =>
+    api.post(`/lyrics/${lyricId}/comments`, data),
+
+  // 按讚/取消按讚評論
+  likeComment: (commentId) =>
+    api.post(`/comments/${commentId}/like`),
+
+  // 刪除評論
+  deleteComment: (commentId) =>
+    api.delete(`/comments/${commentId}`)
+}
 
 // 通用 API 函數
 export const apiCall = async (apiFunction, ...args) => {
