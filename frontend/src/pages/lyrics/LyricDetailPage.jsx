@@ -186,7 +186,7 @@ const LyricDetailPage = () => {
       </div>
 
       {/* 頂部麵包屑導航 */}
-      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-purple-100 shadow-md">
+      <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-purple-100 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Link to="/" className="hover:text-purple-600 transition-colors">首頁</Link>

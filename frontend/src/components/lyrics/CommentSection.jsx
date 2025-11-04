@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { lyricCommentsAPI } from '../../services/api'
+import { useWebsiteAuth } from '../../contexts/WebsiteAuthContext'
 
 const CommentSection = ({ lyricId }) => {
   const [comments, setComments] = useState([])
@@ -7,13 +8,11 @@ const CommentSection = ({ lyricId }) => {
   const [username, setUsername] = useState('')
   const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const { user } = useWebsiteAuth()
+  const isLoggedIn = !!user
 
   useEffect(() => {
     loadComments()
-    // 檢查是否已登入
-    const token = localStorage.getItem('token')
-    setIsLoggedIn(!!token)
   }, [lyricId])
 
   const loadComments = async () => {
