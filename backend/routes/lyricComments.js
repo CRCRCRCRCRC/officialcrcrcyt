@@ -12,6 +12,8 @@ router.get('/lyrics/:lyricId/comments', async (req, res) => {
       SELECT
         c.*,
         u.username as user_username,
+        u.display_name as user_display_name,
+        u.avatar_url as user_avatar_url,
         (SELECT COUNT(*) FROM comment_likes WHERE comment_id = c.id) as likes
       FROM lyric_comments c
       LEFT JOIN users u ON c.user_id = u.id

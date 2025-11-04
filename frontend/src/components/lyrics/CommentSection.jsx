@@ -168,39 +168,49 @@ const CommentSection = ({ lyricId }) => {
         </div>
       ) : (
         <div className="space-y-4">
-          {comments.map((comment) => (
-            <div
-              key={comment.id}
-              className="p-4 rounded-xl bg-gradient-to-r from-purple-50/50 to-pink-50/50 hover:from-purple-50 hover:to-pink-50 transition-all"
-            >
-              <div className="flex items-start gap-3">
-                <img
-                  src={getUserAvatar(comment.avatar_url)}
-                  alt={comment.username}
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="font-semibold text-purple-700">{maskUsername(comment.username)}</span>
-                    <span className="text-xs text-gray-500">{formatDate(comment.created_at)}</span>
+          {comments.map((comment) => {
+            // 如果是登入用戶留言，使用 user_display_name 或 user_username；否則使用 username
+            const displayName = comment.user_id
+              ? (comment.user_display_name || comment.user_username || '匿名用戶')
+              : (comment.username || '匿名用戶')
+
+            // 如果是登入用戶留言，使用 user_avatar_url
+            const avatarUrl = comment.user_id ? comment.user_avatar_url : null
+
+            return (
+              <div
+                key={comment.id}
+                className="p-4 rounded-xl bg-gradient-to-r from-purple-50/50 to-pink-50/50 hover:from-purple-50 hover:to-pink-50 transition-all"
+              >
+                <div className="flex items-start gap-3">
+                  <img
+                    src={getUserAvatar(avatarUrl)}
+                    alt={displayName}
+                    className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-semibold text-purple-700">{maskUsername(displayName)}</span>
+                      <span className="text-xs text-gray-500">{formatDate(comment.created_at)}</span>
+                    </div>
+                    <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
                   </div>
-                  <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
+                </div>
+
+                <div className="mt-3 flex items-center gap-4">
+                  <button
+                    onClick={() => handleLike(comment.id)}
+                    className="flex items-center gap-1 text-sm text-gray-600 hover:text-pink-600 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                    <span>{comment.likes || 0}</span>
+                  </button>
                 </div>
               </div>
-
-              <div className="mt-3 flex items-center gap-4">
-                <button
-                  onClick={() => handleLike(comment.id)}
-                  className="flex items-center gap-1 text-sm text-gray-600 hover:text-pink-600 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                  <span>{comment.likes || 0}</span>
-                </button>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
