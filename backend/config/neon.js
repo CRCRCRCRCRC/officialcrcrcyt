@@ -293,6 +293,19 @@ class NeonDatabase {
         )
       `);
 
+      // 歌詞按讚表
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS lyric_likes (
+          id SERIAL PRIMARY KEY,
+          lyric_id INTEGER NOT NULL REFERENCES lyrics(id) ON DELETE CASCADE,
+          user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          ip_address VARCHAR(45),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(lyric_id, user_id),
+          UNIQUE(lyric_id, ip_address)
+        )
+      `);
+
       // CRCRCoin 資料表
       await this.pool.query(`
         CREATE TABLE IF NOT EXISTS coin_wallets (

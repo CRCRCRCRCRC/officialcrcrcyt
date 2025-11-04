@@ -7,9 +7,13 @@ const CommentSection = ({ lyricId }) => {
   const [username, setUsername] = useState('')
   const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
 
   useEffect(() => {
     loadComments()
+    // 檢查是否已登入
+    const token = localStorage.getItem('token')
+    setIsLoggedIn(!!token)
   }, [lyricId])
 
   const loadComments = async () => {
@@ -27,15 +31,25 @@ const CommentSection = ({ lyricId }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!username.trim() || !content.trim()) {
-      alert('請填寫暱稱和評論內容')
+    // 如果未登入且沒有填暱稱
+    if (!isLoggedIn && !username.trim()) {
+      alert('請填寫暱稱或登入')
+      return
+    }
+
+    if (!content.trim()) {
+      alert('請填寫評論內容')
       return
     }
 
     setSubmitting(true)
     try {
-      await lyricCommentsAPI.createComment(lyricId, { username: username.trim(), content: content.trim() })
+      await lyricCommentsAPI.createComment(lyricId, {
+        username: isLoggedIn ? undefined : username.trim(),
+        content: content.trim()
+      })
       setContent('')
+      setUsername('')
       await loadComments()
     } catch (error) {
       console.error('新增評論失敗:', error)
@@ -83,16 +97,19 @@ const CommentSection = ({ lyricId }) => {
 
       {/* 評論表單 */}
       <form onSubmit={handleSubmit} className="mb-8">
-        <div className="mb-4">
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="您的暱稱"
-            className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none transition-all"
-            maxLength={50}
-          />
-        </div>
+        {/* 只在未登入時顯示暱稱欄位 */}
+        {!isLoggedIn && (
+          <div className="mb-4">
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="您的暱稱"
+              className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-purple-400 focus:outline-none transition-all"
+              maxLength={50}
+            />
+          </div>
+        )}
         <div className="mb-4">
           <textarea
             value={content}
@@ -108,7 +125,7 @@ const CommentSection = ({ lyricId }) => {
         </div>
         <button
           type="submit"
-          disabled={submitting || !username.trim() || !content.trim()}
+          disabled={submitting || (!isLoggedIn && !username.trim()) || !content.trim()}
           className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting ? '發送中...' : '發送評論'}

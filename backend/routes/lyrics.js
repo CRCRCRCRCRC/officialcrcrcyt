@@ -133,6 +133,164 @@ router.post('/category/:category/artist/:artistSlug/song/:songSlug/view', async 
   }
 });
 
+// 按讚/取消按讚歌詞
+router.post('/category/:category/artist/:artistSlug/song/:songSlug/like', async (req, res) => {
+  try {
+    const { category, artistSlug, songSlug } = req.params;
+    const token = req.headers.authorization?.split(' ')[1];
+    const ipAddress = req.ip || req.connection.remoteAddress;
+
+    if (category !== 'soramimi' && category !== 'lyrics') {
+      return res.status(400).json({ error: '分類必須是 soramimi 或 lyrics' });
+    }
+
+    // 先取得歌詞 ID
+    const lyricResult = await database.pool.query(`
+      SELECT l.id
+      FROM lyrics l
+      INNER JOIN artists a ON l.artist_id = a.id
+      WHERE l.category = $1 AND a.slug = $2 AND l.slug = $3
+    `, [category, artistSlug, songSlug]);
+
+    if (lyricResult.rows.length === 0) {
+      return res.status(404).json({ error: '找不到該歌詞' });
+    }
+
+    const lyricId = lyricResult.rows[0].id;
+    let userId = null;
+
+    // 如果有 token，嘗試解析用戶 ID
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        userId = decoded.userId;
+      } catch (err) {
+        // Token 無效，使用 IP 地址
+      }
+    }
+
+    // 檢查是否已按讚
+    let checkQuery, checkParams;
+    if (userId) {
+      checkQuery = 'SELECT id FROM lyric_likes WHERE lyric_id = $1 AND user_id = $2';
+      checkParams = [lyricId, userId];
+    } else {
+      checkQuery = 'SELECT id FROM lyric_likes WHERE lyric_id = $1 AND ip_address = $2';
+      checkParams = [lyricId, ipAddress];
+    }
+
+    const likeCheck = await database.pool.query(checkQuery, checkParams);
+
+    if (likeCheck.rows.length > 0) {
+      // 已按讚，取消按讚
+      await database.pool.query('DELETE FROM lyric_likes WHERE id = $1', [likeCheck.rows[0].id]);
+
+      const countResult = await database.pool.query(
+        'SELECT COUNT(*) as likes FROM lyric_likes WHERE lyric_id = $1',
+        [lyricId]
+      );
+
+      res.json({
+        success: true,
+        liked: false,
+        likes: parseInt(countResult.rows[0].likes)
+      });
+    } else {
+      // 未按讚，新增按讚
+      await database.pool.query(`
+        INSERT INTO lyric_likes (lyric_id, user_id, ip_address, created_at)
+        VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+      `, [lyricId, userId, ipAddress]);
+
+      const countResult = await database.pool.query(
+        'SELECT COUNT(*) as likes FROM lyric_likes WHERE lyric_id = $1',
+        [lyricId]
+      );
+
+      res.json({
+        success: true,
+        liked: true,
+        likes: parseInt(countResult.rows[0].likes)
+      });
+    }
+  } catch (error) {
+    console.error('按讚失敗:', error);
+
+    // 處理重複按讚的錯誤
+    if (error.code === '23505') {
+      return res.status(400).json({ error: '您已經按讚過這首歌詞' });
+    }
+
+    res.status(500).json({ error: '按讚失敗' });
+  }
+});
+
+// 取得歌詞按讚數和用戶是否已按讚
+router.get('/category/:category/artist/:artistSlug/song/:songSlug/like-status', async (req, res) => {
+  try {
+    const { category, artistSlug, songSlug } = req.params;
+    const token = req.headers.authorization?.split(' ')[1];
+    const ipAddress = req.ip || req.connection.remoteAddress;
+
+    // 取得歌詞 ID
+    const lyricResult = await database.pool.query(`
+      SELECT l.id
+      FROM lyrics l
+      INNER JOIN artists a ON l.artist_id = a.id
+      WHERE l.category = $1 AND a.slug = $2 AND l.slug = $3
+    `, [category, artistSlug, songSlug]);
+
+    if (lyricResult.rows.length === 0) {
+      return res.status(404).json({ error: '找不到該歌詞' });
+    }
+
+    const lyricId = lyricResult.rows[0].id;
+    let userId = null;
+
+    // 如果有 token，嘗試解析用戶 ID
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        userId = decoded.userId;
+      } catch (err) {
+        // Token 無效
+      }
+    }
+
+    // 取得總按讚數
+    const countResult = await database.pool.query(
+      'SELECT COUNT(*) as likes FROM lyric_likes WHERE lyric_id = $1',
+      [lyricId]
+    );
+
+    // 檢查用戶是否已按讚
+    let liked = false;
+    if (userId) {
+      const likeCheck = await database.pool.query(
+        'SELECT id FROM lyric_likes WHERE lyric_id = $1 AND user_id = $2',
+        [lyricId, userId]
+      );
+      liked = likeCheck.rows.length > 0;
+    } else {
+      const likeCheck = await database.pool.query(
+        'SELECT id FROM lyric_likes WHERE lyric_id = $1 AND ip_address = $2',
+        [lyricId, ipAddress]
+      );
+      liked = likeCheck.rows.length > 0;
+    }
+
+    res.json({
+      likes: parseInt(countResult.rows[0].likes),
+      liked
+    });
+  } catch (error) {
+    console.error('取得按讚狀態失敗:', error);
+    res.status(500).json({ error: '取得按讚狀態失敗' });
+  }
+});
+
 // 取得單一歌詞 (by ID, for admin)
 router.get('/:id', async (req, res) => {
   try {

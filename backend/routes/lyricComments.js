@@ -26,19 +26,15 @@ router.get('/lyrics/:lyricId/comments', async (req, res) => {
   }
 });
 
-// 新增評論（允許訪客留言）
+// 新增評論（自動使用登入用戶名稱，或允許訪客留言）
 router.post('/lyrics/:lyricId/comments', async (req, res) => {
   try {
     const { lyricId } = req.params;
-    const { content, username } = req.body;
+    let { content, username } = req.body;
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!content || !content.trim()) {
       return res.status(400).json({ error: '評論內容不能為空' });
-    }
-
-    if (!username || !username.trim()) {
-      return res.status(400).json({ error: '請輸入暱稱' });
     }
 
     // 驗證歌詞是否存在
@@ -52,23 +48,39 @@ router.post('/lyrics/:lyricId/comments', async (req, res) => {
     }
 
     let userId = null;
+    let finalUsername = username;
 
-    // 如果有 token，嘗試解析用戶 ID
+    // 如果有 token，嘗試解析用戶 ID 並使用用戶名稱
     if (token) {
       try {
         const jwt = require('jsonwebtoken');
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
         userId = decoded.userId;
+
+        // 從資料庫取得用戶名稱
+        const userResult = await database.pool.query(
+          'SELECT username FROM users WHERE id = $1',
+          [userId]
+        );
+
+        if (userResult.rows.length > 0) {
+          finalUsername = userResult.rows[0].username;
+        }
       } catch (err) {
         // Token 無效，以訪客身份新增
       }
+    }
+
+    // 如果沒有登入且沒有提供暱稱
+    if (!userId && (!finalUsername || !finalUsername.trim())) {
+      return res.status(400).json({ error: '請輸入暱稱或登入' });
     }
 
     const result = await database.pool.query(`
       INSERT INTO lyric_comments (lyric_id, user_id, username, content, created_at, updated_at)
       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       RETURNING *
-    `, [lyricId, userId, username.trim(), content.trim()]);
+    `, [lyricId, userId, finalUsername.trim(), content.trim()]);
 
     res.status(201).json({
       success: true,

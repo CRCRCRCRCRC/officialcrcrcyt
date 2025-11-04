@@ -341,6 +341,14 @@ export const lyricsAPI = {
   incrementView: (category, artistSlug, songSlug) =>
     api.post(`/lyrics/category/${category}/artist/${artistSlug}/song/${songSlug}/view`),
 
+  // 按讚/取消按讚歌詞
+  likeLyric: (category, artistSlug, songSlug) =>
+    api.post(`/lyrics/category/${category}/artist/${artistSlug}/song/${songSlug}/like`),
+
+  // 取得歌詞按讚狀態
+  getLikeStatus: (category, artistSlug, songSlug) =>
+    api.get(`/lyrics/category/${category}/artist/${artistSlug}/song/${songSlug}/like-status`),
+
   // 取得單一歌詞 (by ID, for admin)
   getById: (id) =>
     api.get(`/lyrics/${id}`),

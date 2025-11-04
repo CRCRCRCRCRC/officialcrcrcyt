@@ -11,6 +11,8 @@ const LyricDetailPage = () => {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [latestLyrics, setLatestLyrics] = useState([])
+  const [likeCount, setLikeCount] = useState(0)
+  const [isLiked, setIsLiked] = useState(false)
 
   const getCategoryLabel = () => {
     return category === 'soramimi' ? '空耳歌詞' : '歌詞'
@@ -100,10 +102,29 @@ const LyricDetailPage = () => {
       } catch (error) {
         console.error('載入最新歌詞失敗:', error)
       }
+
+      // 載入按讚狀態
+      try {
+        const likeResponse = await lyricsAPI.getLikeStatus(category, artistSlug, songSlug)
+        setLikeCount(likeResponse.data?.likes || 0)
+        setIsLiked(likeResponse.data?.liked || false)
+      } catch (error) {
+        console.error('載入按讚狀態失敗:', error)
+      }
     } catch (error) {
       console.error('載入失敗:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleLike = async () => {
+    try {
+      const response = await lyricsAPI.likeLyric(category, artistSlug, songSlug)
+      setLikeCount(response.data?.likes || 0)
+      setIsLiked(response.data?.liked || false)
+    } catch (error) {
+      console.error('按讚失敗:', error)
     }
   }
 
@@ -205,10 +226,25 @@ const LyricDetailPage = () => {
             </h2>
 
             {/* 資訊列 */}
-            <div className="flex flex-wrap items-center gap-4 mb-4 text-gray-600 text-sm">
+            <div className="flex flex-wrap items-center gap-4 mb-4">
+              {/* 按讚按鈕 */}
+              <button
+                onClick={handleLike}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg ${
+                  isLiked
+                    ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
+                    : 'bg-gradient-to-r from-purple-50 to-pink-50 text-purple-700 hover:from-purple-100 hover:to-pink-100'
+                }`}
+              >
+                <svg className="w-5 h-5" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                <span>{isLiked ? '已按讚' : '按讚'} ({likeCount})</span>
+              </button>
+
               {/* 瀏覽次數 */}
               {lyric.view_count !== null && lyric.view_count !== undefined && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-gray-600 text-sm">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -219,7 +255,7 @@ const LyricDetailPage = () => {
 
               {/* 最後編輯時間 */}
               {lyric.updated_at && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-gray-600 text-sm">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
