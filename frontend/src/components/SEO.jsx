@@ -5,7 +5,7 @@ const SEO = ({
   title,
   description,
   keywords,
-  image = 'https://crcrc.com/og-image.jpg',
+  image = 'https://officialcrcrc.vercel.app/og-image.jpg',
   type = 'website',
   canonicalUrl,
   author,
@@ -14,7 +14,7 @@ const SEO = ({
   structuredData
 }) => {
   const location = useLocation()
-  const baseUrl = 'https://crcrc.com'
+  const baseUrl = 'https://officialcrcrc.vercel.app'
   const fullUrl = canonicalUrl || `${baseUrl}${location.pathname}`
   const fullTitle = title ? `${title} - CRCRC 官方網站` : 'CRCRC 官方網站 - 空耳歌詞、K-pop 翻唱與遊戲社群'
   const fullDescription = description || 'CRCRC 官方網站 - 提供最新空耳歌詞、K-pop 空耳翻唱、荒野亂鬥遊戲內容。與社群互動、參與排行榜競賽，獲得 CRCR 幣獎勵！'

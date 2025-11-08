@@ -30,4 +30,4 @@ Allow: /*.webp$
 Crawl-delay: 1
 
 # Sitemap location
-Sitemap: https://crcrc.com/sitemap.xml
+Sitemap: https://officialcrcrc.vercel.app/sitemap.xml

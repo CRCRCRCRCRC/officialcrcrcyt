@@ -5,7 +5,7 @@ const database = require('../config/database');
 // 生成 sitemap.xml
 router.get('/sitemap.xml', async (req, res) => {
   try {
-    const baseUrl = 'https://crcrc.com';
+    const baseUrl = 'https://officialcrcrc.vercel.app';
     const currentDate = new Date().toISOString().split('T')[0];
 
     // 靜態頁面

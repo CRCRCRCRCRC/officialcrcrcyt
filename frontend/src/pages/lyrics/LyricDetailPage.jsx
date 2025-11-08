@@ -166,7 +166,7 @@ const LyricDetailPage = () => {
         description={`${lyric.artist_name} 的 ${lyric.title} ${categoryLabel}，包含完整歌詞內容、YouTube 影片連結。瀏覽次數：${(lyric.view_count || 0).toLocaleString()}，按讚數：${likeCount}。`}
         keywords={`${lyric.artist_name}, ${lyric.title}, ${categoryLabel}, 歌詞, lyrics, ${category === 'soramimi' ? '空耳, soramimi' : '翻譯'}`}
         type="music.song"
-        canonicalUrl={`https://crcrc.com/lyrics/${category}/${artistSlug}/${songSlug}`}
+        canonicalUrl={`https://officialcrcrc.vercel.app/lyrics/${category}/${artistSlug}/${songSlug}`}
         author={lyric.artist_name}
         publishedTime={lyric.created_at}
         modifiedTime={lyric.updated_at}
