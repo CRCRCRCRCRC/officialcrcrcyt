@@ -1,0 +1,33 @@
+# robots.txt for CRCRC Official Website
+
+User-agent: *
+Allow: /
+Allow: /lyrics
+Allow: /lyrics/*
+Allow: /announcements
+Allow: /leaderboard
+Allow: /profile
+
+# Disallow admin and API paths
+Disallow: /admin
+Disallow: /api/
+Disallow: /login
+Disallow: /auth
+
+# Disallow private user data
+Disallow: /profile/settings
+Disallow: /notifications
+
+# Allow specific file types
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.jpg$
+Allow: /*.png$
+Allow: /*.svg$
+Allow: /*.webp$
+
+# Crawl delay (optional, adjust as needed)
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://crcrc.com/sitemap.xml

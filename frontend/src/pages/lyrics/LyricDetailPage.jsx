@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { lyricsAPI, artistsAPI } from '../../services/api'
 import CommentSection from '../../components/lyrics/CommentSection'
+import SEO from '../../components/SEO'
 
 const LyricDetailPage = () => {
   const { category, artistSlug, songSlug } = useParams()
@@ -22,57 +23,6 @@ const LyricDetailPage = () => {
     loadData()
   }, [category, artistSlug, songSlug])
 
-  // 設置 SEO meta 標籤
-  useEffect(() => {
-    if (lyric) {
-      const categoryLabel = category === 'soramimi' ? '空耳歌詞' : '歌詞'
-      const title = `${lyric.artist_name} - ${lyric.title} ${categoryLabel}`
-      const description = `${lyric.artist_name} 的 ${lyric.title} ${categoryLabel}。${lyric.lyrics.substring(0, 100)}...`
-      const keywords = `${lyric.artist_name}, ${lyric.title}, ${categoryLabel}, 歌詞, lyrics`
-
-      // 設置頁面標題
-      document.title = title
-
-      // 設置或更新 meta 標籤
-      const setMetaTag = (name, content) => {
-        let meta = document.querySelector(`meta[name="${name}"]`)
-        if (!meta) {
-          meta = document.createElement('meta')
-          meta.setAttribute('name', name)
-          document.head.appendChild(meta)
-        }
-        meta.setAttribute('content', content)
-      }
-
-      const setMetaProperty = (property, content) => {
-        let meta = document.querySelector(`meta[property="${property}"]`)
-        if (!meta) {
-          meta = document.createElement('meta')
-          meta.setAttribute('property', property)
-          document.head.appendChild(meta)
-        }
-        meta.setAttribute('content', content)
-      }
-
-      setMetaTag('description', description)
-      setMetaTag('keywords', keywords)
-
-      // Open Graph 標籤
-      setMetaProperty('og:title', title)
-      setMetaProperty('og:description', description)
-      setMetaProperty('og:type', 'music.song')
-
-      // Twitter Card 標籤
-      setMetaTag('twitter:card', 'summary')
-      setMetaTag('twitter:title', title)
-      setMetaTag('twitter:description', description)
-    }
-
-    return () => {
-      // 清理：恢復默認標題
-      document.title = 'CRCRCYT 官方網站'
-    }
-  }, [lyric, category])
 
   const loadData = async () => {
     setLoading(true)
@@ -162,6 +112,8 @@ const LyricDetailPage = () => {
     )
   }
 
+  const categoryLabel = getCategoryLabel()
+
   if (!lyric) {
     return (
       <div className="min-h-screen flex flex-col justify-center items-center">
@@ -176,9 +128,52 @@ const LyricDetailPage = () => {
     )
   }
 
+  // SEO 結構化數據
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "MusicComposition",
+    "name": lyric.title,
+    "composer": {
+      "@type": "Person",
+      "name": lyric.artist_name
+    },
+    "lyricist": {
+      "@type": "Person",
+      "name": lyric.artist_name
+    },
+    "inLanguage": "zh-TW",
+    "text": lyric.lyrics.substring(0, 200),
+    "datePublished": lyric.created_at,
+    "dateModified": lyric.updated_at,
+    "interactionStatistic": [
+      {
+        "@type": "InteractionCounter",
+        "interactionType": "https://schema.org/LikeAction",
+        "userInteractionCount": likeCount
+      },
+      {
+        "@type": "InteractionCounter",
+        "interactionType": "https://schema.org/ViewAction",
+        "userInteractionCount": lyric.view_count || 0
+      }
+    ]
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-purple-600">
-      {/* 背景動態效果 */}
+    <>
+      <SEO
+        title={`${lyric.artist_name} - ${lyric.title} ${categoryLabel}`}
+        description={`${lyric.artist_name} 的 ${lyric.title} ${categoryLabel}，包含完整歌詞內容、YouTube 影片連結。瀏覽次數：${(lyric.view_count || 0).toLocaleString()}，按讚數：${likeCount}。`}
+        keywords={`${lyric.artist_name}, ${lyric.title}, ${categoryLabel}, 歌詞, lyrics, ${category === 'soramimi' ? '空耳, soramimi' : '翻譯'}`}
+        type="music.song"
+        canonicalUrl={`https://crcrc.com/lyrics/${category}/${artistSlug}/${songSlug}`}
+        author={lyric.artist_name}
+        publishedTime={lyric.created_at}
+        modifiedTime={lyric.updated_at}
+        structuredData={structuredData}
+      />
+      <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-purple-600">
+        {/* 背景動態效果 */}
       <div className="fixed inset-0 opacity-30 pointer-events-none">
         <div className="absolute top-[20%] left-[20%] w-96 h-96 bg-white rounded-full blur-3xl"></div>
         <div className="absolute top-[80%] right-[20%] w-96 h-96 bg-white rounded-full blur-3xl"></div>
@@ -400,7 +395,8 @@ const LyricDetailPage = () => {
           background: linear-gradient(135deg, #764ba2, #667eea);
         }
       `}</style>
-    </div>
+      </div>
+    </>
   )
 }
 

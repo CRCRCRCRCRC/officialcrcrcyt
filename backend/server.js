@@ -19,6 +19,7 @@ const videoRoutes = require('./routes/videos');
 const lyricsRoutes = require('./routes/lyrics');
 const artistsRoutes = require('./routes/artists');
 const lyricCommentsRoutes = require('./routes/lyricComments');
+const sitemapRoutes = require('./routes/sitemap');
 const database = require('./config/database');
 
 const app = express();
@@ -73,6 +74,8 @@ app.use('/api/lyrics', lyricsRoutes);
 console.log('✅ /api/lyrics 路由已註冊');
 app.use('/api', lyricCommentsRoutes);
 console.log('✅ /api (lyric comments) 路由已註冊');
+app.use('/', sitemapRoutes);
+console.log('✅ sitemap 路由已註冊');
 
 // 健康檢查和初始化
 app.get('/api/health', async (req, res) => {
