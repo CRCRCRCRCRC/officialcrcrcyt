@@ -54,7 +54,7 @@ const Header = () => {
   return (
     <>
       <header className="bg-white/95 backdrop-blur-custom border-b border-gray-200 sticky top-0 z-50">
-        <div className="container-custom">
+        <div className="w-full px-4 md:px-8">
           <div className="relative flex items-center justify-between h-16 w-full">
             {/* Logo - 最左邊 */}
             <Link to="/" className="flex items-center space-x-2 z-10">
