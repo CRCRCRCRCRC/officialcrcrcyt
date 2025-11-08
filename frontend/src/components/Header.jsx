@@ -55,9 +55,9 @@ const Header = () => {
     <>
       <header className="bg-white/95 backdrop-blur-custom border-b border-gray-200 sticky top-0 z-50">
         <div className="container-custom">
-          <div className="flex items-center h-16 w-full">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
+          <div className="relative flex items-center justify-between h-16 w-full">
+            {/* Logo - 最左邊 */}
+            <Link to="/" className="flex items-center space-x-2 z-10">
               <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">CR</span>
               </div>
@@ -67,8 +67,8 @@ const Header = () => {
               </div>
             </Link>
 
-            {/* Desktop Navigation - 居中 */}
-            <div className="flex-1 flex justify-center">
+            {/* Desktop Navigation - 絕對置中 */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <nav className="hidden md:flex items-center space-x-8">
                 {navigation.map((item) => (
                   <Link
@@ -86,8 +86,8 @@ const Header = () => {
               </nav>
             </div>
 
-            {/* Social Links & Mobile Menu Button */}
-            <div className="flex items-center space-x-4 flex-shrink-0">
+            {/* Social Links & Mobile Menu Button - 最右邊 */}
+            <div className="flex items-center space-x-4 z-10">
               {/* Social Links */}
               <div className="hidden sm:flex items-center space-x-3">
                 <Link
