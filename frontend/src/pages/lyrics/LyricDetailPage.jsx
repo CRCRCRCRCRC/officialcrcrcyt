@@ -106,8 +106,8 @@ const LyricDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent"></div>
+      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-purple-400 via-pink-500 to-purple-600">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
       </div>
     )
   }
@@ -173,12 +173,6 @@ const LyricDetailPage = () => {
         structuredData={structuredData}
       />
       <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-purple-600">
-        {/* 背景動態效果 */}
-      <div className="fixed inset-0 opacity-30 pointer-events-none">
-        <div className="absolute top-[20%] left-[20%] w-96 h-96 bg-white rounded-full blur-3xl"></div>
-        <div className="absolute top-[80%] right-[20%] w-96 h-96 bg-white rounded-full blur-3xl"></div>
-        <div className="absolute top-[40%] right-[40%] w-64 h-64 bg-white rounded-full blur-3xl"></div>
-      </div>
 
       {/* 頂部麵包屑導航 */}
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-purple-100 shadow-md">

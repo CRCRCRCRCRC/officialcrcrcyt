@@ -1391,6 +1391,50 @@ class NeonDatabase {
         console.error('⚠️ 添加 slug 欄位失敗:', slugError);
       }
 
+      // 創建性能優化索引
+      try {
+        console.log('🔄 創建數據庫索引以優化查詢速度...');
+
+        // 歌詞表索引
+        await this.pool.query(`
+          CREATE INDEX IF NOT EXISTS idx_lyrics_category ON lyrics(category);
+        `);
+        await this.pool.query(`
+          CREATE INDEX IF NOT EXISTS idx_lyrics_artist_id ON lyrics(artist_id);
+        `);
+        await this.pool.query(`
+          CREATE INDEX IF NOT EXISTS idx_lyrics_slug ON lyrics(slug);
+        `);
+        await this.pool.query(`
+          CREATE INDEX IF NOT EXISTS idx_lyrics_category_artist ON lyrics(category, artist_id);
+        `);
+
+        // 演唱者表索引
+        await this.pool.query(`
+          CREATE INDEX IF NOT EXISTS idx_artists_slug ON artists(slug);
+        `);
+
+        // 評論表索引
+        await this.pool.query(`
+          CREATE INDEX IF NOT EXISTS idx_lyric_comments_lyric_id ON lyric_comments(lyric_id);
+        `);
+        await this.pool.query(`
+          CREATE INDEX IF NOT EXISTS idx_lyric_comments_created_at ON lyric_comments(created_at DESC);
+        `);
+
+        // 按讚表索引
+        await this.pool.query(`
+          CREATE INDEX IF NOT EXISTS idx_lyric_likes_lyric_id ON lyric_likes(lyric_id);
+        `);
+        await this.pool.query(`
+          CREATE INDEX IF NOT EXISTS idx_comment_likes_comment_id ON comment_likes(comment_id);
+        `);
+
+        console.log('✅ 數據庫索引創建完成');
+      } catch (indexError) {
+        console.error('⚠️ 創建索引失敗:', indexError);
+      }
+
       // 執行歌詞表遷移 (從舊的 artist 欄位到 artist_id)
       try {
         const checkOldColumn = await this.pool.query(`
