@@ -106,10 +106,22 @@ const GoogleLoginButtonPublic = () => {
         try {
           const code = response.code
           if (!code) return
+
+          // 立即顯示登入中訊息
+          toast.loading('登入中...', { id: 'google-login' })
+
           await loginWithGoogleCode(code)
-          toast.success('登入成功')
+
+          // 立即顯示成功訊息
+          toast.success('登入成功！', {
+            id: 'google-login',
+            icon: '🎉',
+            duration: 2000
+          })
         } catch (e) {
-          toast.error(e.response?.data?.error || e.message)
+          toast.error(e.response?.data?.error || e.message, {
+            id: 'google-login'
+          })
         }
       }
     })

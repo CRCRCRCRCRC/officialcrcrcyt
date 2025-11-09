@@ -21,6 +21,24 @@ const CRCRCoinWidget = ({ compact = false }) => {
     nextClaimInMs
   } = useCoin()
 
+  // 從 localStorage 讀取緩存的餘額（即時顯示）
+  const [cachedBalance, setCachedBalance] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crcr_balance_cache')
+      return cached ? parseInt(cached) : null
+    } catch {
+      return null
+    }
+  })
+
+  // 當 balance 更新時，更新緩存
+  useEffect(() => {
+    if (hydrated && balance !== null && balance !== undefined) {
+      localStorage.setItem('crcr_balance_cache', String(balance))
+      setCachedBalance(balance)
+    }
+  }, [balance, hydrated])
+
   const [open, setOpen] = useState(false)
   const [leftMs, setLeftMs] = useState(nextClaimInMs)
   const [claiming, setClaiming] = useState(false)
@@ -93,14 +111,22 @@ const CRCRCoinWidget = ({ compact = false }) => {
   const onDaily = async () => {
     if (claiming) return
     setClaiming(true)
+
+    // 立即顯示成功訊息（樂觀更新）
+    toast.success('簽到成功！獲得 50 CRCRCoin', {
+      duration: 2000,
+      icon: '🎉'
+    })
+
     try {
       const res = await claimDaily()
-      if (res?.success) {
-        toast.success(`簽到成功！獲得 ${res.amount} CRCRCoin`)
-      } else {
-        const msg = res?.error || '尚未到下次簽到時間'
+      if (!res?.success) {
+        // 如果實際失敗，顯示錯誤並回滾
+        const msg = res?.error || '簽到失敗，請稍後再試'
         toast.error(msg)
       }
+    } catch (error) {
+      toast.error('網路錯誤，請稍後再試')
     } finally {
       setClaiming(false)
     }
@@ -121,7 +147,9 @@ const CRCRCoinWidget = ({ compact = false }) => {
         title="前往 CRCRCoin 錢包"
       >
         <img src={CoinIcon} className="w-4 h-4" alt="CRCRCoin" />
-        <span className="font-semibold tabular-nums">{hydrated ? fmtCoin(balance) : '...'}</span>
+        <span className="font-semibold tabular-nums">
+          {hydrated ? fmtCoin(balance) : (cachedBalance !== null ? fmtCoin(cachedBalance) : '...')}
+        </span>
       </Link>
 
       {/* Dropdown panel (glassmorphism) */}
@@ -170,10 +198,10 @@ const CRCRCoinWidget = ({ compact = false }) => {
                   aria-disabled={!isLoggedIn || !hydrated || !canClaimNow || claiming}
                   disabled={!isLoggedIn || !hydrated || !canClaimNow || claiming}
                   className={[
-                    'px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-all',
+                    'px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition-all duration-75',
                     (!isLoggedIn || !hydrated || !canClaimNow || claiming)
                       ? 'bg-gray-300 cursor-not-allowed pointer-events-none'
-                      : 'bg-gradient-to-r from-primary-500 to-pink-500 hover:from-primary-600 hover:to-pink-600 shadow'
+                      : 'bg-gradient-to-r from-primary-500 to-pink-500 hover:from-primary-600 hover:to-pink-600 hover:scale-105 active:scale-95 shadow'
                   ].join(' ')}
                 >
                   {!isLoggedIn
@@ -181,7 +209,7 @@ const CRCRCoinWidget = ({ compact = false }) => {
                     : (!hydrated
                         ? '同步中...'
                         : (claiming
-                            ? '處理中...'
+                            ? '✓ 已領取'
                             : (canClaimNow ? '領取' : fmtNextClaimTime(leftMs))))}
                 </button>
               </div>

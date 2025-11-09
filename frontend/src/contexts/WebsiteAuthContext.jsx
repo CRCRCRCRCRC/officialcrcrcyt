@@ -21,13 +21,28 @@ export const WebsiteAuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('website_token'))
 
   const loginWithGoogleCode = async (code) => {
-    const res = await authAPI.loginWithGooglePublic(code)
-    const { token: newToken, user: nextUser } = res.data
-    localStorage.setItem('website_token', newToken)
-    localStorage.setItem('website_user', JSON.stringify(nextUser))
-    setToken(newToken)
-    setUser(nextUser)
-    return nextUser
+    // 立即設置臨時用戶狀態（樂觀更新）
+    const tempUser = { displayName: '載入中...', email: '' }
+    setUser(tempUser)
+
+    try {
+      const res = await authAPI.loginWithGooglePublic(code)
+      const { token: newToken, user: nextUser } = res.data
+
+      // 立即更新狀態
+      setToken(newToken)
+      setUser(nextUser)
+
+      // 然後保存到 localStorage
+      localStorage.setItem('website_token', newToken)
+      localStorage.setItem('website_user', JSON.stringify(nextUser))
+
+      return nextUser
+    } catch (error) {
+      // 登入失敗，清除臨時狀態
+      setUser(null)
+      throw error
+    }
   }
 
   const updateProfile = async ({ displayName } = {}) => {
