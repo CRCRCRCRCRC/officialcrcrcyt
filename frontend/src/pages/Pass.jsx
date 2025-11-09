@@ -42,7 +42,15 @@ const PREMIUM_BENEFITS = [
 const Pass = () => {
   const { isLoggedIn, hydrated, balance, refreshWallet } = useCoin()
   const [loading, setLoading] = useState(true)
-  const [data, setData] = useState(null)
+  const [data, setData] = useState(() => {
+    // 從 localStorage 讀取緩存的 Pass 數據
+    try {
+      const cached = localStorage.getItem('crcr_pass_cache')
+      return cached ? JSON.parse(cached) : null
+    } catch {
+      return null
+    }
+  })
   const [purchaseLoading, setPurchaseLoading] = useState(false)
   const [showPremiumModal, setShowPremiumModal] = useState(false)
   const [claimingKey, setClaimingKey] = useState(null)
@@ -89,6 +97,14 @@ const Pass = () => {
       } else {
         next.state = sanitizeState({})
       }
+
+      // 保存到 localStorage
+      try {
+        localStorage.setItem('crcr_pass_cache', JSON.stringify(next))
+      } catch (error) {
+        console.error('Failed to cache pass data:', error)
+      }
+
       return next
     })
   }, [])
@@ -132,9 +148,27 @@ const Pass = () => {
       return
     }
     setPurchaseLoading(true)
+
+    // 樂觀更新：立即設置為已購買
+    setData((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        state: {
+          ...prev.state,
+          hasPremium: true
+        }
+      }
+    })
+
+    // 立即顯示成功訊息
+    toast.success('成功購買高級通行券！', {
+      duration: 2000,
+      icon: '👑'
+    })
+
     try {
       const res = await coinAPI.purchasePass()
-      toast.success('成功購買高級通行券！')
       if (res?.data) {
         updatePassData(res.data)
       }
@@ -142,6 +176,18 @@ const Pass = () => {
     } catch (error) {
       console.error('購買通行券失敗:', error)
       toast.error(error?.response?.data?.error || '購買失敗，請稍後再試')
+
+      // 失敗時恢復狀態
+      setData((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          state: {
+            ...prev.state,
+            hasPremium: false
+          }
+        }
+      })
     } finally {
       setPurchaseLoading(false)
     }
@@ -210,7 +256,7 @@ const Pass = () => {
     toast.success(`成功領取 ${claimableRewards.length} 個獎勵！`, { id: 'claim-all' })
   }
 
-  const handleClaim = async (tier, reward, skipToast = false) => {
+  const handleClaim = async (tier, reward, skipToast = false, retryCount = 0) => {
     if (!isLoggedIn) return requireLogin()
     if (!hydrated) {
       toast('資料同步中，請稍候')
@@ -236,7 +282,7 @@ const Pass = () => {
       if (!prev) return prev
       const currentState = prev.state || sanitizeState({})
       const claimedSet = tier === 'premium' ? new Set(currentState.claimedPremium || []) : new Set(currentState.claimedFree || [])
-      claimedSet.add(reward.id)
+      claimedSet.add(String(reward.id))
 
       return {
         ...prev,
@@ -291,6 +337,16 @@ const Pass = () => {
       }
     } catch (error) {
       console.error('領取通行券獎勵失敗:', error)
+
+      // 如果是網路錯誤且重試次數少於2次，自動重試
+      const isNetworkError = !error?.response
+      if (isNetworkError && retryCount < 2) {
+        console.log(`自動重試第 ${retryCount + 1} 次...`)
+        await new Promise(resolve => setTimeout(resolve, 500))
+        setClaimingKey(null)
+        return handleClaim(tier, reward, skipToast, retryCount + 1)
+      }
+
       toast.error(error?.response?.data?.error || '領取失敗，請稍後再試')
 
       // 失敗時恢復狀態
@@ -298,9 +354,9 @@ const Pass = () => {
         if (!prev) return prev
         const currentState = prev.state || sanitizeState({})
         const claimedSet = tier === 'premium' ? new Set(currentState.claimedPremium || []) : new Set(currentState.claimedFree || [])
-        claimedSet.delete(reward.id)
+        claimedSet.delete(String(reward.id))
 
-        return {
+        const updated = {
           ...prev,
           state: {
             ...currentState,
@@ -308,6 +364,15 @@ const Pass = () => {
             claimedPremium: tier === 'premium' ? Array.from(claimedSet) : currentState.claimedPremium
           }
         }
+
+        // 同步更新 localStorage
+        try {
+          localStorage.setItem('crcr_pass_cache', JSON.stringify(updated))
+        } catch (e) {
+          console.error('Failed to update cache:', e)
+        }
+
+        return updated
       })
     } finally {
       setClaimingKey(null)
@@ -339,7 +404,7 @@ const Pass = () => {
         <button
           onClick={() => handleClaim(tier, reward)}
           disabled={locked || claimed || processing}
-          className={`relative w-full rounded-xl flex flex-col items-center justify-center py-3 px-2 transition-all duration-200 border-3 overflow-hidden ${
+          className={`relative w-full rounded-xl flex flex-col items-center justify-center py-3 px-2 transition-all duration-75 border-3 overflow-hidden ${
             isPremiumTier
               ? 'bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-500 border-yellow-500/50'
               : 'bg-gradient-to-br from-cyan-300 via-blue-400 to-indigo-500 border-cyan-500/50'
@@ -496,7 +561,7 @@ const Pass = () => {
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${xpBarPercent}%` }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
+                transition={{ duration: 0.1, ease: "easeOut" }}
                 className='h-full rounded-full bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 shadow-lg'
               />
               <div className="absolute inset-0 flex items-center justify-center">
@@ -537,7 +602,7 @@ const Pass = () => {
       <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8'>
         {loading ? (
           <div className='flex justify-center py-20'>
-            <div className='h-16 w-16 animate-spin rounded-full border-8 border-white/30 border-t-white shadow-xl' />
+            <div className='h-8 w-8 animate-spin rounded-full border-4 border-white/30 border-t-white shadow-xl' />
           </div>
         ) : rewards.length === 0 ? (
           <div className='py-20 text-center'>
@@ -550,7 +615,7 @@ const Pass = () => {
             {/* 軌道容器 */}
             <div className='inline-flex gap-0 min-w-full'>
               {rewards.map((reward, index) => {
-                const stageUnlocked = xp >= 200 * reward.level
+                const stageUnlocked = xp >= reward.xp
                 const isCurrentLevel = reward.level === currentLevel
                 const showConnector = index < rewards.length - 1
 
@@ -559,7 +624,7 @@ const Pass = () => {
                     <motion.div
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: index * 0.03 }}
+                      transition={{ delay: index * 0.01, duration: 0.1 }}
                       className='inline-block w-36 shrink-0'
                     >
                       {/* 高級獎勵 */}
