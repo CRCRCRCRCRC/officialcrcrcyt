@@ -41,6 +41,10 @@ class NeonDatabase {
       throw new Error('Missing Postgres connection string. Did you link Vercel Postgres (Neon)?');
     }
 
+    // 初始化狀態旗標，避免重複初始化造成阻塞
+    this._initDone = false;
+    this._initPromise = null;
+
     this.pool = createPool({ connectionString });
     this.initializeTables();
   }
@@ -1335,7 +1339,16 @@ class NeonDatabase {
 
   // 初始化數據
   async initializeData() {
-    try {
+    // 若已初始化完成或正在進行，直接返回現有 promise/結果，避免每次請求重跑所有初始化 SQL
+    if (this._initDone) {
+      return true;
+    }
+    if (this._initPromise) {
+      return this._initPromise;
+    }
+
+    this._initPromise = (async () => {
+      try {
       // 添加 slug 欄位並修改約束(如果不存在)
       try {
         console.log('🔄 檢查並添加 slug 欄位...');
@@ -1547,11 +1560,17 @@ class NeonDatabase {
       }
 
       console.log('?? PostgreSQL 數據庫初始化完成！');
+        this._initDone = true;
       return true;
     } catch (error) {
       console.error('? PostgreSQL 數據庫初始化失敗:', error);
       throw error;
-    }
+      } finally {
+        this._initPromise = null;
+      }
+    })();
+
+    return this._initPromise;
   }
 
   // 獲取 CRCRCoin 排行榜

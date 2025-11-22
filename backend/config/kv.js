@@ -25,6 +25,9 @@ class KVDatabase {
   constructor() {
     // 將在 database.js 中設置 this.kv
     this.kv = null;
+    // 初始化狀態旗標，避免每次請求重複跑初始化流程
+    this._initDone = false;
+    this._initPromise = null;
   }
 
   // 用戶相關操作
@@ -223,7 +226,15 @@ class KVDatabase {
 
   // 初始化數據
   async initializeData() {
-    try {
+    if (this._initDone) {
+      return true;
+    }
+    if (this._initPromise) {
+      return this._initPromise;
+    }
+
+    this._initPromise = (async () => {
+      try {
       // 檢查是否已有用戶
       const users = await this.kv.smembers('users');
       
@@ -293,11 +304,17 @@ class KVDatabase {
       }
 
       console.log('🎉 KV 數據庫初始化完成！');
+        this._initDone = true;
       return true;
     } catch (error) {
       console.error('❌ KV 數據庫初始化失敗:', error);
       throw error;
-    }
+      } finally {
+        this._initPromise = null;
+      }
+    })();
+
+    return this._initPromise;
   }
 // ===== CRCRCoin - helpers =====
   walletKey(userId) {
@@ -751,85 +768,6 @@ class KVDatabase {
     } catch (error) {
       console.error('獲取排行榜失敗:', error);
       return [];
-    }
-  }
-
-  // 初始化數據
-  async initializeData() {
-    try {
-      // 檢查是否已有用戶
-      const users = await this.kv.smembers('users');
-      
-      if (users.length === 0) {
-        console.log('📝 創建默認管理員用戶...');
-        const bcrypt = require('bcryptjs');
-        const hashedPassword = await bcrypt.hash('admin', 10);
-        
-        await this.createUser({
-          username: 'CRCRC',
-          password: hashedPassword,
-          role: 'admin',
-          created_at: new Date().toISOString(),
-          displayName: 'CRCRC'
-        });
-        
-        console.log('✅ 默認管理員用戶創建成功 (用戶名: CRCRC, 密碼: admin)');
-      }
-
-      // 檢查是否已有頻道資訊
-      const channelInfo = await this.getChannelInfo();
-      
-      if (!channelInfo.channel_name) {
-        console.log('📝 創建默認頻道資訊...');
-        await this.updateChannelInfo({
-          channel_name: 'CRCRC',
-          description: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！',
-          youtube_url: 'https://youtube.com/@officialcrcrcyt',
-          discord_url: 'https://discord.gg/FyrNaF6Nbj',
-          minecraft_discord_url: 'https://discord.gg/9jBCTheX3Y',
-          subscriber_count: 0,
-          total_views: 0,
-          created_at: new Date().toISOString()
-        });
-        console.log('✅ 默認頻道資訊創建成功');
-      }
-
-      // 檢查是否已有示例影片
-      const videos = await this.getVideos();
-      
-      if (videos.length === 0) {
-        console.log('📝 創建示例影片數據...');
-        
-        // 不創建示例影片，讓管理員自己添加真實影片
-        const sampleVideos = [];
-
-        if (sampleVideos.length > 0) {
-          for (const video of sampleVideos) {
-            await this.createVideo(video);
-          }
-          console.log('✅ 示例影片數據創建成功');
-        } else {
-          console.log('ℹ️  跳過示例影片創建，請在管理後台添加真實影片');
-        }
-      }
-
-      // 設置默認網站設置
-      const siteSettings = await this.getAllSiteSettings();
-      
-      if (!siteSettings.site_title) {
-        console.log('📝 創建默認網站設置...');
-        await this.setSiteSetting('site_title', 'CRCRC 官方網站');
-        await this.setSiteSetting('site_description', '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！');
-        await this.setSiteSetting('contact_email', 'contact@crcrc.com');
-        await this.setSiteSetting('featured_video_count', '6');
-        console.log('✅ 默認網站設置創建成功');
-      }
-
-      console.log('🎉 KV 數據庫初始化完成！');
-      return true;
-    } catch (error) {
-      console.error('❌ KV 數據庫初始化失敗:', error);
-      throw error;
     }
   }
 
