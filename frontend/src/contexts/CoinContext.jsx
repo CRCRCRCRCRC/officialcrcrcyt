@@ -2781,6 +2781,26 @@ export const CoinProvider = ({ children }) => {
 
 
 
+  const canClaimNow = isLoggedIn && hydrated && nextClaimInMs <= 0
+  const markNotificationsRead = () => setHasNewNotifications(false)
+
+  const value = {
+    isLoggedIn,
+    user,
+    hydrated,
+    balance: wallet.balance || 0,
+    lastClaimAt: wallet.lastClaimAt,
+    history: wallet.history || [],
+    hasNewNotifications,
+    markNotificationsRead,
+    addCoins,
+    spendCoins,
+    claimDaily,
+    canClaimNow,
+    nextClaimInMs,
+    refreshWallet
+  }
+
   return (
 
 
