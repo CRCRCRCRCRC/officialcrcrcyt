@@ -10,7 +10,6 @@ import Announcements from './pages/Announcements'
 import AnnouncementDetail from './pages/AnnouncementDetail'
 import Wallet from './pages/Wallet'
 import Shop from './pages/Shop'
-import Pass from './pages/Pass'
 import Leaderboard from './pages/Leaderboard'
 import Tasks from './pages/Tasks'
 import Notifications from './pages/Notifications'
@@ -49,7 +48,6 @@ function App() {
             <Route path="announcements/:slug" element={<AnnouncementDetail />} />
             <Route path="wallet" element={<Wallet />} />
             <Route path="shop" element={<Shop />} />
-            <Route path="pass" element={<Pass />} />
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="tasks" element={<Tasks />} />
