@@ -11,7 +11,7 @@ const PRODUCTS = [
     id: 'discord-role-king',
     name: 'DC👑｜目前還沒有用的會員',
     price: 300,
-    description: '購買後請提供 Discord ID，管理員會手動處理身分組。',
+    description: '購買後會自動加入 Discord 身分組（需先加入伺服器）。',
     requireDiscordId: true
   },
   {

@@ -1,5 +1,7 @@
 ﻿const express = require('express');
 
+const axios = require('axios');
+
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const database = require('../config/database');
@@ -83,6 +85,7 @@ const isSameTaipeiDay = (a, b = Date.now()) => {
 
 
 const PROMOTION_PRODUCT_ID = 'promotion-service';
+const DISCORD_ROLE_PRODUCT_ID = 'discord-role-king';
 const PROMOTION_ACCEPTED_MESSAGE =
   '您購買的宣傳服務已經過管理員批准，請至Discord與管理員詳談您要宣傳的內容';
 const buildPromotionRejectedMessage = (price) => {
@@ -95,10 +98,10 @@ const buildPromotionRejectedMessage = (price) => {
 
 const SHOP_PRODUCTS = [
   {
-    id: 'discord-role-king',
+    id: DISCORD_ROLE_PRODUCT_ID,
     name: 'DC👑｜目前還沒有用的會員',
     price: 300,
-    description: '購買後請提供 Discord ID，管理員會手動處理身分組。',
+    description: '購買後會自動加入 Discord 身分組（需先加入伺服器）。',
     requireDiscordId: true
   },
   {
@@ -118,6 +121,53 @@ const SHOP_PRODUCTS = [
     requirePromotionContent: true
   }
 ];
+
+const DISCORD_API_BASE = 'https://discord.com/api/v10';
+const DISCORD_GUILD_ID = (process.env.DISCORD_GUILD_ID || '1300464762731237386').trim();
+const DISCORD_ROLE_ID_MEMBER = (process.env.DISCORD_ROLE_ID_MEMBER || '1419324979618779218').trim();
+
+const getDiscordInviteUrl = () => (process.env.DISCORD_INVITE_URL || '').trim();
+
+const buildJoinServerMessage = () => {
+  const inviteUrl = getDiscordInviteUrl();
+  if (inviteUrl) {
+    return `請先加入 Discord 伺服器後再購買（已退款）：${inviteUrl}`;
+  }
+  return '請先加入 Discord 伺服器後再購買（已退款）';
+};
+
+const assignDiscordRole = async (discordUserId) => {
+  const botToken = (process.env.DISCORD_BOT_TOKEN || '').trim();
+  if (!botToken) {
+    return { ok: false, reason: 'missing_bot_token' };
+  }
+  if (!DISCORD_GUILD_ID || !DISCORD_ROLE_ID_MEMBER) {
+    return { ok: false, reason: 'missing_config' };
+  }
+
+  const url = `${DISCORD_API_BASE}/guilds/${DISCORD_GUILD_ID}/members/${discordUserId}/roles/${DISCORD_ROLE_ID_MEMBER}`;
+
+  try {
+    await axios.put(url, null, {
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return { ok: true };
+  } catch (error) {
+    const status = error?.response?.status || 0;
+    const message = error?.response?.data?.message || error.message || 'unknown';
+    const code = error?.response?.data?.code || null;
+    return {
+      ok: false,
+      reason: 'discord_api_error',
+      status,
+      message,
+      code
+    };
+  }
+};
 
 const PASS_TASKS = [
 
@@ -1192,6 +1242,7 @@ router.post('/purchase', authenticateToken, async (req, res) => {
     const allowsQuantity = Boolean(product.allowQuantity);
 
     const requiresPromotionContent = Boolean(product.requirePromotionContent);
+    const isDiscordRoleProduct = product.id === DISCORD_ROLE_PRODUCT_ID;
 
     // 如果需要 Discord ID，優先使用用戶綁定的 Discord ID
     let finalDiscordId = (discordId || '').toString().trim();
@@ -1234,6 +1285,13 @@ router.post('/purchase', authenticateToken, async (req, res) => {
 
       }
 
+    }
+
+    if (isDiscordRoleProduct) {
+      const botToken = (process.env.DISCORD_BOT_TOKEN || '').trim();
+      if (!botToken) {
+        return res.status(500).json({ error: 'Discord Bot 尚未設定，暫時無法購買此商品' });
+      }
     }
 
 
@@ -1302,7 +1360,57 @@ router.post('/purchase', authenticateToken, async (req, res) => {
 
 
 
-    if (requiresDiscord || requiresPromotionContent) {
+    if (isDiscordRoleProduct) {
+
+      const assignResult = await assignDiscordRole(finalDiscordId);
+
+      if (!assignResult.ok) {
+
+        console.error('Discord 身分組指派失敗:', assignResult);
+
+        try {
+
+          await database.addCoins(req.user.id, totalPrice, 'Discord 身分組指派失敗退款');
+
+        } catch (refundError) {
+
+          console.error('自動退款失敗，請人工協助:', refundError);
+
+        }
+
+        return res.status(400).json({ error: buildJoinServerMessage() });
+
+      }
+
+      try {
+
+        const order = await database.createCoinOrder(req.user.id, {
+
+          product_id: product.id,
+
+          product_name: product.name,
+
+          price: totalPrice,
+
+          discord_id: finalDiscordId,
+
+          promotion_content: null,
+
+          user_email: req.user.username || req.user.email || null,
+
+          status: 'accepted'
+
+        });
+
+        responsePayload.order = order;
+
+      } catch (error) {
+
+        console.error('建立商品訂單失敗（已完成身分組指派）:', error);
+
+      }
+
+    } else if (requiresDiscord || requiresPromotionContent) {
 
       try {
 
