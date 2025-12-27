@@ -160,12 +160,6 @@ const Tasks = () => {
                 今日任務狀態
               </h2>
             </div>
-            <Link
-              to="/pass"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:shadow-xl whitespace-nowrap"
-            >
-              查看通行券
-            </Link>
           </div>
         </section>
 
