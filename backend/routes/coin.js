@@ -89,6 +89,8 @@ const PROMOTION_PRODUCT_ID = 'promotion-service';
 const DISCORD_ROLE_PRODUCT_ID = 'discord-role-king';
 const PROMOTION_ACCEPTED_MESSAGE =
   '您購買的宣傳服務已經過管理員批准，請至Discord與管理員詳談您要宣傳的內容';
+const PROMOTION_REDEEM_REJECTED_MESSAGE =
+  '您兌換的宣傳服務已被管理員回絕，兌換碼已退還，若還想宣傳，請修改內容後重新兌換';
 const buildPromotionRejectedMessage = (price) => {
   const amount = Number.isFinite(price) ? price : Number.parseInt(price, 10) || 0;
   const formatted = Number.isFinite(amount)
@@ -819,6 +821,8 @@ router.post('/redeem', authenticateToken, async (req, res) => {
             discord_id: finalDiscordId,
             promotion_content: product.requirePromotionContent ? trimmedPromotion : null,
             user_email: req.user.username || req.user.email || null,
+            redeem_code_id: redeemCode.id,
+            redeem_code_use_id: useId,
             status: 'pending'
           });
         } catch (error) {
@@ -1279,13 +1283,16 @@ router.get('/notifications', authenticateToken, async (req, res) => {
         if (!product || !product.requirePromotionContent) {
           return null;
         }
+        const isRedeemOrder = !!(order.redeem_code_id && order.redeem_code_use_id);
         let message = null;
         let variant = 'info';
         if (order.status === 'accepted') {
           message = PROMOTION_ACCEPTED_MESSAGE;
           variant = 'success';
         } else if (order.status === 'rejected') {
-          message = buildPromotionRejectedMessage(order.price);
+          message = isRedeemOrder
+            ? PROMOTION_REDEEM_REJECTED_MESSAGE
+            : buildPromotionRejectedMessage(order.price);
           variant = 'error';
         }
         if (!message) return null;
@@ -1381,6 +1388,23 @@ router.post('/orders/:orderId/decision', authenticateToken, requireAdmin, async 
       // 通知會自動通過訂單狀態系統生成（GET /coin/notifications）
 
       return res.json({ success: true, order: updated });
+    }
+
+    const hasRedeemCode = !!(order.redeem_code_id && order.redeem_code_use_id);
+    if (hasRedeemCode) {
+      try {
+        const rolledBack = await database.rollbackRedeemCodeUse(
+          order.redeem_code_id,
+          order.user_id,
+          order.redeem_code_use_id
+        );
+        if (!rolledBack) {
+          return res.status(500).json({ error: '兌換碼退款失敗，請稍後再試' });
+        }
+      } catch (error) {
+        console.error('兌換碼退款失敗:', error);
+        return res.status(500).json({ error: '兌換碼退款失敗，請稍後再試' });
+      }
     }
 
     const refundAmount = Math.max(0, Number(order.price) || 0);

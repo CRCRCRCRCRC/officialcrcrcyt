@@ -364,6 +364,8 @@ class NeonDatabase {
           status VARCHAR(50) DEFAULT 'pending',
           user_email VARCHAR(255),
           promotion_content TEXT,
+          redeem_code_id VARCHAR(100),
+          redeem_code_use_id VARCHAR(100),
           resolved_at TIMESTAMP,
           resolved_by INTEGER,
           notified_at TIMESTAMP,
@@ -428,6 +430,14 @@ class NeonDatabase {
       await this.pool.query(`
         ALTER TABLE coin_orders
         ADD COLUMN IF NOT EXISTS promotion_content TEXT
+      `);
+      await this.pool.query(`
+        ALTER TABLE coin_orders
+        ADD COLUMN IF NOT EXISTS redeem_code_id VARCHAR(100)
+      `);
+      await this.pool.query(`
+        ALTER TABLE coin_orders
+        ADD COLUMN IF NOT EXISTS redeem_code_use_id VARCHAR(100)
       `);
       await this.pool.query(`
         ALTER TABLE coin_orders
@@ -932,14 +942,28 @@ class NeonDatabase {
       discord_id,
       status = 'pending',
       user_email = null,
-      promotion_content = null
+      promotion_content = null,
+      redeem_code_id = null,
+      redeem_code_use_id = null
     } = orderData;
 
     const result = await this.pool.query(
-      `INSERT INTO coin_orders (user_id, product_id, product_name, price, discord_id, status, user_email, promotion_content)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, user_id, product_id, product_name, price, discord_id, status, user_email, promotion_content, created_at`,
-      [userId, product_id, product_name, price, discord_id, status, user_email, promotion_content]
+      `INSERT INTO coin_orders (user_id, product_id, product_name, price, discord_id, status, user_email, promotion_content, redeem_code_id, redeem_code_use_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, user_id, product_id, product_name, price, discord_id, status, user_email, promotion_content,
+                 redeem_code_id, redeem_code_use_id, created_at`,
+      [
+        userId,
+        product_id,
+        product_name,
+        price,
+        discord_id,
+        status,
+        user_email,
+        promotion_content,
+        redeem_code_id,
+        redeem_code_use_id
+      ]
     );
 
     return result.rows[0];
@@ -949,8 +973,8 @@ class NeonDatabase {
     const max = Math.max(1, Math.min(500, parseInt(limit) || 100));
     const res = await this.pool.query(
       `SELECT o.id, o.user_id, o.product_id, o.product_name, o.price, o.discord_id, o.status,
-              o.user_email, o.promotion_content, o.resolved_at, o.resolved_by, o.notified_at,
-              o.dismissed_at,
+              o.user_email, o.promotion_content, o.redeem_code_id, o.redeem_code_use_id,
+              o.resolved_at, o.resolved_by, o.notified_at, o.dismissed_at,
               o.decision_note, o.created_at, u.username AS current_username
        FROM coin_orders o
        LEFT JOIN users u ON u.id = o.user_id
@@ -969,6 +993,8 @@ class NeonDatabase {
       status: row.status,
       user_email: row.user_email || row.current_username || null,
       promotion_content: row.promotion_content || null,
+      redeem_code_id: row.redeem_code_id || null,
+      redeem_code_use_id: row.redeem_code_use_id || null,
       resolved_at: row.resolved_at || null,
       resolved_by: row.resolved_by || null,
       notified_at: row.notified_at || null,
@@ -982,8 +1008,8 @@ class NeonDatabase {
     if (!orderId) return null;
     const res = await this.pool.query(
       `SELECT id, user_id, product_id, product_name, price, discord_id, status,
-              user_email, promotion_content, resolved_at, resolved_by, notified_at,
-              dismissed_at, decision_note, created_at
+              user_email, promotion_content, redeem_code_id, redeem_code_use_id,
+              resolved_at, resolved_by, notified_at, dismissed_at, decision_note, created_at
        FROM coin_orders
        WHERE id = $1`,
       [orderId]
@@ -1002,6 +1028,8 @@ class NeonDatabase {
       status: row.status,
       user_email: row.user_email || null,
       promotion_content: row.promotion_content || null,
+      redeem_code_id: row.redeem_code_id || null,
+      redeem_code_use_id: row.redeem_code_use_id || null,
       resolved_at: row.resolved_at || null,
       resolved_by: row.resolved_by || null,
       notified_at: row.notified_at || null,
@@ -1032,7 +1060,7 @@ class NeonDatabase {
 
   async getCoinOrderNotifications(userId) {
     const res = await this.pool.query(
-      `SELECT id, product_id, product_name, price, status, created_at
+      `SELECT id, product_id, product_name, price, status, created_at, redeem_code_id, redeem_code_use_id
        FROM coin_orders
        WHERE user_id = $1
          AND status IN ('accepted', 'rejected')
@@ -1054,6 +1082,8 @@ class NeonDatabase {
       product_id: row.product_id,
       product_name: row.product_name,
       price: Number(row.price) || 0,
+      redeem_code_id: row.redeem_code_id || null,
+      redeem_code_use_id: row.redeem_code_use_id || null,
       status: row.status,
       created_at: row.created_at,
       notified_at: null
@@ -1062,7 +1092,7 @@ class NeonDatabase {
 
   async listCoinOrderNotifications(userId) {
     const res = await this.pool.query(
-      `SELECT id, product_id, product_name, price, status, created_at, notified_at
+      `SELECT id, product_id, product_name, price, status, created_at, notified_at, redeem_code_id, redeem_code_use_id
        FROM coin_orders
        WHERE user_id = $1
          AND status IN ('accepted', 'rejected')
@@ -1084,6 +1114,8 @@ class NeonDatabase {
       product_id: row.product_id,
       product_name: row.product_name,
       price: Number(row.price) || 0,
+      redeem_code_id: row.redeem_code_id || null,
+      redeem_code_use_id: row.redeem_code_use_id || null,
       status: row.status,
       created_at: row.created_at,
       notified_at: row.notified_at
