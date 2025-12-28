@@ -1,5 +1,17 @@
-const jwt = require('jsonwebtoken');
+﻿const jwt = require('jsonwebtoken');
 const database = require('../config/database');
+
+const isProd = process.env.NODE_ENV === 'production';
+
+const buildJwtSecrets = () => {
+  const secrets = [process.env.JWT_SECRET, process.env.WEBSITE_JWT_SECRET].filter(Boolean);
+
+  if (!secrets.length && !isProd) {
+    secrets.push('default-jwt-secret');
+  }
+
+  return secrets;
+};
 
 const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -11,19 +23,16 @@ const authenticateToken = async (req, res, next) => {
 
   try {
     // 支援多組密鑰驗證，避免部署或密鑰更新後舊 token 立即失效
-    const secrets = [
-      process.env.JWT_SECRET,
-      process.env.WEBSITE_JWT_SECRET,
-      'default-jwt-secret'
-    ].filter(Boolean);
+    const secrets = buildJwtSecrets();
+    if (!secrets.length) {
+      return res.status(500).json({ error: 'JWT_SECRET/WEBSITE_JWT_SECRET 未設定' });
+    }
 
     let decoded = null;
-    let usedSecret = null;
     let lastErr = null;
     for (const s of secrets) {
       try {
-        decoded = require('jsonwebtoken').verify(token, s);
-        usedSecret = s;
+        decoded = jwt.verify(token, s);
         break;
       } catch (e) {
         lastErr = e;
@@ -36,16 +45,12 @@ const authenticateToken = async (req, res, next) => {
     }
 
     const userId = decoded.userId ?? decoded.user_id ?? decoded.id;
-    console.log('🔍 JWT 解碼成功:', { userId, username: decoded.username, role: decoded.role, usedSecret });
-    console.log('🔍 JWT 完整解碼數據:', decoded);
 
     // 確保資料庫已初始化
     await database.initializeData();
 
     // 讀取使用者
     const user = await database.getUserById(userId);
-    console.log('🔍 資料庫查詢用戶:', user ? `找到用戶 ${user.username}` : '用戶不存在');
-    console.log('🔍 用戶完整數據:', user);
 
     if (!user) {
       console.error('❌ 用戶不存在，userId:', userId);
@@ -62,7 +67,6 @@ const authenticateToken = async (req, res, next) => {
       email: user.email || user.username
     };
 
-    console.log('🔍 完整用戶對象:', fullUser);
 
     req.user = fullUser;
     next();
@@ -73,26 +77,11 @@ const authenticateToken = async (req, res, next) => {
 };
 
 const requireAdmin = (req, res, next) => {
-  console.log('🔍 檢查管理員權限:', {
-    user: req.user,
-    userId: req.user?.id,
-    username: req.user?.username,
-    role: req.user?.role,
-    hasRole: req.user && 'role' in req.user,
-    roleType: typeof req.user?.role,
-    roleValue: req.user?.role,
-    isRoleAdmin: req.user?.role === 'admin'
-  });
-  
   // 確保用戶對象存在
   if (!req.user) {
     console.error('❌ 用戶對象缺失');
     return res.status(403).json({ error: '需要管理員權限' });
   }
-  
-  // 檢查 req.user 對象的完整結構
-  console.log('🔍 用戶對象完整結構:', req.user);
-  
   // 確保用戶有 role 字段，如果沒有則默認為 'user'
   const userRole = req.user.role || 'user';
   
@@ -106,7 +95,6 @@ const requireAdmin = (req, res, next) => {
   // 確保 req.user 對象有所有必要的屬性
   req.user.role = userRole;
   
-  console.log('✅ 管理員權限驗證通過');
   next();
 };
 

@@ -10,6 +10,10 @@
                   },
     "rewrites":  [
                      {
+                         "destination":  "/api/proxy?slug=sitemap.xml",
+                         "source":  "/sitemap.xml"
+                     },
+                     {
                          "destination":  "/api/proxy?slug=$1",
                          "source":  "/api/(.*)"
                      },

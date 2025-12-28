@@ -7,6 +7,25 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
+const isProd = process.env.NODE_ENV === 'production';
+
+const getJwtSecret = (primaryEnv, fallbackEnv) => {
+  const primary = (process.env[primaryEnv] || '').trim();
+  const fallback = fallbackEnv ? (process.env[fallbackEnv] || '').trim() : '';
+  const secret = primary || fallback || (!isProd ? 'default-jwt-secret' : '');
+  if (!secret) {
+    const name = fallbackEnv ? `${primaryEnv}/${fallbackEnv}` : primaryEnv;
+    throw new Error(`伺服器未設定 ${name}`);
+  }
+  return secret;
+};
+
+const getAdminEmailAllowlist = () =>
+  (process.env.ADMIN_GOOGLE_EMAILS || '')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+
 const sanitizeUser = (user, overrides = {}) => {
   if (!user) return null;
   const merged = { ...user, ...overrides };
@@ -61,9 +80,16 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: '用戶名或密碼錯誤' });
     }
 
+    let jwtSecret;
+    try {
+      jwtSecret = getJwtSecret('JWT_SECRET');
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role },
-      process.env.JWT_SECRET || 'default-jwt-secret',
+      jwtSecret,
       { expiresIn: '24h' }
     );
 
@@ -229,6 +255,14 @@ router.post('/google', async (req, res) => {
     const name = info.name || email.split('@')[0];
     const picture = info.picture || '';
 
+    const adminEmails = getAdminEmailAllowlist();
+    if (!adminEmails.length) {
+      return res.status(500).json({ error: '伺服器未設定 ADMIN_GOOGLE_EMAILS' });
+    }
+    if (!adminEmails.includes(email.toLowerCase())) {
+      return res.status(403).json({ error: '不允許的管理員帳號' });
+    }
+
     await database.initializeData();
 
     let user = await database.getUserByUsername(email);
@@ -248,9 +282,16 @@ router.post('/google', async (req, res) => {
 
     const sanitizedUser = await ensureAdminProfile(user, name, picture);
 
+    let jwtSecret;
+    try {
+      jwtSecret = getJwtSecret('JWT_SECRET');
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role, name: sanitizedUser.displayName, picture: sanitizedUser.avatarUrl },
-      process.env.JWT_SECRET || 'default-jwt-secret',
+      jwtSecret,
       { expiresIn: '24h' }
     );
 
@@ -302,10 +343,10 @@ router.post('/google-code', async (req, res) => {
     const name = info.name || email.split('@')[0];
     const picture = info.picture || '';
 
-    const adminEmails = (process.env.ADMIN_GOOGLE_EMAILS || '')
-      .split(',')
-      .map((value) => value.trim().toLowerCase())
-      .filter(Boolean);
+    const adminEmails = getAdminEmailAllowlist();
+    if (!adminEmails.length) {
+      return res.status(500).json({ error: '伺服器未設定 ADMIN_GOOGLE_EMAILS' });
+    }
     if (!adminEmails.includes(email.toLowerCase())) {
       return res.status(403).json({ error: '錯誤的帳號' });
     }
@@ -340,9 +381,16 @@ router.post('/google-code', async (req, res) => {
 
     const sanitizedUser = await ensureAdminProfile(user, name, picture);
 
+    let jwtSecret;
+    try {
+      jwtSecret = getJwtSecret('JWT_SECRET');
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role, name: sanitizedUser.displayName, picture: sanitizedUser.avatarUrl },
-      process.env.JWT_SECRET || 'default-jwt-secret',
+      jwtSecret,
       { expiresIn: '24h' }
     );
 
@@ -412,9 +460,16 @@ router.post('/google-public', async (req, res) => {
 
     const sanitizedUser = await ensureUserProfile(user, name, picture, email);
 
+    let jwtSecret;
+    try {
+      jwtSecret = getJwtSecret('WEBSITE_JWT_SECRET', 'JWT_SECRET');
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
     const token = jwt.sign(
       { userId: user.id, username: user.username, role: user.role || 'user', name: sanitizedUser.displayName, picture: sanitizedUser.avatarUrl },
-      process.env.WEBSITE_JWT_SECRET || process.env.JWT_SECRET || 'default-jwt-secret',
+      jwtSecret,
       { expiresIn: '7d' }
     );
 
