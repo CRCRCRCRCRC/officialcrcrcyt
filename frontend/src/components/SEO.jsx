@@ -5,7 +5,7 @@ const SEO = ({
   title,
   description,
   keywords,
-  image = 'https://officialcrcrc.vercel.app/og-image.jpg',
+  image = 'https://officialcrcrc.vercel.app/og-image.png',
   type = 'website',
   canonicalUrl,
   author,
