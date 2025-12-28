@@ -4,6 +4,7 @@ import { ArrowLeft, Coins } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 import { useCoin } from '../contexts/CoinContext'
+import { coinAPI } from '../services/api'
 import GoogleLoginButtonPublic from '../components/GoogleLoginButtonPublic'
 
 const formatCoin = (value) => {
@@ -16,7 +17,7 @@ const formatCoin = (value) => {
 
 const RedeemCode = () => {
   const { user, token } = useWebsiteAuth()
-  const { balance, hydrated } = useCoin()
+  const { balance, hydrated, refreshWallet } = useCoin()
   const isLoggedIn = !!user && !!token
 
   const [code, setCode] = useState('')
@@ -40,8 +41,17 @@ const RedeemCode = () => {
     }
 
     setSubmitting(true)
-    toast('兌換碼功能尚未開放，敬請期待！')
-    setSubmitting(false)
+    try {
+      const res = await coinAPI.redeemCode(trimmed)
+      const message = res?.data?.message || '兌換成功'
+      toast.success(message)
+      setCode('')
+      await refreshWallet()
+    } catch (error) {
+      toast.error(error.response?.data?.error || '兌換失敗，請稍後再試')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (

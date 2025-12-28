@@ -47,7 +47,7 @@ api.interceptors.request.use(
     let picked = null;
     if (isCoinApi) {
       // 對於需要管理員權限的 Coin API 端點，優先使用 adminToken
-      const adminOnlyEndpoints = ['/coin/grant', '/coin/earn', '/coin/reset', '/coin/orders'];
+      const adminOnlyEndpoints = ['/coin/grant', '/coin/earn', '/coin/reset', '/coin/orders', '/coin/redeem-codes'];
       const isAdminEndpoint = adminOnlyEndpoints.some(endpoint => url.includes(endpoint));
       
       if (isAdminEndpoint) {
@@ -274,6 +274,14 @@ export const coinAPI = {
     api.get('/coin/notifications', { params: { mode } }),
   dismissNotification: (notificationId) =>
     api.delete(`/coin/notifications/${notificationId}`),
+  // 兌換碼（管理員）
+  getRedeemCodes: (params = {}) =>
+    api.get('/coin/redeem-codes', { params, headers: authHeaderForCoin() }),
+  createRedeemCode: (payload) =>
+    api.post('/coin/redeem-codes', payload, { headers: authHeaderForCoin() }),
+  // 兌換碼（使用者）
+  redeemCode: (code) =>
+    api.post('/coin/redeem', { code }),
   // 獲取排行榜（公開）
   getLeaderboard: (limit = 20) =>
     api.get('/coin/leaderboard', { params: { limit } }),

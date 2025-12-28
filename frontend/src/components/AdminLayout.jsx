@@ -13,6 +13,7 @@ import {
   Search,
   User,
   ChevronDown,
+  KeyRound,
   Sparkles,
   Zap,
   TrendingUp,
@@ -65,6 +66,12 @@ const AdminLayout = () => {
       href: '/admin/add-xp',
       icon: Zap,
       gradient: 'from-purple-500 to-pink-600'
+    },
+    {
+      name: '兌換碼管理',
+      href: '/admin/redeem-codes',
+      icon: KeyRound,
+      gradient: 'from-indigo-500 to-purple-600'
     },
     {
       name: 'Discord 申請',

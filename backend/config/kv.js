@@ -333,6 +333,22 @@ class KVDatabase {
     return `coin_pass_task:${userId}`;
   }
 
+  redeemCodeIndexKey() {
+    return 'redeem_code_index';
+  }
+
+  redeemCodeSetKey() {
+    return 'redeem_codes';
+  }
+
+  redeemCodeUsesKey(codeId) {
+    return `redeem_code_uses:${codeId}`;
+  }
+
+  redeemCodeUseKey(useId) {
+    return `redeem_code_use:${useId}`;
+  }
+
   parsePassList(raw) {
     if (!raw) return [];
     if (Array.isArray(raw)) {
@@ -730,6 +746,132 @@ class KVDatabase {
     const payload = { dismissed_at: new Date().toISOString() };
     await this.kv.hset(orderId, payload);
     return { id: orderId };
+  }
+
+  mapRedeemCodeRecord(raw) {
+    if (!raw || Object.keys(raw).length === 0) return null;
+    return {
+      id: raw.id,
+      code: raw.code,
+      rewardType: raw.reward_type,
+      productId: raw.product_id || null,
+      productName: raw.product_name || null,
+      coinAmount: raw.coin_amount === null || raw.coin_amount === undefined ? null : Number(raw.coin_amount),
+      maxRedemptions: Number(raw.max_redemptions) || 0,
+      allowRepeat: raw.allow_repeat === true || raw.allow_repeat === 'true' || raw.allow_repeat === 1 || raw.allow_repeat === '1',
+      createdBy: raw.created_by || null,
+      createdAt: raw.created_at || null
+    };
+  }
+
+  async createRedeemCode(payload = {}) {
+    const {
+      code,
+      rewardType,
+      productId = null,
+      productName = null,
+      coinAmount = null,
+      maxRedemptions = 1,
+      allowRepeat = false,
+      createdBy = null
+    } = payload;
+    const id = `redeem_code:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    const now = new Date().toISOString();
+    const record = {
+      id,
+      code,
+      reward_type: rewardType,
+      product_id: productId,
+      product_name: productName,
+      coin_amount: coinAmount,
+      max_redemptions: maxRedemptions,
+      allow_repeat: allowRepeat ? 'true' : 'false',
+      created_by: createdBy || null,
+      created_at: now
+    };
+    await this.kv.hset(id, record);
+    await this.kv.sadd(this.redeemCodeSetKey(), id);
+    await this.kv.hset(this.redeemCodeIndexKey(), { [code]: id });
+    return this.mapRedeemCodeRecord(record);
+  }
+
+  async getRedeemCodeByCode(code) {
+    const id = await this.kv.hget(this.redeemCodeIndexKey(), code);
+    if (!id) return null;
+    const raw = await this.kv.hgetall(id);
+    return this.mapRedeemCodeRecord(raw);
+  }
+
+  async countRedeemCodeUses(codeId) {
+    const useIds = await this.kv.smembers(this.redeemCodeUsesKey(codeId));
+    return useIds.length;
+  }
+
+  async listRedeemCodes(limit = 200) {
+    const ids = await this.kv.smembers(this.redeemCodeSetKey());
+    const list = [];
+    for (const id of ids) {
+      const raw = await this.kv.hgetall(id);
+      const record = this.mapRedeemCodeRecord(raw);
+      if (!record) continue;
+      const usedCount = await this.countRedeemCodeUses(id);
+      list.push({ ...record, usedCount });
+    }
+    list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const max = Math.max(1, Math.min(500, parseInt(limit, 10) || 200));
+    return list.slice(0, max);
+  }
+
+  async reserveRedeemCodeUse(code, userId) {
+    const redeemCode = await this.getRedeemCodeByCode(code);
+    if (!redeemCode) {
+      return { ok: false, error: '兌換碼不存在' };
+    }
+
+    const useIds = await this.kv.smembers(this.redeemCodeUsesKey(redeemCode.id));
+    const usedCount = useIds.length;
+    const maxRedemptions = Number(redeemCode.maxRedemptions) || 0;
+
+    if (maxRedemptions > 0 && usedCount >= maxRedemptions) {
+      return { ok: false, error: '兌換碼已用完' };
+    }
+
+    if (!redeemCode.allowRepeat) {
+      for (const useId of useIds) {
+        const rawUse = await this.kv.hgetall(this.redeemCodeUseKey(useId));
+        if (rawUse && rawUse.user_id === userId) {
+          return { ok: false, error: '你已兌換過此兌換碼' };
+        }
+      }
+    }
+
+    const useId = `redeem_use:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    const useRecord = {
+      id: useId,
+      user_id: userId,
+      redeemed_at: new Date().toISOString()
+    };
+    await this.kv.hset(this.redeemCodeUseKey(useId), useRecord);
+    await this.kv.sadd(this.redeemCodeUsesKey(redeemCode.id), useId);
+
+    return {
+      ok: true,
+      redeemCode,
+      useId,
+      usedCount: usedCount + 1
+    };
+  }
+
+  async rollbackRedeemCodeUse(codeId, userId, useId) {
+    if (!codeId || !useId) return false;
+    const useKey = this.redeemCodeUseKey(useId);
+    const rawUse = await this.kv.hgetall(useKey);
+    if (!rawUse || rawUse.user_id !== userId) {
+      return false;
+    }
+    await this.kv.del(useKey);
+    await this.kv.srem(this.redeemCodeUsesKey(codeId), useId);
+    return true;
   }
 
   // 獲取 CRCRCoin 排行榜

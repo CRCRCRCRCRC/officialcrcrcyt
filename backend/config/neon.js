@@ -394,6 +394,34 @@ class NeonDatabase {
         )
       `);
       await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS redeem_codes (
+          id SERIAL PRIMARY KEY,
+          code VARCHAR(64) UNIQUE NOT NULL,
+          reward_type VARCHAR(20) NOT NULL,
+          product_id VARCHAR(100),
+          product_name VARCHAR(255),
+          coin_amount INTEGER,
+          max_redemptions INTEGER NOT NULL DEFAULT 1,
+          allow_repeat BOOLEAN DEFAULT false,
+          created_by INTEGER REFERENCES users(id),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS redeem_code_uses (
+          id SERIAL PRIMARY KEY,
+          redeem_code_id INTEGER NOT NULL REFERENCES redeem_codes(id) ON DELETE CASCADE,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await this.pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_redeem_code_uses_code_id ON redeem_code_uses(redeem_code_id)
+      `);
+      await this.pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_redeem_code_uses_user_id ON redeem_code_uses(user_id)
+      `);
+      await this.pool.query(`
         ALTER TABLE coin_orders
         ADD COLUMN IF NOT EXISTS user_email VARCHAR(255)
       `);
@@ -1602,6 +1630,140 @@ class NeonDatabase {
       console.error('獲取排行榜失敗:', error);
       return [];
     }
+  }
+
+  mapRedeemCodeRow(row) {
+    if (!row) return null;
+    return {
+      id: row.id,
+      code: row.code,
+      rewardType: row.reward_type,
+      productId: row.product_id || null,
+      productName: row.product_name || null,
+      coinAmount: row.coin_amount === null || row.coin_amount === undefined ? null : Number(row.coin_amount),
+      maxRedemptions: Number(row.max_redemptions) || 0,
+      allowRepeat: row.allow_repeat === true || row.allow_repeat === 'true' || row.allow_repeat === 1,
+      createdBy: row.created_by || null,
+      createdAt: row.created_at
+    };
+  }
+
+  async createRedeemCode(payload = {}) {
+    const {
+      code,
+      rewardType,
+      productId = null,
+      productName = null,
+      coinAmount = null,
+      maxRedemptions = 1,
+      allowRepeat = false,
+      createdBy = null
+    } = payload;
+
+    const result = await this.pool.query(
+      `INSERT INTO redeem_codes (code, reward_type, product_id, product_name, coin_amount, max_redemptions, allow_repeat, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [code, rewardType, productId, productName, coinAmount, maxRedemptions, allowRepeat, createdBy]
+    );
+
+    return this.mapRedeemCodeRow(result.rows[0]);
+  }
+
+  async getRedeemCodeByCode(code) {
+    const result = await this.pool.query(
+      'SELECT * FROM redeem_codes WHERE code = $1',
+      [code]
+    );
+    return this.mapRedeemCodeRow(result.rows[0]);
+  }
+
+  async listRedeemCodes(limit = 200) {
+    const max = Math.max(1, Math.min(500, parseInt(limit, 10) || 200));
+    const result = await this.pool.query(
+      `SELECT rc.*, COUNT(ru.id) AS used_count
+       FROM redeem_codes rc
+       LEFT JOIN redeem_code_uses ru ON ru.redeem_code_id = rc.id
+       GROUP BY rc.id
+       ORDER BY rc.created_at DESC
+       LIMIT $1`,
+      [max]
+    );
+    return result.rows.map((row) => ({
+      ...this.mapRedeemCodeRow(row),
+      usedCount: Number(row.used_count) || 0
+    }));
+  }
+
+  async reserveRedeemCodeUse(code, userId) {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const codeResult = await client.query(
+        'SELECT * FROM redeem_codes WHERE code = $1 FOR UPDATE',
+        [code]
+      );
+
+      if (codeResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return { ok: false, error: '兌換碼不存在' };
+      }
+
+      const codeRow = codeResult.rows[0];
+      const countResult = await client.query(
+        'SELECT COUNT(*) AS count FROM redeem_code_uses WHERE redeem_code_id = $1',
+        [codeRow.id]
+      );
+      const usedCount = Number(countResult.rows[0].count) || 0;
+      const maxRedemptions = Number(codeRow.max_redemptions) || 0;
+      const allowRepeat = codeRow.allow_repeat === true;
+
+      if (maxRedemptions > 0 && usedCount >= maxRedemptions) {
+        await client.query('ROLLBACK');
+        return { ok: false, error: '兌換碼已用完' };
+      }
+
+      if (!allowRepeat) {
+        const userResult = await client.query(
+          'SELECT id FROM redeem_code_uses WHERE redeem_code_id = $1 AND user_id = $2 LIMIT 1',
+          [codeRow.id, userId]
+        );
+        if (userResult.rows.length > 0) {
+          await client.query('ROLLBACK');
+          return { ok: false, error: '你已兌換過此兌換碼' };
+        }
+      }
+
+      const useResult = await client.query(
+        'INSERT INTO redeem_code_uses (redeem_code_id, user_id) VALUES ($1, $2) RETURNING id',
+        [codeRow.id, userId]
+      );
+
+      await client.query('COMMIT');
+      return {
+        ok: true,
+        redeemCode: this.mapRedeemCodeRow(codeRow),
+        useId: useResult.rows[0].id,
+        usedCount: usedCount + 1
+      };
+    } catch (error) {
+      try {
+        await client.query('ROLLBACK');
+      } catch {}
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async rollbackRedeemCodeUse(codeId, userId, useId) {
+    if (!codeId || !useId) return false;
+    await this.pool.query(
+      'DELETE FROM redeem_code_uses WHERE id = $1 AND redeem_code_id = $2 AND user_id = $3',
+      [useId, codeId, userId]
+    );
+    return true;
   }
 
   // 記錄商店訪問

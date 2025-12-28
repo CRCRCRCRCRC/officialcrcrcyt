@@ -1,6 +1,7 @@
 ﻿const express = require('express');
 
 const axios = require('axios');
+const crypto = require('crypto');
 
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
@@ -121,6 +122,20 @@ const SHOP_PRODUCTS = [
     requirePromotionContent: true
   }
 ];
+
+const REDEEM_CODE_LENGTH = 10;
+const REDEEM_CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+const normalizeRedeemCode = (value) => (value || '').toString().trim().toUpperCase();
+
+const generateRedeemCode = (length = REDEEM_CODE_LENGTH) => {
+  const size = Math.max(6, Math.min(32, Number(length) || REDEEM_CODE_LENGTH));
+  let result = '';
+  for (let i = 0; i < size; i += 1) {
+    result += REDEEM_CODE_CHARS[crypto.randomInt(0, REDEEM_CODE_CHARS.length)];
+  }
+  return result;
+};
 
 const DISCORD_API_BASE = 'https://discord.com/api/v10';
 const DISCORD_GUILD_ID = (process.env.DISCORD_GUILD_ID || '1300464762731237386').trim();
@@ -559,6 +574,90 @@ router.get('/products', (req, res) => {
   res.json({ products });
 });
 
+// 管理員：兌換碼列表
+router.get('/redeem-codes', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const limit = Math.max(1, Math.min(500, parseInt(req.query.limit, 10) || 200));
+    const codes = await database.listRedeemCodes(limit);
+    res.json({ codes });
+  } catch (error) {
+    console.error('取得兌換碼列表失敗:', error);
+    res.status(500).json({ error: '無法取得兌換碼列表' });
+  }
+});
+
+// 管理員：新增兌換碼
+router.post('/redeem-codes', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const rewardType = (req.body?.rewardType || '').toString().trim().toLowerCase();
+    const allowRepeat = Boolean(req.body?.allowRepeat);
+    const maxRedemptions = Math.floor(Number(req.body?.maxRedemptions));
+
+    if (!Number.isFinite(maxRedemptions) || maxRedemptions < 1) {
+      return res.status(400).json({ error: '可兌換人數需為 1 以上' });
+    }
+
+    let payload = null;
+
+    if (rewardType === 'product') {
+      const productId = (req.body?.productId || '').toString().trim();
+      const product = SHOP_PRODUCTS.find((item) => item.id === productId);
+      if (!product) {
+        return res.status(400).json({ error: '商品不存在' });
+      }
+      if (product.requirePromotionContent) {
+        return res.status(400).json({ error: '此商品需要宣傳內容，無法建立兌換碼' });
+      }
+
+      payload = {
+        rewardType: 'product',
+        productId: product.id,
+        productName: product.name,
+        coinAmount: null,
+        maxRedemptions,
+        allowRepeat,
+        createdBy: req.user.id
+      };
+    } else if (rewardType === 'coins') {
+      const coinAmount = Math.floor(Number(req.body?.coinAmount));
+      if (!Number.isFinite(coinAmount) || coinAmount <= 0) {
+        return res.status(400).json({ error: '請輸入正確的 CRCRCoin 數量' });
+      }
+
+      payload = {
+        rewardType: 'coins',
+        productId: null,
+        productName: null,
+        coinAmount,
+        maxRedemptions,
+        allowRepeat,
+        createdBy: req.user.id
+      };
+    } else {
+      return res.status(400).json({ error: '兌換類型不正確' });
+    }
+
+    let code = null;
+    for (let i = 0; i < 5; i += 1) {
+      const candidate = generateRedeemCode();
+      const exists = await database.getRedeemCodeByCode(candidate);
+      if (!exists) {
+        code = candidate;
+        break;
+      }
+    }
+    if (!code) {
+      return res.status(500).json({ error: '無法產生兌換碼，請稍後再試' });
+    }
+
+    const record = await database.createRedeemCode({ code, ...payload });
+    res.json({ success: true, redeemCode: record });
+  } catch (error) {
+    console.error('新增兌換碼失敗:', error);
+    res.status(500).json({ error: '新增兌換碼失敗' });
+  }
+});
+
 // 記錄商店訪問（需要登入）
 router.post('/shop/visit', authenticateToken, async (req, res) => {
   try {
@@ -581,6 +680,146 @@ router.get('/check-discord', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('檢查 Discord 綁定失敗:', error);
     res.status(500).json({ error: '檢查失敗' });
+  }
+});
+
+// 兌換碼（需要登入）
+router.post('/redeem', authenticateToken, async (req, res) => {
+  try {
+    const code = normalizeRedeemCode(req.body?.code);
+    if (!code) {
+      return res.status(400).json({ error: '請輸入兌換碼' });
+    }
+
+    const reserved = await database.reserveRedeemCodeUse(code, req.user.id);
+    if (!reserved?.ok) {
+      return res.status(400).json({ error: reserved?.error || '兌換失敗' });
+    }
+
+    const redeemCode = reserved.redeemCode;
+    const useId = reserved.useId;
+
+    const rollback = async () => {
+      if (!redeemCode?.id || !useId) return;
+      try {
+        await database.rollbackRedeemCodeUse(redeemCode.id, req.user.id, useId);
+      } catch (rollbackError) {
+        console.error('兌換碼回滾失敗:', rollbackError);
+      }
+    };
+
+    if (redeemCode.rewardType === 'coins') {
+      const amount = Number(redeemCode.coinAmount) || 0;
+      if (amount <= 0) {
+        await rollback();
+        return res.status(400).json({ error: '兌換碼設定錯誤' });
+      }
+
+      const addResult = await database.addCoins(req.user.id, amount, `兌換碼 ${code}`);
+      if (!addResult?.success) {
+        await rollback();
+        return res.status(500).json({ error: addResult?.error || '兌換失敗' });
+      }
+
+      return res.json({
+        success: true,
+        reward: { type: 'coins', amount },
+        wallet: mapWallet(addResult.wallet),
+        message: `已兌換 ${amount} CRCRCoin`
+      });
+    }
+
+    if (redeemCode.rewardType === 'product') {
+      const product = SHOP_PRODUCTS.find((item) => item.id === redeemCode.productId);
+      if (!product) {
+        await rollback();
+        return res.status(400).json({ error: '兌換碼商品不存在' });
+      }
+      if (product.requirePromotionContent) {
+        await rollback();
+        return res.status(400).json({ error: '此兌換碼商品需要宣傳內容，請聯繫管理員' });
+      }
+
+      let finalDiscordId = '';
+      if (product.requireDiscordId) {
+        const user = await database.getUserById(req.user.id);
+        finalDiscordId = (user?.discord_id || user?.discordId || '').toString().trim();
+        if (!finalDiscordId) {
+          await rollback();
+          return res.status(400).json({ error: '請先至個人資料頁面綁定 Discord 帳號' });
+        }
+      }
+
+      if (product.id === DISCORD_ROLE_PRODUCT_ID) {
+        const botToken = (process.env.DISCORD_BOT_TOKEN || '').trim();
+        if (!botToken) {
+          await rollback();
+          return res.status(500).json({ error: 'Discord Bot 尚未設定，暫時無法兌換此商品' });
+        }
+
+        const assignResult = await assignDiscordRole(finalDiscordId);
+        if (!assignResult.ok) {
+          await rollback();
+          return res.status(400).json({ error: buildJoinServerMessage() });
+        }
+        try {
+          await database.createCoinOrder(req.user.id, {
+            product_id: product.id,
+            product_name: product.name,
+            price: 0,
+            discord_id: finalDiscordId,
+            promotion_content: null,
+            user_email: req.user.username || req.user.email || null,
+            status: 'accepted'
+          });
+        } catch (error) {
+          console.error('建立兌換碼訂單失敗（已完成身分組指派）:', error);
+        }
+
+        return res.json({
+          success: true,
+          reward: { type: 'product', productId: product.id, productName: product.name },
+          message: '兌換成功，已嘗試加入 Discord 身分組'
+        });
+      }
+
+      if (product.rewardCoins) {
+        const rewardAmount = Number(product.rewardCoins) || 0;
+        if (rewardAmount <= 0) {
+          await rollback();
+          return res.status(400).json({ error: '兌換碼設定錯誤' });
+        }
+
+        const addResult = await database.addCoins(
+          req.user.id,
+          rewardAmount,
+          `兌換碼商品回饋：${product.name}`
+        );
+        if (!addResult?.success) {
+          await rollback();
+          return res.status(500).json({ error: addResult?.error || '兌換失敗' });
+        }
+
+        return res.json({
+          success: true,
+          reward: { type: 'coins', amount: rewardAmount },
+          wallet: mapWallet(addResult.wallet),
+          message: `已兌換 ${rewardAmount} CRCRCoin`
+        });
+      }
+
+      return res.json({
+        success: true,
+        reward: { type: 'product', productId: product.id, productName: product.name },
+        message: '兌換成功'
+      });
+    }
+
+    await rollback();
+    return res.status(400).json({ error: '兌換碼設定錯誤' });
+  } catch (error) {
+    console.error('兌換碼兌換失敗:', error);
+    res.status(500).json({ error: '兌換失敗' });
   }
 });
 
