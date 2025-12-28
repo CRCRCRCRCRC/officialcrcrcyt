@@ -777,19 +777,6 @@ router.post('/redeem', authenticateToken, async (req, res) => {
           await rollback();
           return res.status(400).json({ error: buildJoinServerMessage() });
         }
-        try {
-          await database.createCoinOrder(req.user.id, {
-            product_id: product.id,
-            product_name: product.name,
-            price: 0,
-            discord_id: finalDiscordId,
-            promotion_content: null,
-            user_email: req.user.username || req.user.email || null,
-            status: 'accepted'
-          });
-        } catch (error) {
-          console.error('建立兌換碼訂單失敗（已完成身分組指派）:', error);
-        }
 
         return res.json({
           success: true,
@@ -1349,7 +1336,9 @@ router.get('/orders', authenticateToken, requireAdmin, async (req, res) => {
 
     const orders = await database.getCoinOrders(limit);
 
-    res.json({ orders });
+    const filtered = orders.filter((order) => order.product_id !== DISCORD_ROLE_PRODUCT_ID);
+
+    res.json({ orders: filtered });
 
   } catch (error) {
 
@@ -1651,34 +1640,6 @@ router.post('/purchase', authenticateToken, async (req, res) => {
         }
 
         return res.status(400).json({ error: buildJoinServerMessage() });
-
-      }
-
-      try {
-
-        const order = await database.createCoinOrder(req.user.id, {
-
-          product_id: product.id,
-
-          product_name: product.name,
-
-          price: totalPrice,
-
-          discord_id: finalDiscordId,
-
-          promotion_content: null,
-
-          user_email: req.user.username || req.user.email || null,
-
-          status: 'accepted'
-
-        });
-
-        responsePayload.order = order;
-
-      } catch (error) {
-
-        console.error('建立商品訂單失敗（已完成身分組指派）:', error);
 
       }
 

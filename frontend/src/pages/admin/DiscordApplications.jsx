@@ -101,7 +101,7 @@ const DiscordApplications = () => {
                   Discord 申請列表
                 </h1>
                 <p className="text-sm text-gray-600">
-                  檢視宣傳服務等需要人工處理的訂單，身分組商品會自動套用並保留紀錄。
+                  檢視宣傳服務等需要人工處理的訂單，身分組商品會自動套用且不會出現在此列表。
                 </p>
               </div>
             </div>
