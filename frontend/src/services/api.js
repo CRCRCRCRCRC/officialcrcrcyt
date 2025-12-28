@@ -280,8 +280,8 @@ export const coinAPI = {
   createRedeemCode: (payload) =>
     api.post('/coin/redeem-codes', payload, { headers: authHeaderForCoin() }),
   // 兌換碼（使用者）
-  redeemCode: (code) =>
-    api.post('/coin/redeem', { code }),
+  redeemCode: (payload) =>
+    api.post('/coin/redeem', payload),
   // 獲取排行榜（公開）
   getLeaderboard: (limit = 20) =>
     api.get('/coin/leaderboard', { params: { limit } }),

@@ -125,6 +125,8 @@ const SHOP_PRODUCTS = [
 
 const REDEEM_CODE_LENGTH = 10;
 const REDEEM_CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const PROMOTION_CONTENT_MIN = 10;
+const PROMOTION_CONTENT_MAX = 500;
 
 const normalizeRedeemCode = (value) => (value || '').toString().trim().toUpperCase();
 
@@ -605,9 +607,6 @@ router.post('/redeem-codes', authenticateToken, requireAdmin, async (req, res) =
       if (!product) {
         return res.status(400).json({ error: '商品不存在' });
       }
-      if (product.requirePromotionContent) {
-        return res.status(400).json({ error: '此商品需要宣傳內容，無法建立兌換碼' });
-      }
 
       payload = {
         rewardType: 'product',
@@ -735,10 +734,7 @@ router.post('/redeem', authenticateToken, async (req, res) => {
         await rollback();
         return res.status(400).json({ error: '兌換碼商品不存在' });
       }
-      if (product.requirePromotionContent) {
-        await rollback();
-        return res.status(400).json({ error: '此兌換碼商品需要宣傳內容，請聯繫管理員' });
-      }
+      const trimmedPromotion = (req.body?.promotionContent || '').toString().trim();
 
       let finalDiscordId = '';
       if (product.requireDiscordId) {
@@ -747,6 +743,25 @@ router.post('/redeem', authenticateToken, async (req, res) => {
         if (!finalDiscordId) {
           await rollback();
           return res.status(400).json({ error: '請先至個人資料頁面綁定 Discord 帳號' });
+        }
+      }
+
+      if (product.requirePromotionContent) {
+        if (!trimmedPromotion) {
+          await rollback();
+          return res.status(400).json({
+            error: '請輸入想宣傳的內容',
+            code: 'NEEDS_PROMOTION_CONTENT',
+            productName: product.name
+          });
+        }
+        if (trimmedPromotion.length < PROMOTION_CONTENT_MIN) {
+          await rollback();
+          return res.status(400).json({ error: `宣傳內容太短，請至少輸入 ${PROMOTION_CONTENT_MIN} 個字` });
+        }
+        if (trimmedPromotion.length > PROMOTION_CONTENT_MAX) {
+          await rollback();
+          return res.status(400).json({ error: `宣傳內容太長，請縮短在 ${PROMOTION_CONTENT_MAX} 字內` });
         }
       }
 
@@ -806,6 +821,24 @@ router.post('/redeem', authenticateToken, async (req, res) => {
           wallet: mapWallet(addResult.wallet),
           message: `已兌換 ${rewardAmount} CRCRCoin`
         });
+      }
+
+      if (product.requireDiscordId || product.requirePromotionContent) {
+        try {
+          await database.createCoinOrder(req.user.id, {
+            product_id: product.id,
+            product_name: product.name,
+            price: 0,
+            discord_id: finalDiscordId,
+            promotion_content: product.requirePromotionContent ? trimmedPromotion : null,
+            user_email: req.user.username || req.user.email || null,
+            status: 'pending'
+          });
+        } catch (error) {
+          console.error('建立兌換碼訂單失敗:', error);
+          await rollback();
+          return res.status(500).json({ error: '建立訂單失敗，請稍後再試' });
+        }
       }
 
       return res.json({

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { KeyRound, Copy, Coins, Gift, RefreshCw, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -23,11 +23,6 @@ const RedeemCodes = () => {
   const [loadingList, setLoadingList] = useState(false)
   const [codes, setCodes] = useState([])
   const [lastCreated, setLastCreated] = useState(null)
-
-  const filteredProducts = useMemo(
-    () => products.filter((item) => !item.requirePromotionContent),
-    [products]
-  )
 
   const fetchProducts = async () => {
     try {
@@ -218,18 +213,24 @@ const RedeemCodes = () => {
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 disabled={loading}
               >
-                {filteredProducts.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}（{formatNumber(item.price)} CRCRCoin）
-                  </option>
-                ))}
+                {products.map((item) => {
+                  const tags = []
+                  if (item.requireDiscordId) tags.push('需綁定 Discord')
+                  if (item.requirePromotionContent) tags.push('需宣傳內容')
+                  const suffix = tags.length ? `（${tags.join('、')}）` : ''
+                  return (
+                    <option key={item.id} value={item.id}>
+                      {item.name}{suffix}
+                    </option>
+                  )
+                })}
               </select>
-              {filteredProducts.length === 0 && (
+              {products.length === 0 && (
                 <p className="mt-2 text-xs text-gray-500">目前沒有可用商品。</p>
               )}
               {products.some((item) => item.requirePromotionContent) && (
                 <p className="mt-2 text-xs text-gray-500">
-                  需要宣傳內容的商品不支援兌換碼。
+                  若商品需要宣傳內容，使用者兌換時需填寫宣傳資料。
                 </p>
               )}
             </div>

@@ -15,17 +15,36 @@ const formatCoin = (value) => {
   }
 }
 
+const PROMOTION_CONTENT_MIN = 10
+const PROMOTION_CONTENT_MAX = 500
+
+const normalizeCode = (value) => (value || '').toString().trim().toUpperCase()
+
 const RedeemCode = () => {
   const { user, token } = useWebsiteAuth()
   const { balance, hydrated, refreshWallet } = useCoin()
   const isLoggedIn = !!user && !!token
 
   const [code, setCode] = useState('')
+  const [promotionContent, setPromotionContent] = useState('')
+  const [needsPromotion, setNeedsPromotion] = useState(false)
+  const [promotionProductName, setPromotionProductName] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = (event) => {
+  const handleCodeChange = (event) => {
+    const value = event.target.value
+    if (needsPromotion && normalizeCode(value) !== normalizeCode(code)) {
+      setNeedsPromotion(false)
+      setPromotionContent('')
+      setPromotionProductName('')
+    }
+    setCode(value)
+  }
+
+  const handleSubmit = async (event) => {
     event.preventDefault()
     const trimmed = code.trim()
+    const trimmedPromotion = promotionContent.trim()
 
     if (!isLoggedIn) {
       toast.error('請先登入後再兌換')
@@ -39,16 +58,44 @@ const RedeemCode = () => {
       toast.error('兌換碼太長，請確認後再試')
       return
     }
+    if (needsPromotion) {
+      if (!trimmedPromotion) {
+        toast.error('請輸入想宣傳的內容')
+        return
+      }
+      if (trimmedPromotion.length < PROMOTION_CONTENT_MIN) {
+        toast.error(`宣傳內容至少 ${PROMOTION_CONTENT_MIN} 個字`)
+        return
+      }
+      if (trimmedPromotion.length > PROMOTION_CONTENT_MAX) {
+        toast.error(`宣傳內容請控制在 ${PROMOTION_CONTENT_MAX} 字內`)
+        return
+      }
+    }
 
     setSubmitting(true)
     try {
-      const res = await coinAPI.redeemCode(trimmed)
+      const payload = { code: trimmed }
+      if (needsPromotion) {
+        payload.promotionContent = trimmedPromotion
+      }
+      const res = await coinAPI.redeemCode(payload)
       const message = res?.data?.message || '兌換成功'
       toast.success(message)
       setCode('')
+      setPromotionContent('')
+      setNeedsPromotion(false)
+      setPromotionProductName('')
       await refreshWallet()
     } catch (error) {
-      toast.error(error.response?.data?.error || '兌換失敗，請稍後再試')
+      const errorData = error.response?.data || {}
+      if (errorData.code === 'NEEDS_PROMOTION_CONTENT') {
+        setNeedsPromotion(true)
+        setPromotionProductName(errorData.productName || '')
+        toast.error(errorData.error || '請輸入想宣傳的內容')
+      } else {
+        toast.error(errorData.error || '兌換失敗，請稍後再試')
+      }
     } finally {
       setSubmitting(false)
     }
@@ -82,7 +129,7 @@ const RedeemCode = () => {
             <div className="mb-6">
               <h2 className="text-xl font-bold text-gray-900">輸入兌換碼領取獎勵</h2>
               <p className="mt-2 text-sm text-gray-600">
-                有活動或合作兌換碼時，請在此輸入。兌換成功後會直接加入你的 CRCRCoin 錢包。
+                有活動或合作兌換碼時，請在此輸入。兌換成功後會依兌換碼內容發放獎勵。
               </p>
             </div>
 
@@ -102,21 +149,41 @@ const RedeemCode = () => {
                   id="redeem-code"
                   type="text"
                   value={code}
-                  onChange={(event) => setCode(event.target.value)}
+                  onChange={handleCodeChange}
                   placeholder="例：CRCRC-2025"
                   className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
                   disabled={!isLoggedIn || submitting}
                 />
               </div>
+              {needsPromotion && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700" htmlFor="promotion-content">
+                    宣傳內容{promotionProductName ? `（${promotionProductName}）` : ''}
+                  </label>
+                  <textarea
+                    id="promotion-content"
+                    rows={5}
+                    maxLength={PROMOTION_CONTENT_MAX}
+                    value={promotionContent}
+                    onChange={(event) => setPromotionContent(event.target.value)}
+                    placeholder="請輸入想宣傳的內容（會送交管理員審核）"
+                    className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                    disabled={!isLoggedIn || submitting}
+                  />
+                  <div className="mt-1 text-right text-xs text-gray-500">
+                    {promotionContent.length}/{PROMOTION_CONTENT_MAX}
+                  </div>
+                </div>
+              )}
               <button
                 type="submit"
-                disabled={!isLoggedIn || submitting || !code.trim()}
+                disabled={!isLoggedIn || submitting || !code.trim() || (needsPromotion && !promotionContent.trim())}
                 className="w-full rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? '兌換中...' : '確認兌換'}
               </button>
               <p className="text-xs text-gray-500">
-                兌換碼通常區分大小寫，請確認輸入內容。
+                兌換碼會自動轉成大寫，不分大小寫。
               </p>
             </form>
           </div>
@@ -125,15 +192,15 @@ const RedeemCode = () => {
             <div className="rounded-3xl border border-white/30 bg-white/80 p-6 shadow-lg backdrop-blur-xl">
               <h3 className="text-base font-semibold text-gray-900 mb-3">兌換規則</h3>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li>每組兌換碼僅能使用一次。</li>
+                <li>兌換次數依活動設定為準。</li>
                 <li>活動碼通常有有效期限。</li>
-                <li>兌換成功後會立即入帳。</li>
+                <li>兌換成功後會立即發放。</li>
               </ul>
             </div>
             <div className="rounded-3xl border border-white/30 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-blue-500/10 p-6 shadow-lg">
               <h3 className="text-base font-semibold text-gray-900 mb-2">注意事項</h3>
               <p className="text-sm text-gray-600">
-                兌換碼功能尚在準備中，正式上線後會在公告區通知。
+                若兌換失敗請確認是否已登入或兌換碼已達上限，必要時請聯繫管理員。
               </p>
               <Link
                 to="/announcements"
