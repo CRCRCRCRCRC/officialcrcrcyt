@@ -15,6 +15,7 @@ import Tasks from './pages/Tasks'
 import Notifications from './pages/Notifications'
 import Profile from './pages/Profile'
 import DiscordCallback from './pages/DiscordCallback'
+import RedeemCode from './pages/RedeemCode'
 import CategoryPage from './pages/lyrics/CategoryPage'
 import ArtistsPage from './pages/lyrics/ArtistsPage'
 import SongsPage from './pages/lyrics/SongsPage'
@@ -51,6 +52,7 @@ function App() {
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="tasks" element={<Tasks />} />
+            <Route path="redeem" element={<RedeemCode />} />
             <Route path="profile" element={<Profile />} />
             <Route path="profile/discord/callback" element={<DiscordCallback />} />
 

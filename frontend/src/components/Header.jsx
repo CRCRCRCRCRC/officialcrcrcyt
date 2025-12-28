@@ -46,6 +46,7 @@ const Header = () => {
     { name: '首頁', href: '/' },
     { name: '公告', href: '/announcements' },
     { name: '排行榜', href: '/leaderboard' },
+    { name: '兌換碼', href: '/redeem' },
     { name: '歌詞', href: '/lyrics' },
   ]
 
