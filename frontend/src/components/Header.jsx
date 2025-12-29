@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings, Bell } from 'lucide-react'
+import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings, Bell, Zap } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 import { useCoin } from '../contexts/CoinContext'
@@ -17,11 +17,18 @@ const resolveAvatarSrc = (value) => {
 }
 
 const APP_VERSION = 'v1.0.01'
+const TECH_EFFECT_STORAGE_PREFIX = 'tech_effect_enabled:'
+
+const getTechEffectStorageKey = (userId) => {
+  if (!userId) return TECH_EFFECT_STORAGE_PREFIX
+  return `${TECH_EFFECT_STORAGE_PREFIX}${userId}`
+}
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
+  const [techEffectEnabled, setTechEffectEnabled] = useState(false)
   const location = useLocation()
   const { user, logout, updateProfile } = useWebsiteAuth()
   const { hasNewNotifications } = useCoin()
@@ -30,6 +37,8 @@ const Header = () => {
   const userDisplayName = user?.displayName || user?.name || user?.username || user?.email
   const rawUserAvatar = user?.picture || user?.avatarUrl || ''
   const userAvatar = resolveAvatarSrc(rawUserAvatar) || defaultAvatar
+  const techEffectUnlocked = Boolean(user?.techEffectUnlocked || user?.tech_effect_unlocked)
+  const techStorageKey = getTechEffectStorageKey(user?.id)
 
   useEffect(() => {
     const handleDocClick = (event) => {
@@ -40,6 +49,40 @@ const Header = () => {
     }
     document.addEventListener('mousedown', handleDocClick)
     return () => document.removeEventListener('mousedown', handleDocClick)
+  }, [])
+
+  useEffect(() => {
+    if (!techEffectUnlocked) {
+      setTechEffectEnabled(false)
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('tech-mode')
+      }
+      return
+    }
+    const stored = localStorage.getItem(techStorageKey)
+    setTechEffectEnabled(stored === 'true')
+  }, [techEffectUnlocked, techStorageKey])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    if (!techEffectUnlocked) {
+      document.body.classList.remove('tech-mode')
+      return
+    }
+    if (techEffectEnabled) {
+      document.body.classList.add('tech-mode')
+    } else {
+      document.body.classList.remove('tech-mode')
+    }
+    localStorage.setItem(techStorageKey, techEffectEnabled ? 'true' : 'false')
+  }, [techEffectEnabled, techEffectUnlocked, techStorageKey])
+
+  useEffect(() => {
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('tech-mode')
+      }
+    }
   }, [])
 
   const navigation = [
@@ -89,13 +132,29 @@ const Header = () => {
 
             {/* Social Links & Mobile Menu Button - 最右邊 */}
             <div className="flex items-center space-x-4 z-10">
-              {/* Social Links */}
-              <div className="hidden sm:flex items-center space-x-3">
-                <Link
-                  to="/notifications"
-                  className="relative rounded-full p-2 text-gray-600 hover:text-primary-600 transition-colors duration-200"
-                  aria-label="通知中心"
+            {/* Social Links */}
+            <div className="hidden sm:flex items-center space-x-3">
+              {techEffectUnlocked && (
+                <button
+                  type="button"
+                  onClick={() => setTechEffectEnabled((prev) => !prev)}
+                  className={`relative rounded-full p-2 transition-colors duration-200 ${
+                    techEffectEnabled
+                      ? 'bg-cyan-100 text-cyan-700 ring-2 ring-cyan-300/60'
+                      : 'text-gray-600 hover:text-cyan-600 hover:bg-cyan-50'
+                  }`}
+                  aria-pressed={techEffectEnabled}
+                  aria-label="切換科技感特效"
+                  title="切換科技感特效"
                 >
+                  <Zap className="w-5 h-5" />
+                </button>
+              )}
+              <Link
+                to="/notifications"
+                className="relative rounded-full p-2 text-gray-600 hover:text-primary-600 transition-colors duration-200"
+                aria-label="通知中心"
+              >
                   <Bell className="w-5 h-5" />
                   {hasNewNotifications && (
                     <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white" />
@@ -197,6 +256,21 @@ const Header = () => {
                       </span>
                     )}
                   </Link>
+                  {techEffectUnlocked && (
+                    <button
+                      type="button"
+                      onClick={() => setTechEffectEnabled((prev) => !prev)}
+                      className={`flex w-full items-center gap-2 px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                        techEffectEnabled
+                          ? 'text-cyan-700 bg-cyan-50'
+                          : 'text-gray-700 hover:text-cyan-600 hover:bg-cyan-50'
+                      }`}
+                      aria-pressed={techEffectEnabled}
+                    >
+                      <Zap className="w-4 h-4" />
+                      科技感特效
+                    </button>
+                  )}
 
                   {/* Mobile Social Links */}
                   <div className="flex items-center space-x-4 px-4 pt-4 border-t border-gray-200">

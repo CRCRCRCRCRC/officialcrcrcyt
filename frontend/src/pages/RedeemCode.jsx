@@ -17,11 +17,12 @@ const formatCoin = (value) => {
 
 const PROMOTION_CONTENT_MIN = 10
 const PROMOTION_CONTENT_MAX = 500
+const TECH_EFFECT_PRODUCT_ID = 'site-tech-effect'
 
 const normalizeCode = (value) => (value || '').toString().trim().toUpperCase()
 
 const RedeemCode = () => {
-  const { user, token } = useWebsiteAuth()
+  const { user, token, refreshUser } = useWebsiteAuth()
   const { balance, hydrated, refreshWallet } = useCoin()
   const isLoggedIn = !!user && !!token
 
@@ -80,6 +81,7 @@ const RedeemCode = () => {
         payload.promotionContent = trimmedPromotion
       }
       const res = await coinAPI.redeemCode(payload)
+      const reward = res?.data?.reward
       const message = res?.data?.message || '兌換成功'
       toast.success(message)
       setCode('')
@@ -87,6 +89,9 @@ const RedeemCode = () => {
       setNeedsPromotion(false)
       setPromotionProductName('')
       await refreshWallet()
+      if (reward?.type === 'product' && reward?.productId === TECH_EFFECT_PRODUCT_ID) {
+        await refreshUser()
+      }
     } catch (error) {
       const errorData = error.response?.data || {}
       if (errorData.code === 'NEEDS_PROMOTION_CONTENT') {

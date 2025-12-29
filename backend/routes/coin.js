@@ -87,6 +87,7 @@ const isSameTaipeiDay = (a, b = Date.now()) => {
 
 const PROMOTION_PRODUCT_ID = 'promotion-service';
 const DISCORD_ROLE_PRODUCT_ID = 'discord-role-king';
+const TECH_EFFECT_PRODUCT_ID = 'site-tech-effect';
 const PROMOTION_ACCEPTED_MESSAGE =
   '您購買的宣傳服務已經過管理員批准，請至Discord與管理員詳談您要宣傳的內容';
 const formatPromotionRefundAmount = (price) => {
@@ -99,6 +100,7 @@ const buildPromotionRejectedMessage = (price, label = '購買') => {
   const formatted = formatPromotionRefundAmount(price);
   return `您${label}的宣傳服務已被管理員回絕，可能是因為內容不洽當，已將${formatted} CRCRCoin退還給您，若還想宣傳，請嘗試修改內容再次提交`;
 };
+const isEnabledFlag = (value) => value === true || value === 'true' || value === 1 || value === '1';
 
 const SHOP_PRODUCTS = [
   {
@@ -107,6 +109,13 @@ const SHOP_PRODUCTS = [
     price: 300,
     description: '購買後會自動加入 Discord 身分組（需先加入伺服器）。',
     requireDiscordId: true
+  },
+  {
+    id: TECH_EFFECT_PRODUCT_ID,
+    name: '網站特效 - 科技感',
+    price: 2000,
+    description: '解鎖科技感特效按鈕，切換全站酷炫視覺。',
+    unlockTechEffect: true
   },
   {
     id: 'crcrcoin-pack-50',
@@ -565,7 +574,8 @@ router.get('/products', (req, res) => {
       description,
       requireDiscordId = false,
       allowQuantity = false,
-      requirePromotionContent = false
+      requirePromotionContent = false,
+      unlockTechEffect = false
     }) => ({
       id,
       name,
@@ -573,7 +583,8 @@ router.get('/products', (req, res) => {
       description,
       requireDiscordId,
       allowQuantity,
-      requirePromotionContent
+      requirePromotionContent,
+      unlockTechEffect
     })
   );
   res.json({ products });
@@ -785,6 +796,30 @@ router.post('/redeem', authenticateToken, async (req, res) => {
           success: true,
           reward: { type: 'product', productId: product.id, productName: product.name },
           message: '兌換成功，已嘗試加入 Discord 身分組'
+        });
+      }
+
+      if (product.id === TECH_EFFECT_PRODUCT_ID) {
+        const user = await database.getUserById(req.user.id);
+        if (isEnabledFlag(user?.tech_effect_unlocked) || isEnabledFlag(user?.techEffectUnlocked)) {
+          await rollback();
+          return res.status(400).json({ error: '你已擁有此網站特效' });
+        }
+        try {
+          const updatedUser = await database.updateUserProfile(req.user.id, { techEffectUnlocked: true });
+          if (!isEnabledFlag(updatedUser?.tech_effect_unlocked) && !isEnabledFlag(updatedUser?.techEffectUnlocked)) {
+            throw new Error('unlock_failed');
+          }
+        } catch (error) {
+          console.error('兌換解鎖網站特效失敗:', error);
+          await rollback();
+          return res.status(500).json({ error: '網站特效解鎖失敗，請稍後再試' });
+        }
+
+        return res.json({
+          success: true,
+          reward: { type: 'product', productId: product.id, productName: product.name },
+          message: '兌換成功，已解鎖科技感特效'
         });
       }
 
@@ -1526,11 +1561,18 @@ router.post('/purchase', authenticateToken, async (req, res) => {
 
     const requiresPromotionContent = Boolean(product.requirePromotionContent);
     const isDiscordRoleProduct = product.id === DISCORD_ROLE_PRODUCT_ID;
+    const isTechEffectProduct = product.id === TECH_EFFECT_PRODUCT_ID;
 
     // 如果需要 Discord ID，優先使用用戶綁定的 Discord ID
     let finalDiscordId = (discordId || '').toString().trim();
+    let user = null;
+    if (requiresDiscord || isTechEffectProduct) {
+      user = await database.getUserById(req.user.id);
+    }
+    if (isTechEffectProduct && (isEnabledFlag(user?.tech_effect_unlocked) || isEnabledFlag(user?.techEffectUnlocked))) {
+      return res.status(400).json({ error: '你已擁有此網站特效' });
+    }
     if (requiresDiscord) {
-      const user = await database.getUserById(req.user.id);
       const userBoundDiscordId = user?.discord_id || user?.discordId || '';
 
       // 如果用戶已綁定 Discord ID，優先使用綁定的
@@ -1614,6 +1656,24 @@ router.post('/purchase', authenticateToken, async (req, res) => {
     let finalWallet = spendResult.wallet;
 
     const responsePayload = {};
+
+    if (isTechEffectProduct) {
+      try {
+        const updatedUser = await database.updateUserProfile(req.user.id, { techEffectUnlocked: true });
+        if (!isEnabledFlag(updatedUser?.tech_effect_unlocked) && !isEnabledFlag(updatedUser?.techEffectUnlocked)) {
+          throw new Error('unlock_failed');
+        }
+        responsePayload.techEffectUnlocked = true;
+      } catch (error) {
+        console.error('解鎖網站特效失敗:', error);
+        try {
+          await database.addCoins(req.user.id, totalPrice, '網站特效解鎖失敗退款');
+        } catch (refundError) {
+          console.error('自動退款失敗，請人工協助:', refundError);
+        }
+        return res.status(500).json({ error: '網站特效解鎖失敗，已嘗試退款' });
+      }
+    }
 
 
 

@@ -83,6 +83,10 @@ class KVDatabase {
       payload.avatar_url = profileData.avatarUrl;
     }
 
+    if (Object.prototype.hasOwnProperty.call(profileData, 'techEffectUnlocked')) {
+      payload.tech_effect_unlocked = profileData.techEffectUnlocked ? 'true' : 'false';
+    }
+
     if (!Object.keys(payload).length) {
       return await this.getUserById(userId);
     }

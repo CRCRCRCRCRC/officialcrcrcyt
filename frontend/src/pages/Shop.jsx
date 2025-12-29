@@ -4,7 +4,10 @@ import { ArrowLeft, ShoppingBag, ShieldCheck, Coins, MessageCircle, X } from 'lu
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useCoin } from '../contexts/CoinContext'
+import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 import { coinAPI } from '../services/api'
+
+const TECH_EFFECT_PRODUCT_ID = 'site-tech-effect'
 
 const PRODUCTS = [
   {
@@ -13,6 +16,13 @@ const PRODUCTS = [
     price: 300,
     description: '購買後會自動加入 Discord 身分組（需先加入伺服器）。',
     requireDiscordId: true
+  },
+  {
+    id: TECH_EFFECT_PRODUCT_ID,
+    name: '網站特效 - 科技感',
+    price: 2000,
+    description: '解鎖科技感特效按鈕，一鍵切換全站酷炫視覺。',
+    unlockTechEffect: true
   },
   {
     id: 'crcrcoin-pack-50',
@@ -67,6 +77,8 @@ const PROMOTION_CONTENT_MAX = 500
 
 const Shop = () => {
   const { isLoggedIn, hydrated, balance, refreshWallet } = useCoin()
+  const { user, refreshUser } = useWebsiteAuth()
+  const techEffectUnlocked = Boolean(user?.techEffectUnlocked || user?.tech_effect_unlocked)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [step, setStep] = useState('idle')
   const [discordId, setDiscordId] = useState('')
@@ -157,6 +169,7 @@ const Shop = () => {
   const handlePurchase = async () => {
     if (!selectedProduct) return
 
+    const purchasedId = selectedProduct.id
     const payload = { productId: selectedProduct.id }
 
     if (selectedProduct.allowQuantity) {
@@ -200,6 +213,9 @@ const Shop = () => {
       toast.success('購買成功！')
       closeModals()
       await refreshWallet()
+      if (purchasedId === TECH_EFFECT_PRODUCT_ID) {
+        await refreshUser()
+      }
     } catch (error) {
       toast.error(error.response?.data?.error || '購買失敗，請稍後再試')
     } finally {
@@ -245,7 +261,12 @@ const Shop = () => {
 
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
             {PRODUCTS.map((product) => {
-              const disabled = !isLoggedIn || (hydrated && typeof balance === 'number' && balance < product.price)
+              const isTechEffect = product.id === TECH_EFFECT_PRODUCT_ID
+              const alreadyOwned = isTechEffect && techEffectUnlocked
+              const disabled =
+                alreadyOwned ||
+                !isLoggedIn ||
+                (hydrated && typeof balance === 'number' && balance < product.price)
               return (
                 <div
                   key={product.id}
@@ -264,6 +285,11 @@ const Shop = () => {
                             需管理員審核
                           </div>
                         )}
+                        {alreadyOwned && (
+                          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
+                            已解鎖
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="mt-6 space-y-4 text-center md:text-left">
@@ -279,9 +305,13 @@ const Shop = () => {
                           className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
                           disabled={disabled}
                         >
-                          {isLoggedIn ? '購買' : '請先登入'}
+                          {alreadyOwned ? '已擁有' : isLoggedIn ? '購買' : '請先登入'}
                         </button>
-                        {isLoggedIn && hydrated && typeof balance === 'number' && balance < product.price && (
+                        {isLoggedIn &&
+                          !alreadyOwned &&
+                          hydrated &&
+                          typeof balance === 'number' &&
+                          balance < product.price && (
                           <p className="text-xs text-red-500 md:text-right">餘額不足，請先累積更多 CRCRCoin。</p>
                         )}
                       </div>

@@ -60,6 +60,21 @@ export const WebsiteAuthProvider = ({ children }) => {
     return updatedUser
   }
 
+  const refreshUser = async () => {
+    if (!token) return null
+    try {
+      const res = await authAPI.getProfile()
+      const nextUser = res?.data?.user
+      if (nextUser) {
+        localStorage.setItem('website_user', JSON.stringify(nextUser))
+        setUser(nextUser)
+      }
+      return nextUser
+    } catch {
+      return null
+    }
+  }
+
   const logout = () => {
     localStorage.removeItem('website_token')
     localStorage.removeItem('website_user')
@@ -68,7 +83,7 @@ export const WebsiteAuthProvider = ({ children }) => {
   }
 
   return (
-    <WebsiteAuthContext.Provider value={{ user, token, loginWithGoogleCode, logout, updateProfile }}>
+    <WebsiteAuthContext.Provider value={{ user, token, loginWithGoogleCode, logout, updateProfile, refreshUser }}>
       {children}
     </WebsiteAuthContext.Provider>
   )

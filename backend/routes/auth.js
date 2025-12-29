@@ -35,6 +35,10 @@ const sanitizeUser = (user, overrides = {}) => {
   const discordId = merged.discord_id || merged.discordId || '';
   const discordUsername = merged.discord_username || merged.discordUsername || '';
   const discordAvatar = merged.discord_avatar || merged.discordAvatar || '';
+  const techEffectUnlocked =
+    merged.tech_effect_unlocked === true ||
+    merged.tech_effect_unlocked === 'true' ||
+    merged.techEffectUnlocked === true;
 
   return {
     id: merged.id,
@@ -46,11 +50,13 @@ const sanitizeUser = (user, overrides = {}) => {
     discordId,
     discordUsername,
     discordAvatar,
+    techEffectUnlocked,
     name: displayName,
     picture: avatarUrl,
     discord_id: discordId,
     discord_username: discordUsername,
-    discord_avatar: discordAvatar
+    discord_avatar: discordAvatar,
+    tech_effect_unlocked: techEffectUnlocked
   };
 };
 

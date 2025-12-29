@@ -105,6 +105,10 @@ class NeonDatabase {
         ALTER TABLE users
         ADD COLUMN IF NOT EXISTS discord_avatar VARCHAR(255)
       `);
+      await this.pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS tech_effect_unlocked BOOLEAN DEFAULT false
+      `);
 
       // 創建影片表
       await this.pool.query(`
@@ -523,6 +527,11 @@ class NeonDatabase {
     if (Object.prototype.hasOwnProperty.call(profileData, 'discordAvatar')) {
       fields.push(`discord_avatar = $${index++}`);
       values.push(profileData.discordAvatar || null);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(profileData, 'techEffectUnlocked')) {
+      fields.push(`tech_effect_unlocked = $${index++}`);
+      values.push(profileData.techEffectUnlocked ? true : false);
     }
 
     if (!fields.length) {

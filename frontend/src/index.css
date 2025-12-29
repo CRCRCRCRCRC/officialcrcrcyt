@@ -534,3 +534,82 @@
   border-top: 2px solid #e5e7eb;
   margin: 3rem 0;
 }
+
+/* Tech effect mode */
+body.tech-mode {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(900px 500px at 10% 10%, rgba(56, 189, 248, 0.18), transparent 60%),
+    radial-gradient(800px 500px at 90% 80%, rgba(45, 212, 191, 0.14), transparent 62%),
+    linear-gradient(135deg, #0a1020 0%, #0b1a2f 45%, #0b1328 100%);
+  background-attachment: fixed;
+}
+
+body.tech-mode::before,
+body.tech-mode::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.tech-mode::before {
+  background:
+    linear-gradient(120deg, rgba(59, 130, 246, 0.14), rgba(34, 211, 238, 0.1), rgba(236, 72, 153, 0.08)),
+    radial-gradient(1000px 700px at 20% 80%, rgba(14, 165, 233, 0.12), transparent 70%);
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  animation: techGlow 16s ease-in-out infinite;
+}
+
+body.tech-mode::after {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.06) 0,
+      rgba(255, 255, 255, 0.06) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(34, 211, 238, 0.04) 0,
+      rgba(34, 211, 238, 0.04) 1px,
+      transparent 1px,
+      transparent 120px
+    );
+  opacity: 0.35;
+  animation: techScan 12s linear infinite;
+}
+
+body.tech-mode #root {
+  position: relative;
+  z-index: 1;
+  filter: saturate(1.12) contrast(1.04);
+}
+
+@keyframes techGlow {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate3d(2%, -1%, 0) scale(1.02);
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.75;
+  }
+}
+
+@keyframes techScan {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-20px);
+  }
+}
