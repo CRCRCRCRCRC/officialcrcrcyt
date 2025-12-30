@@ -102,7 +102,7 @@ const Leaderboard = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-[40px] border border-white/20 bg-white/90 px-6 py-8 shadow-2xl backdrop-blur-xl sm:px-10 sm:py-12 lg:px-16 lg:py-16"
+          className="rounded-[40px] border border-white/20 bg-white/90 px-6 py-8 shadow-2xl backdrop-blur-xl sm:px-10 sm:py-12 lg:px-16 lg:py-16 tech-surface"
         >
           <div className="mb-10 text-center">
             <div className="flex items-center justify-center mb-6">
@@ -136,7 +136,7 @@ const Leaderboard = () => {
                         : index === 2 
                           ? 'bg-gradient-to-r from-orange-100 to-orange-50 border-2 border-orange-300' 
                           : 'bg-white border border-gray-200'
-                  } shadow-sm hover:shadow-md transition-shadow`}
+                  } shadow-sm hover:shadow-md transition-shadow tech-surface`}
                 >
                   <div className="flex items-center">
                     <div className={`flex items-center justify-center w-10 h-10 rounded-full ${

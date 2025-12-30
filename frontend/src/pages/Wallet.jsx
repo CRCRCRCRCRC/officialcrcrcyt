@@ -149,7 +149,7 @@ const Wallet = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/80 backdrop-blur-xl border border-white/25 rounded-2xl shadow-xl p-8 h-full"
+              className="bg-white/80 backdrop-blur-xl border border-white/25 rounded-2xl shadow-xl p-8 h-full tech-surface"
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -170,7 +170,7 @@ const Wallet = () => {
               </div>
 
               {/* Daily Claim */}
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-100 tech-surface">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -222,7 +222,7 @@ const Wallet = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white/80 backdrop-blur-xl border border-white/25 rounded-2xl shadow-xl p-6 h-full"
+              className="bg-white/80 backdrop-blur-xl border border-white/25 rounded-2xl shadow-xl p-6 h-full tech-surface"
             >
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -256,7 +256,7 @@ const Wallet = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mt-8 bg-white/80 backdrop-blur-xl border border-white/25 rounded-2xl shadow-xl"
+          className="mt-8 bg-white/80 backdrop-blur-xl border border-white/25 rounded-2xl shadow-xl tech-surface"
         >
           <div className="p-6 border-b border-gray-100">
             <h3 className="text-lg font-bold text-gray-900">交易記錄</h3>

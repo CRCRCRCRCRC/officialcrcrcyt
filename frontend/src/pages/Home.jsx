@@ -421,7 +421,7 @@ const Home = () => {
                 transition={{ duration: 0.8, delay: stat.delay }}
                 className="group"
               >
-                <div className={`card-gradient bg-gradient-to-br ${stat.bgColor} p-8 text-center card-hover group-hover:shadow-[0_10px_60px_rgba(16,185,129,0.25)]`}>
+                <div className={`card-gradient tech-surface bg-gradient-to-br ${stat.bgColor} p-8 text-center card-hover group-hover:shadow-[0_10px_60px_rgba(16,185,129,0.25)]`}>
                   {/* 圖標 */}
                   <motion.div
                     className={`w-20 h-20 bg-gradient-to-r ${stat.color} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg group-hover:shadow-xl transition-all duration-300`}
