@@ -539,10 +539,12 @@
 body.tech-mode {
   position: relative;
   isolation: isolate;
+  color: #e2f4ff;
   background:
-    radial-gradient(900px 500px at 10% 10%, rgba(56, 189, 248, 0.18), transparent 60%),
-    radial-gradient(800px 500px at 90% 80%, rgba(45, 212, 191, 0.14), transparent 62%),
-    linear-gradient(135deg, #0a1020 0%, #0b1a2f 45%, #0b1328 100%);
+    radial-gradient(1200px 600px at 12% 8%, rgba(34, 211, 238, 0.35), transparent 60%),
+    radial-gradient(1000px 600px at 88% 20%, rgba(59, 130, 246, 0.3), transparent 60%),
+    radial-gradient(900px 600px at 80% 92%, rgba(236, 72, 153, 0.22), transparent 65%),
+    linear-gradient(135deg, #050b18 0%, #0b1d35 45%, #09101f 100%);
   background-attachment: fixed;
 }
 
@@ -557,59 +559,183 @@ body.tech-mode::after {
 
 body.tech-mode::before {
   background:
-    linear-gradient(120deg, rgba(59, 130, 246, 0.14), rgba(34, 211, 238, 0.1), rgba(236, 72, 153, 0.08)),
-    radial-gradient(1000px 700px at 20% 80%, rgba(14, 165, 233, 0.12), transparent 70%);
+    conic-gradient(from 90deg at 30% 20%, rgba(34, 211, 238, 0.2), transparent 35%, rgba(129, 140, 248, 0.2), transparent 70%, rgba(236, 72, 153, 0.2)),
+    radial-gradient(900px 600px at 15% 75%, rgba(14, 165, 233, 0.2), transparent 70%),
+    linear-gradient(120deg, rgba(59, 130, 246, 0.2), rgba(34, 211, 238, 0.12), rgba(236, 72, 153, 0.1));
   mix-blend-mode: screen;
-  opacity: 0.85;
-  animation: techGlow 16s ease-in-out infinite;
+  filter: blur(8px) saturate(1.4);
+  opacity: 0.9;
+  animation: techAurora 18s ease-in-out infinite;
 }
 
 body.tech-mode::after {
   background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 45%, rgba(34, 211, 238, 0.08) 100%),
     repeating-linear-gradient(
       0deg,
-      rgba(255, 255, 255, 0.06) 0,
-      rgba(255, 255, 255, 0.06) 1px,
+      rgba(255, 255, 255, 0.08) 0,
+      rgba(255, 255, 255, 0.08) 1px,
       transparent 1px,
-      transparent 4px
+      transparent 6px
     ),
     repeating-linear-gradient(
       90deg,
-      rgba(34, 211, 238, 0.04) 0,
-      rgba(34, 211, 238, 0.04) 1px,
+      rgba(34, 211, 238, 0.08) 0,
+      rgba(34, 211, 238, 0.08) 1px,
       transparent 1px,
       transparent 120px
-    );
-  opacity: 0.35;
-  animation: techScan 12s linear infinite;
+    ),
+    radial-gradient(800px 500px at 60% 40%, rgba(56, 189, 248, 0.12), transparent 70%);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  animation: techGrid 12s linear infinite;
 }
 
 body.tech-mode #root {
   position: relative;
   z-index: 1;
-  filter: saturate(1.12) contrast(1.04);
+  filter: saturate(1.35) contrast(1.1) brightness(1.03);
 }
 
-@keyframes techGlow {
+body.tech-mode #root::before,
+body.tech-mode #root::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+}
+
+body.tech-mode #root::before {
+  background:
+    radial-gradient(240px 140px at 12% 18%, rgba(34, 211, 238, 0.4), transparent 70%),
+    radial-gradient(220px 120px at 88% 15%, rgba(129, 140, 248, 0.38), transparent 72%),
+    radial-gradient(260px 160px at 88% 85%, rgba(236, 72, 153, 0.28), transparent 78%),
+    linear-gradient(180deg, rgba(34, 211, 238, 0.08), transparent 40%, transparent 60%, rgba(34, 211, 238, 0.08));
+  opacity: 0.9;
+  mix-blend-mode: screen;
+  animation: techPulse 6s ease-in-out infinite;
+}
+
+body.tech-mode #root::after {
+  background:
+    linear-gradient(
+      120deg,
+      transparent 0%,
+      rgba(34, 211, 238, 0.25) 45%,
+      rgba(59, 130, 246, 0.4) 50%,
+      rgba(236, 72, 153, 0.2) 55%,
+      transparent 100%
+    );
+  opacity: 0.6;
+  transform: translateY(-60%);
+  animation: techSweep 9s linear infinite;
+}
+
+body.tech-mode .card,
+body.tech-mode .card-glass,
+body.tech-mode .card-gradient,
+body.tech-mode .glass-effect,
+body.tech-mode [class*="bg-white"],
+body.tech-mode [class*="bg-gray-50"],
+body.tech-mode [class*="bg-gray-100"] {
+  background-color: rgba(7, 16, 34, 0.78) !important;
+  border-color: rgba(56, 189, 248, 0.25) !important;
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.12),
+    0 18px 40px rgba(3, 9, 22, 0.6),
+    0 0 30px rgba(34, 211, 238, 0.2);
+}
+
+body.tech-mode [class*="border-gray"],
+body.tech-mode [class*="border-white"] {
+  border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+body.tech-mode .text-gray-900 { color: #f8fafc !important; }
+body.tech-mode .text-gray-800 { color: #e2e8f0 !important; }
+body.tech-mode .text-gray-700 { color: #c7d2fe !important; }
+body.tech-mode .text-gray-600 { color: #a5b4fc !important; }
+body.tech-mode .text-gray-500 { color: #93c5fd !important; }
+body.tech-mode .text-gray-400 { color: #7dd3fc !important; }
+body.tech-mode .text-gray-300 { color: #bae6fd !important; }
+
+body.tech-mode a {
+  color: #7dd3fc;
+}
+
+body.tech-mode a:hover {
+  color: #38bdf8;
+}
+
+body.tech-mode h1,
+body.tech-mode h2,
+body.tech-mode h3 {
+  text-shadow: 0 0 18px rgba(34, 211, 238, 0.35);
+}
+
+body.tech-mode button,
+body.tech-mode .btn {
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.18) inset,
+    0 0 18px rgba(34, 211, 238, 0.25);
+}
+
+body.tech-mode input,
+body.tech-mode textarea,
+body.tech-mode select {
+  background-color: rgba(6, 15, 32, 0.8) !important;
+  color: #e2f4ff;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.18) inset;
+}
+
+body.tech-mode input::placeholder,
+body.tech-mode textarea::placeholder {
+  color: rgba(186, 230, 253, 0.7);
+}
+
+@keyframes techAurora {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.75;
+    opacity: 0.78;
   }
-  50% {
-    transform: translate3d(2%, -1%, 0) scale(1.02);
+  45% {
+    transform: translate3d(2%, -1%, 0) scale(1.03);
     opacity: 0.95;
   }
   100% {
     transform: translate3d(0, 0, 0) scale(1);
-    opacity: 0.75;
+    opacity: 0.78;
   }
 }
 
-@keyframes techScan {
+@keyframes techGrid {
   0% {
     transform: translateY(0);
   }
   100% {
-    transform: translateY(-20px);
+    transform: translateY(-30px);
+  }
+}
+
+@keyframes techPulse {
+  0% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.75;
+  }
+}
+
+@keyframes techSweep {
+  0% {
+    transform: translateY(-65%);
+  }
+  100% {
+    transform: translateY(65%);
   }
 }
