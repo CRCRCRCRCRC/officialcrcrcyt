@@ -235,6 +235,22 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
   }
+
+  @supports (height: 100dvh) {
+    .min-h-screen {
+      min-height: 100dvh;
+    }
+  }
+
+  @supports (height: 100svh) and (not (height: 100dvh)) {
+    .min-h-screen {
+      min-height: 100svh;
+    }
+  }
+
+  .main-shell > .min-h-screen {
+    min-height: 100%;
+  }
 }
 
 /* 自定義滾動條 */
