@@ -248,8 +248,13 @@
     }
   }
 
+  .main-shell {
+    min-height: 0;
+  }
+
   .main-shell > .min-h-screen {
-    min-height: 100%;
+    min-height: 0;
+    flex: 1 0 auto;
   }
 }
 
