@@ -124,7 +124,7 @@ const Tasks = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+    <div className="min-h-full bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       <div className="bg-white/95 backdrop-blur-xl border-b border-white/30 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex items-center justify-between">
           <Link to="/wallet" className="flex items-center text-gray-600 hover:text-gray-900 transition">

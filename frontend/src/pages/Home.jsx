@@ -138,14 +138,14 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-full flex items-center justify-center">
         <LoadingSpinner size="large" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-full">
       {/* Hero Section */}
       <section ref={heroRef} className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
         {/* 動態背景 */}

@@ -107,7 +107,7 @@ const RedeemCode = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+    <div className="min-h-full bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       <div className="border-b border-white/20 bg-white/95 backdrop-blur-xl shadow-sm">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-6 sm:px-8">
           <Link to="/wallet" className="flex items-center text-gray-600 transition hover:text-gray-900">

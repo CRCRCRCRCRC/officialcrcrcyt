@@ -113,7 +113,7 @@ const AnnouncementDetail = () => {
   if (loading) {
     console.log('⏳ 顯示載入中...')
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-full bg-gray-50 flex items-center justify-center">
         <LoadingSpinner size="large" />
       </div>
     )
@@ -122,7 +122,7 @@ const AnnouncementDetail = () => {
   if (error) {
     console.log('❌ 顯示錯誤:', error)
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-full bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Megaphone className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">{error}</h1>
@@ -149,7 +149,7 @@ const AnnouncementDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-full bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="container-custom py-6">

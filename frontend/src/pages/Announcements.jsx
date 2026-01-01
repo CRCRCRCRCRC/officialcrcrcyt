@@ -72,14 +72,14 @@ const Announcements = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-full bg-gray-50 flex items-center justify-center">
         <LoadingSpinner size="large" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-full bg-gray-50">
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-blue-600 to-purple-700 text-white">
         <div className="container-custom py-20">

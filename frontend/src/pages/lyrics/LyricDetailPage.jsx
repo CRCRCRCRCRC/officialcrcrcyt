@@ -106,7 +106,7 @@ const LyricDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-purple-400 via-pink-500 to-purple-600">
+      <div className="min-h-full flex justify-center items-center bg-gradient-to-br from-purple-400 via-pink-500 to-purple-600">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
       </div>
     )
@@ -116,7 +116,7 @@ const LyricDetailPage = () => {
 
   if (!lyric) {
     return (
-      <div className="min-h-screen flex flex-col justify-center items-center">
+      <div className="min-h-full flex flex-col justify-center items-center">
         <p className="text-xl text-gray-500 mb-8">找不到歌詞</p>
         <button
           onClick={() => navigate('/lyrics')}
@@ -172,7 +172,7 @@ const LyricDetailPage = () => {
         modifiedTime={lyric.updated_at}
         structuredData={structuredData}
       />
-      <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-purple-600">
+      <div className="min-h-full bg-gradient-to-br from-purple-400 via-pink-500 to-purple-600">
 
       {/* 頂部麵包屑導航 */}
       <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-purple-100 shadow-md">
