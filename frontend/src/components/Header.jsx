@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings, Bell, Zap } from 'lucide-react'
+import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings, Bell, Zap, Package } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 import { useCoin } from '../contexts/CoinContext'
@@ -187,6 +187,14 @@ const Header = () => {
                         >
                           <Settings className="w-4 h-4" />
                           個人資料設定
+                        </Link>
+                        <Link
+                          to="/backpack"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-50 rounded"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          <Package className="w-4 h-4" />
+                          背包
                         </Link>
                         <button
                           className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-50 rounded"

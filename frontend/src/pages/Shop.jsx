@@ -1,11 +1,12 @@
 import { useMemo, useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, ShoppingBag, ShieldCheck, Coins, MessageCircle, X } from 'lucide-react'
+import { ArrowLeft, ShoppingBag, ShieldCheck, Coins, MessageCircle, X, Gift, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useCoin } from '../contexts/CoinContext'
 import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 import { coinAPI } from '../services/api'
+import defaultAvatar from '../assets/default-avatar.svg'
 
 const TECH_EFFECT_PRODUCT_ID = 'site-tech-effect'
 
@@ -67,6 +68,13 @@ const Modal = ({ open, title, description, children, actions, onClose }) => {
   )
 }
 
+const resolveAvatarSrc = (value) => {
+  if (!value) return ''
+  if (/^(?:https?:)?\/\//i.test(value) || value.startsWith('data:')) return value
+  const normalized = value.replace(/^\.?\/+/, '')
+  return normalized ? `/${normalized}` : ''
+}
+
 const clampQuantity = (value) => {
   if (!Number.isFinite(value)) return 1
   return Math.min(99, Math.max(1, Math.floor(value)))
@@ -85,6 +93,12 @@ const Shop = () => {
   const [promotionContent, setPromotionContent] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [processing, setProcessing] = useState(false)
+  const [giftProduct, setGiftProduct] = useState(null)
+  const [giftRecipientId, setGiftRecipientId] = useState('')
+  const [giftRecipient, setGiftRecipient] = useState(null)
+  const [giftQuantity, setGiftQuantity] = useState(1)
+  const [giftLookupLoading, setGiftLookupLoading] = useState(false)
+  const [giftProcessing, setGiftProcessing] = useState(false)
 
   // 記錄商店訪問（用於任務系統）
   useEffect(() => {
@@ -102,6 +116,83 @@ const Shop = () => {
     setPromotionContent('')
     setQuantity(1)
     setProcessing(false)
+  }
+
+  const closeGiftModal = () => {
+    setGiftProduct(null)
+    setGiftRecipientId('')
+    setGiftRecipient(null)
+    setGiftQuantity(1)
+    setGiftLookupLoading(false)
+    setGiftProcessing(false)
+  }
+
+  const handleGiftClick = (product) => {
+    if (!isLoggedIn) {
+      toast.error('請先使用 Google 登入後再贈禮')
+      return
+    }
+    if (!hydrated) {
+      toast('資料同步中，請稍候')
+      return
+    }
+    setGiftProduct(product)
+    setGiftRecipientId('')
+    setGiftRecipient(null)
+    setGiftQuantity(1)
+  }
+
+  const handleGiftLookup = async () => {
+    const trimmed = giftRecipientId.trim().toUpperCase()
+    if (!trimmed) {
+      toast.error('請輸入收禮者 ID')
+      return
+    }
+    setGiftLookupLoading(true)
+    try {
+      const response = await coinAPI.lookupGiftRecipient(trimmed)
+      setGiftRecipient(response.data?.user || null)
+    } catch (error) {
+      setGiftRecipient(null)
+      toast.error(error.response?.data?.error || '查詢失敗')
+    } finally {
+      setGiftLookupLoading(false)
+    }
+  }
+
+  const handleGiftQuantityInput = (event) => {
+    const value = Number.parseInt(event.target.value, 10)
+    if (Number.isNaN(value)) {
+      setGiftQuantity(1)
+      return
+    }
+    setGiftQuantity(clampQuantity(value))
+  }
+
+  const handleSendGift = async () => {
+    if (!giftProduct) return
+    if (!giftRecipient) {
+      toast.error('請先查詢收禮者')
+      return
+    }
+    const payload = {
+      productId: giftProduct.id,
+      recipientPublicId: giftRecipient.publicId || giftRecipientId.trim().toUpperCase()
+    }
+    if (giftProduct.allowQuantity) {
+      payload.quantity = giftQuantity
+    }
+    setGiftProcessing(true)
+    try {
+      await coinAPI.sendGift(payload)
+      toast.success('贈禮已送出')
+      closeGiftModal()
+      await refreshWallet()
+    } catch (error) {
+      toast.error(error.response?.data?.error || '贈禮失敗，請稍後再試')
+    } finally {
+      setGiftProcessing(false)
+    }
   }
 
   const handleBuyClick = async (product) => {
@@ -151,11 +242,23 @@ const Shop = () => {
     return selectedProduct.price * factor
   }, [selectedProduct, quantity])
 
+  const giftTotalCost = useMemo(() => {
+    if (!giftProduct) return 0
+    const factor = giftProduct.allowQuantity ? giftQuantity : 1
+    return giftProduct.price * factor
+  }, [giftProduct, giftQuantity])
+
   const insufficientBalance =
     hydrated &&
     selectedProduct &&
     typeof balance === 'number' &&
     balance < totalCost
+
+  const giftInsufficientBalance =
+    hydrated &&
+    giftProduct &&
+    typeof balance === 'number' &&
+    balance < giftTotalCost
 
   const handleQuantityInput = (event) => {
     const value = Number.parseInt(event.target.value, 10)
@@ -267,6 +370,9 @@ const Shop = () => {
                 alreadyOwned ||
                 !isLoggedIn ||
                 (hydrated && typeof balance === 'number' && balance < product.price)
+              const giftDisabled =
+                !isLoggedIn ||
+                (hydrated && typeof balance === 'number' && balance < product.price)
               return (
                 <div
                   key={product.id}
@@ -299,14 +405,25 @@ const Shop = () => {
                       </div>
                       <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
                       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <button
-                          type="button"
-                          onClick={() => handleBuyClick(product)}
-                          className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
-                          disabled={disabled}
-                        >
-                          {alreadyOwned ? '已擁有' : isLoggedIn ? '購買' : '請先登入'}
-                        </button>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                          <button
+                            type="button"
+                            onClick={() => handleBuyClick(product)}
+                            className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+                            disabled={disabled}
+                          >
+                            {alreadyOwned ? '已擁有' : isLoggedIn ? '購買' : '請先登入'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleGiftClick(product)}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-purple-200 px-6 py-2.5 text-sm font-semibold text-purple-600 shadow-sm transition hover:bg-purple-50 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+                            disabled={giftDisabled}
+                          >
+                            <Gift className="h-4 w-4" />
+                            贈禮
+                          </button>
+                        </div>
                         {isLoggedIn &&
                           !alreadyOwned &&
                           hydrated &&
@@ -444,6 +561,130 @@ const Shop = () => {
           </div>
           {insufficientBalance && (
             <p className="text-xs text-red-500">餘額不足，請先累積更多 CRCRCoin 再送出申請。</p>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        open={!!giftProduct}
+        title={`贈送「${giftProduct?.name ?? ''}」`}
+        description="輸入收禮者的個人 ID（大寫字母+數字）並確認贈禮。"
+        onClose={giftProcessing ? undefined : closeGiftModal}
+        actions={[
+          (
+            <button
+              key="cancel-gift"
+              type="button"
+              onClick={closeGiftModal}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 transition hover:bg-gray-50"
+              disabled={giftProcessing}
+            >
+              取消
+            </button>
+          ),
+          (
+            <button
+              key="confirm-gift"
+              type="button"
+              onClick={handleSendGift}
+              className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={giftProcessing || giftLookupLoading || !giftRecipient || giftInsufficientBalance}
+            >
+              {giftProcessing
+                ? '處理中…'
+                : `確認贈禮（${giftTotalCost.toLocaleString('zh-TW')} CRCRCoin）`}
+            </button>
+          )
+        ]}
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700" htmlFor="gift-recipient">
+              收禮者 ID
+            </label>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                id="gift-recipient"
+                type="text"
+                value={giftRecipientId}
+                onChange={(event) => {
+                  const value = event.target.value.toUpperCase()
+                  setGiftRecipientId(value)
+                  setGiftRecipient(null)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault()
+                    handleGiftLookup()
+                  }
+                }}
+                className="w-full flex-1 rounded-xl border border-gray-200 px-4 py-3 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                placeholder="例如：AB12CD34"
+                disabled={giftProcessing}
+              />
+              <button
+                type="button"
+                onClick={handleGiftLookup}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-60"
+                disabled={giftLookupLoading || giftProcessing}
+              >
+                {giftLookupLoading ? (
+                  '查詢中…'
+                ) : (
+                  <>
+                    <Search className="h-4 w-4" />
+                    查詢
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">ID 會自動轉為大寫。</p>
+          </div>
+
+          {giftRecipient && (
+            <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <img
+                src={resolveAvatarSrc(giftRecipient.avatarUrl) || defaultAvatar}
+                alt={giftRecipient.displayName || 'avatar'}
+                className="h-12 w-12 rounded-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.src = defaultAvatar
+                }}
+              />
+              <div>
+                <p className="text-sm font-semibold text-emerald-900">
+                  {giftRecipient.displayName || '未命名使用者'}
+                </p>
+                <p className="text-xs text-emerald-700">
+                  ID：{giftRecipient.publicId || giftRecipientId}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {giftProduct?.allowQuantity && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700" htmlFor="gift-quantity">
+                贈禮數量
+              </label>
+              <input
+                id="gift-quantity"
+                type="number"
+                min={1}
+                max={99}
+                value={giftQuantity}
+                onChange={handleGiftQuantityInput}
+                className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                disabled={giftProcessing}
+              />
+            </div>
+          )}
+
+          <div className="text-sm text-gray-600">
+            總價：{giftTotalCost.toLocaleString('zh-TW')} CRCRCoin
+          </div>
+          {giftInsufficientBalance && (
+            <p className="text-xs text-red-500">餘額不足，無法贈禮。</p>
           )}
         </div>
       </Modal>

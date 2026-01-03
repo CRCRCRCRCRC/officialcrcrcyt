@@ -135,6 +135,22 @@ const SHOP_PRODUCTS = [
   }
 ];
 
+const getProductById = (productId) => SHOP_PRODUCTS.find((item) => item.id === productId);
+const buildProductMeta = (product) => {
+  if (!product) return null;
+  return {
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    description: product.description,
+    requireDiscordId: Boolean(product.requireDiscordId),
+    requirePromotionContent: Boolean(product.requirePromotionContent),
+    allowQuantity: Boolean(product.allowQuantity),
+    unlockTechEffect: Boolean(product.unlockTechEffect),
+    rewardCoins: Number(product.rewardCoins) || 0
+  };
+};
+
 const REDEEM_CODE_LENGTH = 10;
 const REDEEM_CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const PROMOTION_CONTENT_MIN = 10;
@@ -157,12 +173,15 @@ const DISCORD_ROLE_ID_MEMBER = (process.env.DISCORD_ROLE_ID_MEMBER || '141932497
 
 const getDiscordInviteUrl = () => (process.env.DISCORD_INVITE_URL || '').trim();
 
-const buildJoinServerMessage = () => {
+const buildJoinServerMessage = (options = {}) => {
+  const { action = '購買', refunded = true } = options;
   const inviteUrl = getDiscordInviteUrl();
+  const suffix = refunded ? '（已退款）' : '';
+  const message = `請先加入 Discord 伺服器後再${action}${suffix}`;
   if (inviteUrl) {
-    return `請先加入 Discord 伺服器後再購買（已退款）：${inviteUrl}`;
+    return `${message}：${inviteUrl}`;
   }
-  return '請先加入 Discord 伺服器後再購買（已退款）';
+  return message;
 };
 
 const assignDiscordRole = async (discordUserId) => {
@@ -588,6 +607,229 @@ router.get('/products', (req, res) => {
     })
   );
   res.json({ products });
+});
+
+// 查找贈禮用戶（需要登入）
+router.get('/gift/lookup', authenticateToken, async (req, res) => {
+  try {
+    const publicId = (req.query?.publicId || '').toString().trim().toUpperCase();
+    if (!publicId) {
+      return res.status(400).json({ error: '請輸入使用者 ID' });
+    }
+    const recipient = await database.getUserByPublicId(publicId);
+    if (!recipient) {
+      return res.status(404).json({ error: '找不到此使用者' });
+    }
+    if (recipient.id === req.user.id) {
+      return res.status(400).json({ error: '不能贈禮給自己' });
+    }
+    const displayName =
+      recipient.display_name ||
+      recipient.displayName ||
+      recipient.username ||
+      '';
+    const avatarUrl = recipient.avatar_url || recipient.avatarUrl || '';
+    const resolvedPublicId = recipient.public_id || recipient.publicId || publicId;
+    return res.json({
+      user: {
+        id: recipient.id,
+        publicId: resolvedPublicId,
+        displayName,
+        avatarUrl
+      }
+    });
+  } catch (error) {
+    console.error('查找贈禮用戶失敗:', error);
+    return res.status(500).json({ error: '無法查找使用者' });
+  }
+});
+
+// 贈禮商品（需要登入）
+router.post('/gift', authenticateToken, async (req, res) => {
+  try {
+    const productId = (req.body?.productId || '').toString().trim();
+    const product = getProductById(productId);
+    if (!product) {
+      return res.status(404).json({ error: '找不到此商品' });
+    }
+
+    const recipientPublicId = (req.body?.recipientPublicId || req.body?.recipientId || '')
+      .toString()
+      .trim()
+      .toUpperCase();
+    if (!recipientPublicId) {
+      return res.status(400).json({ error: '請輸入收禮者 ID' });
+    }
+
+    const recipient = await database.getUserByPublicId(recipientPublicId);
+    if (!recipient) {
+      return res.status(404).json({ error: '找不到此使用者' });
+    }
+    if (recipient.id === req.user.id) {
+      return res.status(400).json({ error: '不能贈禮給自己' });
+    }
+
+    if (
+      product.id === TECH_EFFECT_PRODUCT_ID &&
+      (isEnabledFlag(recipient?.tech_effect_unlocked) || isEnabledFlag(recipient?.techEffectUnlocked))
+    ) {
+      return res.status(400).json({ error: '對方已擁有此網站特效' });
+    }
+
+    let qty = 1;
+    if (product.allowQuantity) {
+      const parsed = Number.parseInt(req.body?.quantity, 10);
+      if (!Number.isFinite(parsed) || parsed < 1) {
+        return res.status(400).json({ error: '贈禮數量無效' });
+      }
+      qty = Math.min(parsed, 99);
+    }
+
+    const totalPrice = product.price * qty;
+    const reason = `贈禮：${product.name}${product.allowQuantity ? ` x${qty}` : ''}`;
+    const spendResult = await database.spendCoins(req.user.id, totalPrice, reason);
+    if (!spendResult?.success) {
+      return res.status(400).json({ error: spendResult?.error || '餘額不足' });
+    }
+
+    const gift = await database.createGift(req.user.id, {
+      recipientId: recipient.id,
+      productId: product.id,
+      productName: product.name,
+      price: totalPrice,
+      quantity: qty
+    });
+
+    return res.json({
+      success: true,
+      gift,
+      wallet: mapWallet(spendResult.wallet)
+    });
+  } catch (error) {
+    console.error('贈禮商品失敗:', error);
+    return res.status(500).json({ error: '贈禮失敗' });
+  }
+});
+
+// 背包列表（需要登入）
+router.get('/backpack', authenticateToken, async (req, res) => {
+  try {
+    const items = await database.listBackpackItems(req.user.id, { includeUsed: false });
+    const payload = (items || []).map((item) => {
+      const product = getProductById(item.product_id);
+      return {
+        id: item.id,
+        productId: item.product_id,
+        productName: item.product_name,
+        quantity: Number(item.quantity) || 0,
+        status: item.status,
+        createdAt: item.created_at || null,
+        usedAt: item.used_at || null,
+        product: buildProductMeta(product)
+      };
+    });
+    return res.json({ items: payload });
+  } catch (error) {
+    console.error('取得背包失敗:', error);
+    return res.status(500).json({ error: '無法取得背包' });
+  }
+});
+
+// 接受禮物（需要登入）
+router.post('/gifts/:giftId/accept', authenticateToken, async (req, res) => {
+  try {
+    const giftId = req.params.giftId;
+    if (!giftId) {
+      return res.status(400).json({ error: '缺少禮物編號' });
+    }
+    const result = await database.acceptGift(giftId, req.user.id);
+    if (!result?.item) {
+      return res.status(404).json({ error: '找不到禮物或已處理' });
+    }
+    return res.json({
+      success: true,
+      gift: result.gift,
+      item: result.item
+    });
+  } catch (error) {
+    console.error('接受禮物失敗:', error);
+    return res.status(500).json({ error: '接受禮物失敗' });
+  }
+});
+
+// 回禮（需要登入）
+router.post('/gifts/:giftId/return', authenticateToken, async (req, res) => {
+  try {
+    const giftId = req.params.giftId;
+    if (!giftId) {
+      return res.status(400).json({ error: '缺少禮物編號' });
+    }
+    const gift = await database.getGiftById(giftId);
+    if (!gift || gift.recipient_id !== req.user.id || gift.status !== 'pending') {
+      return res.status(404).json({ error: '找不到禮物或已處理' });
+    }
+
+    const product = getProductById(gift.product_id);
+    if (!product) {
+      return res.status(400).json({ error: '此商品已不存在' });
+    }
+    const qty = Math.max(1, Math.floor(Number(gift.quantity) || 1));
+    const unitPrice = Number(product.price) || 0;
+    const totalPrice = Math.max(0, Number(gift.price) || unitPrice * qty);
+    const reason = `回禮：${product.name}${qty > 1 ? ` x${qty}` : ''}`;
+    const spendResult = await database.spendCoins(req.user.id, totalPrice, reason);
+    if (!spendResult?.success) {
+      return res.status(400).json({ error: spendResult?.error || '餘額不足' });
+    }
+
+    let acceptResult = null;
+    try {
+      acceptResult = await database.acceptGift(giftId, req.user.id);
+    } catch (error) {
+      console.error('回禮接受禮物失敗:', error);
+    }
+    if (!acceptResult?.item) {
+      const refund = await database.addCoins(req.user.id, totalPrice, '回禮失敗退款');
+      return res.status(500).json({
+        error: '回禮失敗，已退款',
+        wallet: refund?.wallet ? mapWallet(refund.wallet) : undefined
+      });
+    }
+
+    let returnGift = null;
+    try {
+      returnGift = await database.createGift(req.user.id, {
+        recipientId: gift.sender_id,
+        productId: product.id,
+        productName: product.name,
+        price: totalPrice,
+        quantity: qty
+      });
+    } catch (error) {
+      console.error('建立回禮失敗:', error);
+    }
+
+    if (!returnGift) {
+      const refund = await database.addCoins(req.user.id, totalPrice, '回禮失敗退款');
+      return res.status(500).json({
+        error: '回禮失敗，已退款（禮物已收下）',
+        gift: acceptResult.gift,
+        item: acceptResult.item,
+        wallet: refund?.wallet ? mapWallet(refund.wallet) : undefined
+      });
+    }
+
+    return res.json({
+      success: true,
+      gift: acceptResult.gift,
+      item: acceptResult.item,
+      returnGift,
+      wallet: mapWallet(spendResult.wallet)
+    });
+  } catch (error) {
+    console.error('回禮失敗:', error);
+    return res.status(500).json({ error: '回禮失敗' });
+  }
 });
 
 // 管理員：兌換碼列表
@@ -1308,12 +1550,18 @@ router.get('/history', authenticateToken, async (req, res) => {
 router.get('/notifications', authenticateToken, async (req, res) => {
   try {
     const mode = (req.query.mode || 'new').toString().toLowerCase();
-    const fetcher =
+    const orderFetcher =
       mode === 'all'
         ? database.listCoinOrderNotifications(req.user.id)
         : database.getCoinOrderNotifications(req.user.id);
-    const rows = await fetcher;
-    const notifications = (rows || [])
+    const giftFetcher =
+      mode === 'all'
+        ? database.listGiftNotifications(req.user.id)
+        : database.getGiftNotifications(req.user.id);
+
+    const [orderRows, giftRows] = await Promise.all([orderFetcher, giftFetcher]);
+
+    const orderNotifications = (orderRows || [])
       .map((order) => {
         const product = SHOP_PRODUCTS.find((item) => item.id === order.product_id);
         if (!product || !product.requirePromotionContent) {
@@ -1334,22 +1582,52 @@ router.get('/notifications', authenticateToken, async (req, res) => {
           const label = isRedeemOrder ? '兌換' : '購買';
           message = buildPromotionRejectedMessage(refundAmount, label);
           variant = 'error';
-        }
-        if (!message) return null;
-        const displayPrice = order.status === 'rejected' ? refundAmount : basePrice;
-        return {
-          id: order.id,
-          productId: order.product_id,
-          productName: order.product_name,
-          status: order.status,
-          message,
+          }
+          if (!message) return null;
+          const displayPrice = order.status === 'rejected' ? refundAmount : basePrice;
+          return {
+            type: 'order',
+            id: order.id,
+            productId: order.product_id,
+            productName: order.product_name,
+            status: order.status,
+            message,
           variant,
           price: displayPrice,
-          createdAt: order.created_at || null,
-          notifiedAt: order.notified_at || null
-        };
-      })
-      .filter(Boolean);
+            createdAt: order.created_at || null,
+            notifiedAt: order.notified_at || null
+          };
+        })
+        .filter(Boolean);
+
+    const giftNotifications = (giftRows || []).map((gift) => {
+      const senderName =
+        gift.sender_display_name ||
+        gift.sender_username ||
+        '有人';
+      const qtyLabel = Number(gift.quantity) > 1 ? ` x${gift.quantity}` : '';
+      return {
+        type: 'gift',
+        id: gift.id,
+        giftId: gift.id,
+        senderName,
+        senderAvatar: gift.sender_avatar_url || '',
+        productId: gift.product_id,
+        productName: gift.product_name,
+        quantity: Number(gift.quantity) || 1,
+        price: Number(gift.price) || 0,
+        status: 'pending',
+        message: `${senderName} 送你「${gift.product_name}」${qtyLabel}`,
+        variant: 'info',
+        createdAt: gift.created_at || null,
+        notifiedAt: gift.notified_at || null
+      };
+    });
+
+    const notifications = [...orderNotifications, ...giftNotifications].sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    );
+
     res.json({ notifications });
   } catch (error) {
     console.error('取得通知失敗:', error);
@@ -1797,8 +2075,129 @@ router.post('/purchase', authenticateToken, async (req, res) => {
 
 
 
-// ���O�]�����A�ݵn�J�^
 
+
+// 使用背包道具
+router.post('/backpack/:itemId/use', authenticateToken, async (req, res) => {
+  try {
+    const itemId = req.params.itemId;
+    if (!itemId) {
+      return res.status(400).json({ error: '缺少道具 ID' });
+    }
+
+    const item = await database.getBackpackItemById(itemId);
+    if (!item || item.user_id !== req.user.id || item.status !== 'available' || Number(item.quantity) <= 0) {
+      return res.status(404).json({ error: '找不到可使用的道具' });
+    }
+
+    const product = getProductById(item.product_id);
+    if (!product) {
+      return res.status(400).json({ error: '找不到對應商品' });
+    }
+
+    const isDiscordRoleProduct = product.id === DISCORD_ROLE_PRODUCT_ID;
+    const isTechEffectProduct = product.id === TECH_EFFECT_PRODUCT_ID;
+    const requiresPromotionContent = Boolean(product.requirePromotionContent);
+
+    let user = null;
+    if (isDiscordRoleProduct || isTechEffectProduct || product.requireDiscordId) {
+      user = await database.getUserById(req.user.id);
+    }
+
+    if (isTechEffectProduct) {
+      if (isEnabledFlag(user?.tech_effect_unlocked) || isEnabledFlag(user?.techEffectUnlocked)) {
+        return res.status(400).json({ error: '已解鎖科技感特效' });
+      }
+      try {
+        const updatedUser = await database.updateUserProfile(req.user.id, { techEffectUnlocked: true });
+        if (!isEnabledFlag(updatedUser?.tech_effect_unlocked) && !isEnabledFlag(updatedUser?.techEffectUnlocked)) {
+          throw new Error('unlock_failed');
+        }
+      } catch (error) {
+        console.error('解鎖科技感特效失敗:', error);
+        return res.status(500).json({ error: '解鎖科技感特效失敗，請稍後再試' });
+      }
+    }
+
+    if (isDiscordRoleProduct || product.requireDiscordId) {
+      const discordId = (user?.discord_id || user?.discordId || '').toString().trim();
+      if (!discordId) {
+        return res.status(400).json({ error: '尚未綁定 Discord 帳號' });
+      }
+      if (isDiscordRoleProduct) {
+        const botToken = (process.env.DISCORD_BOT_TOKEN || '').trim();
+        if (!botToken) {
+          return res.status(500).json({ error: 'Discord Bot 尚未設定，請稍後再試' });
+        }
+        const assignResult = await assignDiscordRole(discordId);
+        if (!assignResult.ok) {
+          return res.status(400).json({ error: buildJoinServerMessage({ action: '使用', refunded: false }) });
+        }
+      }
+    }
+
+    let responsePayload = {};
+    let walletResult = null;
+
+    if (requiresPromotionContent) {
+      const trimmedPromotion = (req.body?.promotionContent || '').toString().trim();
+      if (!trimmedPromotion) {
+        return res.status(400).json({ error: '請填寫宣傳內容' });
+      }
+      if (trimmedPromotion.length < PROMOTION_CONTENT_MIN) {
+        return res.status(400).json({ error: `宣傳內容至少 ${PROMOTION_CONTENT_MIN} 字` });
+      }
+      if (trimmedPromotion.length > PROMOTION_CONTENT_MAX) {
+        return res.status(400).json({ error: `宣傳內容最多 ${PROMOTION_CONTENT_MAX} 字` });
+      }
+      const discordId = (user?.discord_id || user?.discordId || '').toString().trim();
+      if (!discordId) {
+        return res.status(400).json({ error: '尚未綁定 Discord 帳號' });
+      }
+      try {
+        const order = await database.createCoinOrder(req.user.id, {
+          product_id: product.id,
+          product_name: product.name,
+          price: product.price,
+          discord_id: discordId,
+          promotion_content: trimmedPromotion,
+          user_email: user?.username || user?.email || null,
+          status: 'pending'
+        });
+        responsePayload.order = order;
+      } catch (error) {
+        console.error('建立宣傳訂單失敗:', error);
+        return res.status(500).json({ error: '建立宣傳訂單失敗' });
+      }
+    } else if (product.rewardCoins) {
+      const rewardAmount = Math.max(0, Number(product.rewardCoins) || 0);
+      if (rewardAmount > 0) {
+        walletResult = await database.addCoins(req.user.id, rewardAmount, `兌換獎勵：${product.name}`);
+      }
+    }
+
+    const updatedItem = await database.consumeBackpackItem(itemId, req.user.id, 1);
+    if (!updatedItem) {
+      return res.status(500).json({ error: '扣除道具失敗，請稍後再試' });
+    }
+
+    if (walletResult?.wallet) {
+      responsePayload.wallet = mapWallet(walletResult.wallet);
+    }
+    if (isTechEffectProduct) {
+      responsePayload.techEffectUnlocked = true;
+    }
+
+    return res.json({
+      success: true,
+      item: updatedItem,
+      ...responsePayload
+    });
+  } catch (error) {
+    console.error('使用背包道具失敗:', error);
+    return res.status(500).json({ error: '使用背包道具失敗' });
+  }
+});
 router.post('/pass/earn', authenticateToken, async (req, res) => {
 
   try {
@@ -2170,6 +2569,5 @@ router.get('/leaderboard', async (req, res) => {
 
 
 module.exports = router;
-
 
 

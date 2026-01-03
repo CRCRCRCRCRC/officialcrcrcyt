@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Bell, Trash2, RefreshCw, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react'
+import { ArrowLeft, Bell, Trash2, RefreshCw, CheckCircle2, AlertTriangle, Loader2, Gift, Check, Undo2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useCoin } from '../contexts/CoinContext'
 import { coinAPI } from '../services/api'
@@ -18,12 +18,24 @@ const STATUS_META = {
   }
 }
 
+const GIFT_META = {
+  label: '收到禮物',
+  colorClass: 'text-sky-600 bg-sky-50',
+  icon: Gift
+}
+
+const resolveMeta = (notification) => {
+  if (notification?.type === 'gift') return GIFT_META
+  return STATUS_META[notification?.status] || STATUS_META.accepted
+}
+
 const Notifications = () => {
-  const { isLoggedIn, markNotificationsRead } = useCoin()
+  const { isLoggedIn, markNotificationsRead, refreshWallet } = useCoin()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [dismissingId, setDismissingId] = useState(null)
+  const [giftAction, setGiftAction] = useState({ id: null, type: null })
 
   const formatDateTime = (value) => {
     if (!value) return '未知時間'
@@ -78,6 +90,38 @@ const Notifications = () => {
       toast.error(error.response?.data?.error || '刪除通知失敗')
     } finally {
       setDismissingId(null)
+    }
+  }
+
+  const handleAcceptGift = async (notification) => {
+    const giftId = notification?.giftId || notification?.id
+    if (!giftId) return
+    setGiftAction({ id: giftId, type: 'accept' })
+    try {
+      await coinAPI.acceptGift(giftId)
+      setNotifications((prev) => prev.filter((item) => item.id !== notification.id))
+      toast.success('已收下禮物，已放入背包')
+    } catch (error) {
+      toast.error(error.response?.data?.error || '接受禮物失敗')
+    } finally {
+      setGiftAction({ id: null, type: null })
+    }
+  }
+
+  const handleReturnGift = async (notification) => {
+    const giftId = notification?.giftId || notification?.id
+    if (!giftId) return
+    if (!confirm('確定回禮嗎？')) return
+    setGiftAction({ id: giftId, type: 'return' })
+    try {
+      await coinAPI.returnGift(giftId)
+      setNotifications((prev) => prev.filter((item) => item.id !== notification.id))
+      toast.success('回禮成功，禮物已放入背包')
+      await refreshWallet()
+    } catch (error) {
+      toast.error(error.response?.data?.error || '回禮失敗')
+    } finally {
+      setGiftAction({ id: null, type: null })
     }
   }
 
@@ -143,8 +187,20 @@ const Notifications = () => {
         ) : (
           <div className="space-y-4">
             {notifications.map((notification) => {
-              const meta = STATUS_META[notification.status] || STATUS_META.accepted
+              const isGift = notification.type === 'gift'
+              const meta = resolveMeta(notification)
               const Icon = meta.icon || Bell
+              const giftId = notification.giftId || notification.id
+              const giftBusy = isGift && giftAction.id === giftId
+              const giftAccepting = giftBusy && giftAction.type === 'accept'
+              const giftReturning = giftBusy && giftAction.type === 'return'
+              const productLabel =
+                notification.productName || (isGift ? '禮物' : '幫你宣傳')
+              const priceLabel = isGift ? '價值' : '金額'
+              const quantityLabel =
+                isGift && Number(notification.quantity) > 1
+                  ? `｜數量：${Number(notification.quantity)}`
+                  : ''
               return (
                 <div
                   key={notification.id}
@@ -163,30 +219,64 @@ const Notifications = () => {
                       </div>
                       <p className="mt-2 text-gray-800 whitespace-pre-line">{notification.message}</p>
                       <p className="mt-2 text-xs text-gray-500">
-                        商品：{notification.productName || '幫你宣傳'}｜金額：{Number(notification.price || 0).toLocaleString('zh-TW')} CRCRCoin
+                        {isGift ? '禮物' : '商品'}：{productLabel}｜{priceLabel}：
+                        {Number(notification.price || 0).toLocaleString('zh-TW')} CRCRCoin{quantityLabel}
                       </p>
                     </div>
                   </div>
                   <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
-                    <button
-                      type="button"
-                      onClick={() => handleDismiss(notification.id)}
-                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-60 whitespace-nowrap"
-                      disabled={dismissingId === notification.id}
-                    >
-                      {dismissingId === notification.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="h-4 w-4" />
-                      )}
-                      刪除
-                    </button>
-                    <Link
-                      to="/shop"
-                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:shadow-xl whitespace-nowrap"
-                    >
-                      前往商店
-                    </Link>
+                    {isGift ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleAcceptGift(notification)}
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-600 disabled:opacity-60 whitespace-nowrap"
+                          disabled={giftBusy}
+                        >
+                          {giftAccepting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4" />
+                          )}
+                          接受
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleReturnGift(notification)}
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-lg transition hover:bg-amber-600 disabled:opacity-60 whitespace-nowrap"
+                          disabled={giftBusy}
+                        >
+                          {giftReturning ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Undo2 className="h-4 w-4" />
+                          )}
+                          回禮
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleDismiss(notification.id)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-60 whitespace-nowrap"
+                          disabled={dismissingId === notification.id}
+                        >
+                          {dismissingId === notification.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                          刪除
+                        </button>
+                        <Link
+                          to="/shop"
+                          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:shadow-xl whitespace-nowrap"
+                        >
+                          前往商店
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </div>
               )

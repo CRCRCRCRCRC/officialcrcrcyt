@@ -251,6 +251,18 @@ export const coinAPI = {
   // 購買商品
   purchaseProduct: (payload) =>
     api.post('/coin/purchase', payload),
+  lookupGiftRecipient: (publicId) =>
+    api.get('/coin/gift/lookup', { params: { publicId } }),
+  sendGift: (payload) =>
+    api.post('/coin/gift', payload),
+  acceptGift: (giftId) =>
+    api.post(`/coin/gifts/${giftId}/accept`, undefined),
+  returnGift: (giftId) =>
+    api.post(`/coin/gifts/${giftId}/return`, undefined),
+  getBackpack: () =>
+    api.get('/coin/backpack'),
+  useBackpackItem: (itemId, payload) =>
+    api.post(`/coin/backpack/${itemId}/use`, payload),
   // 消費（扣幣，需登入）
   spend: (amount, reason = '消費') => api.post('/coin/spend', { amount, reason }),
   // 加幣（管理員）

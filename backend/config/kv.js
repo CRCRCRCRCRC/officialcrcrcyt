@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
 
@@ -30,6 +31,58 @@ class KVDatabase {
     this._initPromise = null;
   }
 
+  generatePublicId(length = 10) {
+    const size = Math.max(6, Math.min(20, Number(length) || 10));
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < size; i += 1) {
+      result += chars[crypto.randomInt(0, chars.length)];
+    }
+    return result;
+  }
+
+  async generateUniquePublicId(length = 10, maxAttempts = 8) {
+    const userIds = await this.kv.smembers('users');
+    for (let i = 0; i < maxAttempts; i += 1) {
+      const candidate = this.generatePublicId(length);
+      let found = false;
+      for (const userId of userIds) {
+        const user = await this.kv.hgetall(userId);
+        if (user && user.public_id === candidate) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) return candidate;
+    }
+    throw new Error('Unable to generate unique public id');
+  }
+
+  async ensureUserPublicId(userId) {
+    if (!userId) return null;
+    const user = await this.getUserById(userId);
+    if (!user) return null;
+    if (user.public_id && String(user.public_id).trim()) {
+      return user;
+    }
+    const publicId = await this.generateUniquePublicId();
+    await this.kv.hset(userId, { public_id: publicId });
+    return await this.getUserById(userId);
+  }
+
+  async getUserByPublicId(publicId) {
+    const normalized = String(publicId || '').trim().toUpperCase();
+    if (!normalized) return null;
+    const userIds = await this.kv.smembers('users');
+    for (const userId of userIds) {
+      const user = await this.kv.hgetall(userId);
+      if (user && String(user.public_id || '').toUpperCase() == normalized) {
+        return { id: userId, ...user };
+      }
+    }
+    return null;
+  }
+
   // 用戶相關操作
   async createUser(userData) {
     const userId = `user:${Date.now()}`;
@@ -43,6 +96,10 @@ class KVDatabase {
     if (Object.prototype.hasOwnProperty.call(payload, 'avatarUrl') && !Object.prototype.hasOwnProperty.call(payload, 'avatar_url')) {
       payload.avatar_url = payload.avatarUrl;
       delete payload.avatarUrl;
+    }
+
+    if (!payload.public_id) {
+      payload.public_id = await this.generateUniquePublicId();
     }
 
     await this.kv.hset(userId, payload);
@@ -351,6 +408,22 @@ class KVDatabase {
 
   redeemCodeUseKey(useId) {
     return `redeem_code_use:${useId}`;
+  }
+
+  giftKey(giftId) {
+    return `coin_gift:${giftId}`;
+  }
+
+  giftSetKey() {
+    return 'coin_gifts';
+  }
+
+  backpackItemKey(itemId) {
+    return `coin_backpack_item:${itemId}`;
+  }
+
+  backpackItemsKey(userId) {
+    return `coin_backpack_items:${userId}`;
   }
 
   parsePassList(raw) {
@@ -760,6 +833,200 @@ class KVDatabase {
     const payload = { dismissed_at: new Date().toISOString() };
     await this.kv.hset(orderId, payload);
     return { id: orderId };
+  }
+
+  mapGiftRecord(raw) {
+    if (!raw || Object.keys(raw).length === 0) return null;
+    return {
+      id: raw.id,
+      sender_id: raw.sender_id,
+      recipient_id: raw.recipient_id,
+      product_id: raw.product_id,
+      product_name: raw.product_name,
+      price: Number(raw.price) || 0,
+      quantity: Number(raw.quantity) || 1,
+      status: raw.status,
+      created_at: raw.created_at || null,
+      accepted_at: raw.accepted_at || null,
+      notified_at: raw.notified_at || null,
+      dismissed_at: raw.dismissed_at || null
+    };
+  }
+
+  mapBackpackItemRecord(raw) {
+    if (!raw || Object.keys(raw).length === 0) return null;
+    return {
+      id: raw.id,
+      user_id: raw.user_id,
+      product_id: raw.product_id,
+      product_name: raw.product_name,
+      quantity: Number(raw.quantity) || 0,
+      status: raw.status,
+      source_gift_id: raw.source_gift_id || null,
+      created_at: raw.created_at || null,
+      used_at: raw.used_at || null
+    };
+  }
+
+  async createGift(senderId, payload = {}) {
+    const { recipientId, productId, productName, price = 0, quantity = 1 } = payload;
+    const id = `coin_gift:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    const now = new Date().toISOString();
+    const record = {
+      id,
+      sender_id: senderId,
+      recipient_id: recipientId,
+      product_id: productId,
+      product_name: productName,
+      price: Math.max(0, Math.floor(Number(price) || 0)),
+      quantity: Math.max(1, Math.floor(Number(quantity) || 1)),
+      status: 'pending',
+      created_at: now,
+      accepted_at: null,
+      notified_at: null,
+      dismissed_at: null
+    };
+    await this.kv.hset(this.giftKey(id), record);
+    await this.kv.sadd(this.giftSetKey(), id);
+    return this.mapGiftRecord(record);
+  }
+
+  async getGiftById(giftId) {
+    if (!giftId) return null;
+    const raw = await this.kv.hgetall(this.giftKey(giftId));
+    return this.mapGiftRecord(raw);
+  }
+
+  async getGiftNotifications(userId) {
+    const ids = await this.kv.smembers(this.giftSetKey());
+    const notifications = [];
+    const nowISO = new Date().toISOString();
+    for (const id of ids) {
+      const raw = await this.kv.hgetall(this.giftKey(id));
+      if (
+        raw &&
+        raw.recipient_id === userId &&
+        raw.status === 'pending' &&
+        !raw.notified_at &&
+        !raw.dismissed_at
+      ) {
+        const sender = await this.kv.hgetall(raw.sender_id);
+        notifications.push({
+          ...this.mapGiftRecord(raw),
+          sender_display_name: sender?.display_name || null,
+          sender_username: sender?.username || null,
+          sender_avatar_url: sender?.avatar_url || null
+        });
+        await this.kv.hset(this.giftKey(id), { notified_at: nowISO });
+      }
+    }
+    notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return notifications;
+  }
+
+  async listGiftNotifications(userId) {
+    const ids = await this.kv.smembers(this.giftSetKey());
+    const notifications = [];
+    const nowISO = new Date().toISOString();
+    for (const id of ids) {
+      const raw = await this.kv.hgetall(this.giftKey(id));
+      if (
+        raw &&
+        raw.recipient_id === userId &&
+        raw.status === 'pending' &&
+        !raw.dismissed_at
+      ) {
+        const sender = await this.kv.hgetall(raw.sender_id);
+        notifications.push({
+          ...this.mapGiftRecord(raw),
+          sender_display_name: sender?.display_name || null,
+          sender_username: sender?.username || null,
+          sender_avatar_url: sender?.avatar_url || null
+        });
+        if (!raw.notified_at) {
+          await this.kv.hset(this.giftKey(id), { notified_at: nowISO });
+        }
+      }
+    }
+    notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return notifications;
+  }
+
+  async createBackpackItem(userId, payload = {}) {
+    const { productId, productName, quantity = 1, sourceGiftId = null } = payload;
+    const id = `coin_backpack_item:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    const now = new Date().toISOString();
+    const record = {
+      id,
+      user_id: userId,
+      product_id: productId,
+      product_name: productName,
+      quantity: Math.max(1, Math.floor(Number(quantity) || 1)),
+      status: 'available',
+      source_gift_id: sourceGiftId || null,
+      created_at: now,
+      used_at: null
+    };
+    await this.kv.hset(this.backpackItemKey(id), record);
+    await this.kv.sadd(this.backpackItemsKey(userId), id);
+    return this.mapBackpackItemRecord(record);
+  }
+
+  async listBackpackItems(userId, { includeUsed = false } = {}) {
+    const ids = await this.kv.smembers(this.backpackItemsKey(userId));
+    const items = [];
+    for (const id of ids) {
+      const raw = await this.kv.hgetall(this.backpackItemKey(id));
+      if (!raw || raw.user_id !== userId) continue;
+      if (!includeUsed && raw.status !== 'available') continue;
+      items.push(this.mapBackpackItemRecord(raw));
+    }
+    items.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    return items;
+  }
+
+  async getBackpackItemById(itemId) {
+    if (!itemId) return null;
+    const raw = await this.kv.hgetall(this.backpackItemKey(itemId));
+    return this.mapBackpackItemRecord(raw);
+  }
+
+  async acceptGift(giftId, recipientId) {
+    if (!giftId || !recipientId) return null;
+    const raw = await this.kv.hgetall(this.giftKey(giftId));
+    if (!raw || raw.recipient_id !== recipientId || raw.status !== 'pending' || raw.dismissed_at) {
+      return null;
+    }
+    const item = await this.createBackpackItem(recipientId, {
+      productId: raw.product_id,
+      productName: raw.product_name,
+      quantity: Number(raw.quantity) || 1,
+      sourceGiftId: raw.id
+    });
+    const updatePayload = {
+      status: 'accepted',
+      accepted_at: new Date().toISOString(),
+      dismissed_at: new Date().toISOString()
+    };
+    await this.kv.hset(this.giftKey(giftId), updatePayload);
+    const updatedGift = await this.kv.hgetall(this.giftKey(giftId));
+    return { gift: this.mapGiftRecord(updatedGift), item };
+  }
+
+  async consumeBackpackItem(itemId, userId, quantity = 1) {
+    if (!itemId || !userId) return null;
+    const raw = await this.kv.hgetall(this.backpackItemKey(itemId));
+    if (!raw || raw.user_id !== userId || raw.status !== 'available') return null;
+    const qty = Math.max(1, Math.floor(Number(quantity) || 1));
+    const currentQty = Math.max(0, Math.floor(Number(raw.quantity) || 0));
+    if (currentQty < qty) return null;
+    const nextQty = currentQty - qty;
+    const payload = nextQty <= 0
+      ? { quantity: 0, status: 'used', used_at: new Date().toISOString() }
+      : { quantity: nextQty };
+    await this.kv.hset(this.backpackItemKey(itemId), payload);
+    const updated = await this.kv.hgetall(this.backpackItemKey(itemId));
+    return this.mapBackpackItemRecord(updated);
   }
 
   mapRedeemCodeRecord(raw) {

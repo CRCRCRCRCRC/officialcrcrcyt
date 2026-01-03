@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, User, Save, Loader2, MessageCircle, Unlink } from 'lucide-react'
+import { ArrowLeft, User, Save, Loader2, MessageCircle, Unlink, Copy } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useCoin } from '../contexts/CoinContext'
 import { authAPI } from '../services/api'
@@ -16,7 +16,8 @@ const Profile = () => {
     displayName: '',
     discordId: '',
     discordUsername: '',
-    discordAvatar: ''
+    discordAvatar: '',
+    publicId: ''
   })
 
   useEffect(() => {
@@ -35,7 +36,8 @@ const Profile = () => {
         displayName: data.display_name || data.displayName || '',
         discordId: data.discord_id || data.discordId || '',
         discordUsername: data.discord_username || data.discordUsername || '',
-        discordAvatar: data.discord_avatar || data.discordAvatar || ''
+        discordAvatar: data.discord_avatar || data.discordAvatar || '',
+        publicId: data.public_id || data.publicId || ''
       })
     } catch (error) {
       console.error('取得個人資料失敗:', error)
@@ -78,6 +80,17 @@ const Profile = () => {
       toast.error(error.response?.data?.error || '解除綁定失敗')
     } finally {
       setUnbinding(false)
+    }
+  }
+
+  const handleCopyPublicId = async () => {
+    if (!profile.publicId) return
+    try {
+      await navigator.clipboard.writeText(profile.publicId)
+      toast.success('已複製個人 ID')
+    } catch (error) {
+      console.error('複製個人 ID 失敗:', error)
+      toast.error('複製失敗，請手動選取')
     }
   }
 
@@ -170,6 +183,25 @@ const Profile = () => {
                 </label>
                 <div className="text-gray-900 bg-gray-50 rounded-lg px-4 py-3">
                   {user?.email || user?.username || '未提供'}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  個人 ID（贈禮用）
+                </label>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <div className="flex-1 text-gray-900 bg-gray-50 rounded-lg px-4 py-3">
+                    {profile.publicId || '尚未產生'}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCopyPublicId}
+                    disabled={!profile.publicId}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    <Copy className="h-4 w-4" />
+                    複製
+                  </button>
                 </div>
               </div>
             </div>

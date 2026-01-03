@@ -1,4 +1,5 @@
 ﻿const { createPool } = require('@vercel/postgres');
+const crypto = require('crypto');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const TAIPEI_OFFSET_MS = 8 * 60 * 60 * 1000;
@@ -47,6 +48,47 @@ class NeonDatabase {
 
     this.pool = createPool({ connectionString });
     this.initializeTables();
+  }
+
+  generatePublicId(length = 10) {
+    const size = Math.max(6, Math.min(20, Number(length) || 10));
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < size; i += 1) {
+      result += chars[crypto.randomInt(0, chars.length)];
+    }
+    return result;
+  }
+
+  async generateUniquePublicId(length = 10, maxAttempts = 8) {
+    for (let i = 0; i < maxAttempts; i += 1) {
+      const candidate = this.generatePublicId(length);
+      const exists = await this.pool.query('SELECT id FROM users WHERE public_id = $1 LIMIT 1', [candidate]);
+      if (!exists.rows.length) {
+        return candidate;
+      }
+    }
+    throw new Error('Unable to generate unique public id');
+  }
+
+  async ensureUserPublicId(userId) {
+    if (!userId) return null;
+    const user = await this.getUserById(userId);
+    if (!user) return null;
+    if (user.public_id && String(user.public_id).trim()) {
+      return user;
+    }
+    const publicId = await this.generateUniquePublicId();
+    await this.pool.query('UPDATE users SET public_id = $1 WHERE id = $2', [publicId, userId]);
+    return await this.getUserById(userId);
+  }
+
+  async getUserByPublicId(publicId) {
+    if (!publicId) return null;
+    const normalized = String(publicId).trim().toUpperCase();
+    if (!normalized) return null;
+    const result = await this.pool.query('SELECT * FROM users WHERE public_id = $1', [normalized]);
+    return result.rows[0] || null;
   }
 
   parsePassList(raw) {
@@ -109,6 +151,22 @@ class NeonDatabase {
         ALTER TABLE users
         ADD COLUMN IF NOT EXISTS tech_effect_unlocked BOOLEAN DEFAULT false
       `);
+
+      await this.pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS public_id VARCHAR(20)
+      `);
+      await this.pool.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_id ON users(public_id)
+      `);
+
+      const missingPublicIds = await this.pool.query(
+        "SELECT id FROM users WHERE public_id IS NULL OR public_id = ''"
+      );
+      for (const row of missingPublicIds.rows) {
+        const publicId = await this.generateUniquePublicId();
+        await this.pool.query('UPDATE users SET public_id = $1 WHERE id = $2', [publicId, row.id]);
+      }
 
       // 創建影片表
       await this.pool.query(`
@@ -379,6 +437,44 @@ class NeonDatabase {
         )
       `);
       await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS coin_gifts (
+          id SERIAL PRIMARY KEY,
+          sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          recipient_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          product_id VARCHAR(100) NOT NULL,
+          product_name VARCHAR(255) NOT NULL,
+          price INTEGER NOT NULL DEFAULT 0,
+          quantity INTEGER NOT NULL DEFAULT 1,
+          status VARCHAR(20) DEFAULT 'pending',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          accepted_at TIMESTAMP,
+          notified_at TIMESTAMP,
+          dismissed_at TIMESTAMP
+        )
+      `);
+      await this.pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_coin_gifts_recipient_id ON coin_gifts(recipient_id)
+      `);
+      await this.pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_coin_gifts_sender_id ON coin_gifts(sender_id)
+      `);
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS coin_backpack_items (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          product_id VARCHAR(100) NOT NULL,
+          product_name VARCHAR(255) NOT NULL,
+          quantity INTEGER NOT NULL DEFAULT 1,
+          status VARCHAR(20) DEFAULT 'available',
+          source_gift_id INTEGER REFERENCES coin_gifts(id) ON DELETE SET NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          used_at TIMESTAMP
+        )
+      `);
+      await this.pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_coin_backpack_items_user_id ON coin_backpack_items(user_id)
+      `);
+      await this.pool.query(`
         CREATE TABLE IF NOT EXISTS coin_pass_task_logs (
           id SERIAL PRIMARY KEY,
           user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -473,9 +569,10 @@ class NeonDatabase {
   // 用戶相關操作
   async createUser(userData) {
     const { username, password, role = 'user', displayName = null, avatarUrl = null } = userData;
+    const publicId = await this.generateUniquePublicId();
     const result = await this.pool.query(
-      'INSERT INTO users (username, password, role, display_name, avatar_url) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [username, password, role, displayName, avatarUrl]
+      'INSERT INTO users (username, password, role, display_name, avatar_url, public_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
+      [username, password, role, displayName, avatarUrl, publicId]
     );
     return result.rows[0].id;
   }
@@ -1141,6 +1238,243 @@ class NeonDatabase {
       [orderId, userId]
     );
     return res.rows[0] || null;
+  }
+
+  mapGiftRow(row) {
+    if (!row) return null;
+    return {
+      id: row.id,
+      sender_id: row.sender_id,
+      recipient_id: row.recipient_id,
+      product_id: row.product_id,
+      product_name: row.product_name,
+      price: Number(row.price) || 0,
+      quantity: Number(row.quantity) || 1,
+      status: row.status,
+      created_at: row.created_at || null,
+      accepted_at: row.accepted_at || null,
+      notified_at: row.notified_at || null,
+      dismissed_at: row.dismissed_at || null
+    };
+  }
+
+  mapBackpackItemRow(row) {
+    if (!row) return null;
+    return {
+      id: row.id,
+      user_id: row.user_id,
+      product_id: row.product_id,
+      product_name: row.product_name,
+      quantity: Number(row.quantity) || 0,
+      status: row.status,
+      source_gift_id: row.source_gift_id || null,
+      created_at: row.created_at || null,
+      used_at: row.used_at || null
+    };
+  }
+
+  async createGift(senderId, payload = {}) {
+    const { recipientId, productId, productName, price = 0, quantity = 1 } = payload;
+    const qty = Math.max(1, Math.floor(Number(quantity) || 1));
+    const amount = Math.max(0, Math.floor(Number(price) || 0));
+    const result = await this.pool.query(
+      `INSERT INTO coin_gifts (sender_id, recipient_id, product_id, product_name, price, quantity)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [senderId, recipientId, productId, productName, amount, qty]
+    );
+    return this.mapGiftRow(result.rows[0]);
+  }
+
+  async getGiftById(giftId) {
+    if (!giftId) return null;
+    const res = await this.pool.query('SELECT * FROM coin_gifts WHERE id = $1', [giftId]);
+    return this.mapGiftRow(res.rows[0]);
+  }
+
+  async getGiftNotifications(userId) {
+    const res = await this.pool.query(
+      `SELECT g.*, u.display_name AS sender_display_name, u.username AS sender_username, u.avatar_url AS sender_avatar_url
+       FROM coin_gifts g
+       LEFT JOIN users u ON u.id = g.sender_id
+       WHERE g.recipient_id = $1
+         AND g.status = 'pending'
+         AND g.notified_at IS NULL
+         AND g.dismissed_at IS NULL
+       ORDER BY g.created_at DESC`,
+      [userId]
+    );
+    const ids = res.rows.map((row) => row.id);
+    if (ids.length) {
+      await this.pool.query(
+        `UPDATE coin_gifts
+         SET notified_at = CURRENT_TIMESTAMP
+         WHERE recipient_id = $1 AND id = ANY($2::int[])`,
+        [userId, ids]
+      );
+    }
+    return res.rows.map((row) => ({
+      ...this.mapGiftRow(row),
+      sender_display_name: row.sender_display_name || null,
+      sender_username: row.sender_username || null,
+      sender_avatar_url: row.sender_avatar_url || null
+    }));
+  }
+
+  async listGiftNotifications(userId) {
+    const res = await this.pool.query(
+      `SELECT g.*, u.display_name AS sender_display_name, u.username AS sender_username, u.avatar_url AS sender_avatar_url
+       FROM coin_gifts g
+       LEFT JOIN users u ON u.id = g.sender_id
+       WHERE g.recipient_id = $1
+         AND g.status = 'pending'
+         AND g.dismissed_at IS NULL
+       ORDER BY g.created_at DESC`,
+      [userId]
+    );
+    const ids = res.rows.filter((row) => !row.notified_at).map((row) => row.id);
+    if (ids.length) {
+      await this.pool.query(
+        `UPDATE coin_gifts
+         SET notified_at = CURRENT_TIMESTAMP
+         WHERE recipient_id = $1 AND id = ANY($2::int[])`,
+        [userId, ids]
+      );
+    }
+    return res.rows.map((row) => ({
+      ...this.mapGiftRow(row),
+      sender_display_name: row.sender_display_name || null,
+      sender_username: row.sender_username || null,
+      sender_avatar_url: row.sender_avatar_url || null
+    }));
+  }
+
+  async createBackpackItem(userId, payload = {}) {
+    const { productId, productName, quantity = 1, sourceGiftId = null } = payload;
+    const qty = Math.max(1, Math.floor(Number(quantity) || 1));
+    const res = await this.pool.query(
+      `INSERT INTO coin_backpack_items (user_id, product_id, product_name, quantity, source_gift_id)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [userId, productId, productName, qty, sourceGiftId]
+    );
+    return this.mapBackpackItemRow(res.rows[0]);
+  }
+
+  async listBackpackItems(userId, { includeUsed = false } = {}) {
+    const res = await this.pool.query(
+      `SELECT *
+       FROM coin_backpack_items
+       WHERE user_id = $1
+       ${includeUsed ? '' : "AND status = 'available'"}
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+    return res.rows.map((row) => this.mapBackpackItemRow(row));
+  }
+
+  async getBackpackItemById(itemId) {
+    if (!itemId) return null;
+    const res = await this.pool.query('SELECT * FROM coin_backpack_items WHERE id = $1', [itemId]);
+    return this.mapBackpackItemRow(res.rows[0]);
+  }
+
+  async acceptGift(giftId, recipientId) {
+    if (!giftId || !recipientId) return null;
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const giftRes = await client.query('SELECT * FROM coin_gifts WHERE id = $1 FOR UPDATE', [giftId]);
+      if (!giftRes.rows.length) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+      const gift = giftRes.rows[0];
+      if (gift.recipient_id !== recipientId || gift.status !== 'pending' || gift.dismissed_at) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+      const qty = Math.max(1, Math.floor(Number(gift.quantity) || 1));
+      const itemRes = await client.query(
+        `INSERT INTO coin_backpack_items (user_id, product_id, product_name, quantity, source_gift_id)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [recipientId, gift.product_id, gift.product_name, qty, gift.id]
+      );
+      const updatedGiftRes = await client.query(
+        `UPDATE coin_gifts
+         SET status = 'accepted',
+             accepted_at = CURRENT_TIMESTAMP,
+             dismissed_at = CURRENT_TIMESTAMP
+         WHERE id = $1
+         RETURNING *`,
+        [giftId]
+      );
+      await client.query('COMMIT');
+      return {
+        gift: this.mapGiftRow(updatedGiftRes.rows[0] || gift),
+        item: this.mapBackpackItemRow(itemRes.rows[0])
+      };
+    } catch (error) {
+      try { await client.query('ROLLBACK'); } catch {}
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async consumeBackpackItem(itemId, userId, quantity = 1) {
+    if (!itemId || !userId) return null;
+    const qty = Math.max(1, Math.floor(Number(quantity) || 1));
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const res = await client.query('SELECT * FROM coin_backpack_items WHERE id = $1 FOR UPDATE', [itemId]);
+      if (!res.rows.length) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+      const item = res.rows[0];
+      if (item.user_id !== userId || item.status !== 'available') {
+        await client.query('ROLLBACK');
+        return null;
+      }
+      const currentQty = Math.max(0, Math.floor(Number(item.quantity) || 0));
+      if (currentQty < qty) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+      const nextQty = currentQty - qty;
+      let updated = null;
+      if (nextQty <= 0) {
+        const updateRes = await client.query(
+          `UPDATE coin_backpack_items
+           SET quantity = 0,
+               status = 'used',
+               used_at = CURRENT_TIMESTAMP
+           WHERE id = $1
+           RETURNING *`,
+          [itemId]
+        );
+        updated = updateRes.rows[0];
+      } else {
+        const updateRes = await client.query(
+          `UPDATE coin_backpack_items
+           SET quantity = $2
+           WHERE id = $1
+           RETURNING *`,
+          [itemId, nextQty]
+        );
+        updated = updateRes.rows[0];
+      }
+      await client.query('COMMIT');
+      return this.mapBackpackItemRow(updated);
+    } catch (error) {
+      try { await client.query('ROLLBACK'); } catch {}
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   // 生成 slug

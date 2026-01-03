@@ -26,6 +26,18 @@ const getAdminEmailAllowlist = () =>
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean);
 
+const ensurePublicId = async (userId) => {
+  if (!userId || !database?.ensureUserPublicId) {
+    return database.getUserById(userId);
+  }
+  try {
+    return await database.ensureUserPublicId(userId);
+  } catch (error) {
+    console.warn('ensureUserPublicId failed:', error.message);
+    return database.getUserById(userId);
+  }
+};
+
 const sanitizeUser = (user, overrides = {}) => {
   if (!user) return null;
   const merged = { ...user, ...overrides };
@@ -35,6 +47,7 @@ const sanitizeUser = (user, overrides = {}) => {
   const discordId = merged.discord_id || merged.discordId || '';
   const discordUsername = merged.discord_username || merged.discordUsername || '';
   const discordAvatar = merged.discord_avatar || merged.discordAvatar || '';
+  const publicId = merged.public_id || merged.publicId || '';
   const techEffectUnlocked =
     merged.tech_effect_unlocked === true ||
     merged.tech_effect_unlocked === 'true' ||
@@ -50,12 +63,14 @@ const sanitizeUser = (user, overrides = {}) => {
     discordId,
     discordUsername,
     discordAvatar,
+    publicId,
     techEffectUnlocked,
     name: displayName,
     picture: avatarUrl,
     discord_id: discordId,
     discord_username: discordUsername,
     discord_avatar: discordAvatar,
+    public_id: publicId,
     tech_effect_unlocked: techEffectUnlocked
   };
 };
@@ -99,10 +114,12 @@ router.post('/login', async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    const freshUser = await ensurePublicId(user.id);
+
     res.json({
       message: '登入成功',
       token,
-      user: sanitizeUser(user)
+      user: sanitizeUser(freshUser || user)
     });
   } catch (error) {
     console.error('登入錯誤:', error);
@@ -113,7 +130,7 @@ router.post('/login', async (req, res) => {
 // 驗證 token
 router.get('/verify', authenticateToken, async (req, res) => {
   try {
-    const freshUser = await database.getUserById(req.user.id);
+    const freshUser = await ensurePublicId(req.user.id);
     res.json({
       valid: true,
       user: sanitizeUser(freshUser || req.user)
@@ -127,7 +144,7 @@ router.get('/verify', authenticateToken, async (req, res) => {
 // 取得個人資料
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const freshUser = await database.getUserById(req.user.id);
+    const freshUser = await ensurePublicId(req.user.id);
     res.json({ user: sanitizeUser(freshUser || req.user) });
   } catch (error) {
     console.error('取得個人資料失敗:', error);
@@ -173,9 +190,11 @@ router.put('/profile', authenticateToken, async (req, res) => {
       updatedUser = await database.updateUserProfile(userId, updates);
     }
 
+    const withPublicId = await ensurePublicId(updatedUser.id);
+
     res.json({
       message: Object.keys(updates).length ? '個人資料已更新' : '資料未變更',
-      user: sanitizeUser(updatedUser)
+      user: sanitizeUser(withPublicId || updatedUser)
     });
   } catch (error) {
     console.error('更新個人資料錯誤:', error);
@@ -226,7 +245,7 @@ const ensureAdminProfile = async (user, displayName, avatarUrl) => {
     displayName: displayName || user.username,
     avatarUrl: avatarUrl || user.avatar_url || null
   });
-  return sanitizeUser(await database.getUserById(user.id), { name: displayName, picture: avatarUrl });
+  return sanitizeUser(await ensurePublicId(user.id), { name: displayName, picture: avatarUrl });
 };
 
 const ensureUserProfile = async (user, displayName, avatarUrl, email) => {
@@ -234,7 +253,7 @@ const ensureUserProfile = async (user, displayName, avatarUrl, email) => {
     displayName: displayName || email,
     avatarUrl: avatarUrl || null
   });
-  return sanitizeUser(await database.getUserById(user.id), { email, name: displayName, picture: avatarUrl });
+  return sanitizeUser(await ensurePublicId(user.id), { email, name: displayName, picture: avatarUrl });
 };
 
 // Google 登入（使用 id_token）
@@ -599,9 +618,9 @@ router.get('/users', authenticateToken, async (req, res) => {
 
     // 從資料庫搜尋用戶（依 username/email 或 display_name）
     const result = await database.pool.query(
-      `SELECT id, username, email, display_name, discord_id
+      `SELECT id, username, email, display_name, discord_id, public_id
        FROM users
-       WHERE (username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1)
+       WHERE (username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1 OR public_id ILIKE $1)
        ORDER BY display_name, username
        LIMIT 20`,
       [searchTerm]
@@ -612,7 +631,8 @@ router.get('/users', authenticateToken, async (req, res) => {
       email: row.email || row.username,
       display_name: row.display_name,
       username: row.username,
-      discord_id: row.discord_id
+      discord_id: row.discord_id,
+      public_id: row.public_id
     }));
 
     res.json({ users });
