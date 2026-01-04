@@ -842,11 +842,11 @@ body.neon-mode {
   color: #f8fafc;
   color-scheme: dark;
   background:
-    radial-gradient(1200px 700px at 12% 12%, rgba(16, 185, 129, 0.35), transparent 60%),
-    radial-gradient(900px 600px at 88% 20%, rgba(99, 102, 241, 0.3), transparent 62%),
-    radial-gradient(800px 500px at 80% 85%, rgba(244, 114, 182, 0.25), transparent 65%),
-    radial-gradient(700px 400px at 22% 78%, rgba(56, 189, 248, 0.28), transparent 70%),
-    linear-gradient(135deg, #05060f 0%, #0b1024 45%, #070a17 100%);
+    radial-gradient(1100px 620px at 12% 10%, rgba(16, 185, 129, 0.55), transparent 62%),
+    radial-gradient(900px 600px at 88% 20%, rgba(14, 116, 144, 0.35), transparent 65%),
+    radial-gradient(800px 520px at 85% 88%, rgba(168, 85, 247, 0.28), transparent 70%),
+    radial-gradient(650px 420px at 24% 80%, rgba(52, 211, 153, 0.28), transparent 68%),
+    linear-gradient(140deg, #030408 0%, #071b16 48%, #05060d 100%);
   background-attachment: fixed;
 }
 
@@ -861,37 +861,44 @@ body.neon-mode::after {
 
 body.neon-mode::before {
   background:
-    conic-gradient(from 40deg at 20% 20%, rgba(16, 185, 129, 0.22), transparent 40%, rgba(99, 102, 241, 0.24), transparent 75%, rgba(244, 114, 182, 0.2)),
-    radial-gradient(900px 500px at 75% 25%, rgba(94, 234, 212, 0.28), transparent 70%),
-    linear-gradient(120deg, rgba(45, 212, 191, 0.24), rgba(99, 102, 241, 0.18), rgba(244, 114, 182, 0.16));
+    conic-gradient(from 40deg at 18% 18%, rgba(16, 185, 129, 0.32), transparent 38%, rgba(45, 212, 191, 0.28), transparent 72%, rgba(168, 85, 247, 0.22)),
+    radial-gradient(880px 520px at 78% 24%, rgba(16, 185, 129, 0.3), transparent 70%),
+    linear-gradient(115deg, rgba(34, 211, 238, 0.22), rgba(16, 185, 129, 0.26), rgba(168, 85, 247, 0.18));
   mix-blend-mode: screen;
-  filter: blur(8px) saturate(1.8);
+  filter: blur(10px) saturate(2.1);
   opacity: 0.95;
   animation: neonPulse 14s ease-in-out infinite;
 }
 
 body.neon-mode::after {
   background-image:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 40%, rgba(16, 185, 129, 0.1) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 42%, rgba(16, 185, 129, 0.18) 100%),
     repeating-linear-gradient(
       0deg,
-      rgba(255, 255, 255, 0.08) 0,
-      rgba(255, 255, 255, 0.08) 1px,
+      rgba(16, 185, 129, 0.16) 0,
+      rgba(16, 185, 129, 0.16) 1px,
       transparent 1px,
-      transparent 6px
+      transparent 10px
     ),
     repeating-linear-gradient(
       90deg,
-      rgba(16, 185, 129, 0.12) 0,
-      rgba(16, 185, 129, 0.12) 1px,
+      rgba(34, 211, 238, 0.2) 0,
+      rgba(34, 211, 238, 0.2) 1px,
       transparent 1px,
-      transparent 90px
+      transparent 80px
     ),
-    radial-gradient(700px 450px at 60% 40%, rgba(14, 165, 233, 0.16), transparent 70%),
-    repeating-radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 4px);
-  opacity: 0.65;
+    repeating-linear-gradient(
+      90deg,
+      rgba(16, 185, 129, 0.1) 0,
+      rgba(16, 185, 129, 0.1) 1px,
+      transparent 1px,
+      transparent 26px
+    ),
+    radial-gradient(720px 460px at 60% 40%, rgba(20, 184, 166, 0.2), transparent 70%),
+    repeating-radial-gradient(circle at 30% 20%, rgba(16, 185, 129, 0.08) 0 1px, transparent 1px 4px);
+  opacity: 0.7;
   mix-blend-mode: screen;
-  animation: neonGrid 12s linear infinite;
+  animation: neonGrid 14s linear infinite;
 }
 
 body.neon-mode #root {
@@ -922,17 +929,33 @@ body.neon-mode #root::before {
 
 body.neon-mode #root::after {
   background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(16, 185, 129, 0.2) 0,
+      rgba(16, 185, 129, 0.2) 2px,
+      transparent 2px,
+      transparent 14px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(34, 211, 238, 0.22) 0,
+      rgba(34, 211, 238, 0.22) 1px,
+      transparent 1px,
+      transparent 80px
+    ),
     linear-gradient(
       120deg,
       transparent 0%,
-      rgba(34, 211, 238, 0.28) 45%,
-      rgba(99, 102, 241, 0.45) 52%,
-      rgba(244, 114, 182, 0.24) 58%,
+      rgba(16, 185, 129, 0.32) 46%,
+      rgba(34, 211, 238, 0.45) 52%,
+      rgba(168, 85, 247, 0.24) 58%,
       transparent 100%
     );
-  opacity: 0.65;
-  transform: translateY(-60%);
-  animation: neonSweep 9s linear infinite;
+  background-size: 100% 180px, 140px 100%, 220% 220%;
+  background-position: 0 0, 0 0, -40% -60%;
+  opacity: 0.75;
+  mix-blend-mode: screen;
+  animation: neonRain 10s linear infinite;
 }
 
 body.neon-mode .card,
@@ -943,6 +966,22 @@ body.neon-mode [class*="bg-white"],
 body.neon-mode [class*="bg-gray-50"],
 body.neon-mode [class*="bg-gray-100"] {
   background-color: rgba(8, 12, 26, 0.9) !important;
+  background-image:
+    linear-gradient(135deg, rgba(10, 20, 28, 0.95), rgba(6, 10, 20, 0.9)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(16, 185, 129, 0.14) 0,
+      rgba(16, 185, 129, 0.14) 1px,
+      transparent 1px,
+      transparent 44px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(16, 185, 129, 0.08) 0,
+      rgba(16, 185, 129, 0.08) 1px,
+      transparent 1px,
+      transparent 12px
+    );
   border-color: rgba(16, 185, 129, 0.35) !important;
   box-shadow:
     0 0 0 1px rgba(45, 212, 191, 0.2),
@@ -980,10 +1019,10 @@ body.neon-mode .text-primary-600,
 body.neon-mode .text-primary-500,
 body.neon-mode .text-purple-600,
 body.neon-mode .text-blue-600,
-body.neon-mode .text-pink-600 { color: #5eead4 !important; }
+body.neon-mode .text-pink-600 { color: #34d399 !important; }
 
 body.neon-mode a {
-  color: #67e8f9;
+  color: #6ee7b7;
 }
 
 body.neon-mode a:hover {
@@ -993,11 +1032,11 @@ body.neon-mode a:hover {
 body.neon-mode h1,
 body.neon-mode h2,
 body.neon-mode h3 {
-  text-shadow: 0 0 20px rgba(34, 211, 238, 0.5);
+  text-shadow: 0 0 22px rgba(16, 185, 129, 0.55);
 }
 
 body.neon-mode .bg-clip-text {
-  background-image: linear-gradient(90deg, #f8fafc 0%, #5eead4 40%, #22d3ee 60%, #a78bfa 100%) !important;
+  background-image: linear-gradient(90deg, #f8fafc 0%, #34d399 35%, #22d3ee 60%, #f472b6 100%) !important;
   -webkit-text-fill-color: transparent;
 }
 
@@ -1050,7 +1089,22 @@ body.neon-mode .text-red-500 {
 
 body.neon-mode .tech-surface {
   background-color: rgba(7, 11, 24, 0.92) !important;
-  background-image: linear-gradient(135deg, rgba(12, 18, 38, 0.95), rgba(6, 10, 22, 0.9)) !important;
+  background-image:
+    linear-gradient(135deg, rgba(12, 18, 38, 0.95), rgba(6, 10, 22, 0.9)) !important,
+    repeating-linear-gradient(
+      90deg,
+      rgba(16, 185, 129, 0.12) 0,
+      rgba(16, 185, 129, 0.12) 1px,
+      transparent 1px,
+      transparent 60px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(16, 185, 129, 0.08) 0,
+      rgba(16, 185, 129, 0.08) 1px,
+      transparent 1px,
+      transparent 16px
+    ) !important;
   border-color: rgba(45, 212, 191, 0.45) !important;
   box-shadow:
     0 0 0 1px rgba(45, 212, 191, 0.2),
@@ -1060,16 +1114,16 @@ body.neon-mode .tech-surface {
 }
 
 body.neon-mode svg {
-  filter: drop-shadow(0 0 6px rgba(45, 212, 191, 0.35));
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.45));
 }
 
 body.neon-mode .text-gradient,
 body.neon-mode .text-gradient-warm,
 body.neon-mode .text-gradient-cool {
-  background-image: linear-gradient(90deg, #f8fafc 0%, #5eead4 40%, #22d3ee 60%, #a78bfa 100%) !important;
+  background-image: linear-gradient(90deg, #f8fafc 0%, #34d399 35%, #22d3ee 60%, #f472b6 100%) !important;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 20px rgba(34, 211, 238, 0.45);
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.45);
 }
 
 body.neon-mode .shadow,
@@ -1135,6 +1189,15 @@ body.neon-mode textarea::placeholder {
   }
   100% {
     transform: translateY(-40px);
+  }
+}
+
+@keyframes neonRain {
+  0% {
+    background-position: 0 0, 0 0, -40% -60%;
+  }
+  100% {
+    background-position: 0 180px, 140px 0, 140% 120%;
   }
 }
 
