@@ -835,6 +835,318 @@ body.tech-mode textarea::placeholder {
   color: rgba(191, 219, 254, 0.85);
 }
 
+/* Neon matrix effect mode */
+body.neon-mode {
+  position: relative;
+  isolation: isolate;
+  color: #f8fafc;
+  color-scheme: dark;
+  background:
+    radial-gradient(1200px 700px at 12% 12%, rgba(16, 185, 129, 0.35), transparent 60%),
+    radial-gradient(900px 600px at 88% 20%, rgba(99, 102, 241, 0.3), transparent 62%),
+    radial-gradient(800px 500px at 80% 85%, rgba(244, 114, 182, 0.25), transparent 65%),
+    radial-gradient(700px 400px at 22% 78%, rgba(56, 189, 248, 0.28), transparent 70%),
+    linear-gradient(135deg, #05060f 0%, #0b1024 45%, #070a17 100%);
+  background-attachment: fixed;
+}
+
+body.neon-mode::before,
+body.neon-mode::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.neon-mode::before {
+  background:
+    conic-gradient(from 40deg at 20% 20%, rgba(16, 185, 129, 0.22), transparent 40%, rgba(99, 102, 241, 0.24), transparent 75%, rgba(244, 114, 182, 0.2)),
+    radial-gradient(900px 500px at 75% 25%, rgba(94, 234, 212, 0.28), transparent 70%),
+    linear-gradient(120deg, rgba(45, 212, 191, 0.24), rgba(99, 102, 241, 0.18), rgba(244, 114, 182, 0.16));
+  mix-blend-mode: screen;
+  filter: blur(8px) saturate(1.8);
+  opacity: 0.95;
+  animation: neonPulse 14s ease-in-out infinite;
+}
+
+body.neon-mode::after {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, transparent 40%, rgba(16, 185, 129, 0.1) 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.08) 0,
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px,
+      transparent 6px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(16, 185, 129, 0.12) 0,
+      rgba(16, 185, 129, 0.12) 1px,
+      transparent 1px,
+      transparent 90px
+    ),
+    radial-gradient(700px 450px at 60% 40%, rgba(14, 165, 233, 0.16), transparent 70%),
+    repeating-radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.06) 0 1px, transparent 1px 4px);
+  opacity: 0.65;
+  mix-blend-mode: screen;
+  animation: neonGrid 12s linear infinite;
+}
+
+body.neon-mode #root {
+  position: relative;
+  z-index: 1;
+  filter: saturate(1.5) contrast(1.14) brightness(1.06);
+}
+
+body.neon-mode #root::before,
+body.neon-mode #root::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+}
+
+body.neon-mode #root::before {
+  background:
+    radial-gradient(260px 150px at 12% 18%, rgba(34, 211, 238, 0.5), transparent 70%),
+    radial-gradient(240px 140px at 88% 15%, rgba(99, 102, 241, 0.45), transparent 72%),
+    radial-gradient(320px 180px at 86% 88%, rgba(244, 114, 182, 0.35), transparent 78%),
+    linear-gradient(180deg, rgba(16, 185, 129, 0.16), transparent 40%, transparent 60%, rgba(16, 185, 129, 0.12));
+  opacity: 0.85;
+  mix-blend-mode: screen;
+  animation: neonPulse 6s ease-in-out infinite;
+}
+
+body.neon-mode #root::after {
+  background:
+    linear-gradient(
+      120deg,
+      transparent 0%,
+      rgba(34, 211, 238, 0.28) 45%,
+      rgba(99, 102, 241, 0.45) 52%,
+      rgba(244, 114, 182, 0.24) 58%,
+      transparent 100%
+    );
+  opacity: 0.65;
+  transform: translateY(-60%);
+  animation: neonSweep 9s linear infinite;
+}
+
+body.neon-mode .card,
+body.neon-mode .card-glass,
+body.neon-mode .card-gradient,
+body.neon-mode .glass-effect,
+body.neon-mode [class*="bg-white"],
+body.neon-mode [class*="bg-gray-50"],
+body.neon-mode [class*="bg-gray-100"] {
+  background-color: rgba(8, 12, 26, 0.9) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  box-shadow:
+    0 0 0 1px rgba(45, 212, 191, 0.2),
+    0 22px 50px rgba(5, 7, 18, 0.75),
+    0 0 32px rgba(34, 211, 238, 0.25);
+  backdrop-filter: blur(18px);
+}
+
+body.neon-mode [class*="border-gray"],
+body.neon-mode [class*="border-white"] {
+  border-color: rgba(45, 212, 191, 0.4) !important;
+}
+
+body.neon-mode .text-gray-900 { color: #f8fafc !important; }
+body.neon-mode .text-gray-800 { color: #e2e8f0 !important; }
+body.neon-mode .text-gray-700 { color: #cbd5f5 !important; }
+body.neon-mode .text-gray-600 { color: #b8c4f3 !important; }
+body.neon-mode .text-gray-500 { color: #9fb1f0 !important; }
+body.neon-mode .text-gray-400 { color: #8aa2e6 !important; }
+body.neon-mode .text-gray-300 { color: #b9d7ff !important; }
+body.neon-mode .text-slate-900,
+body.neon-mode .text-zinc-900,
+body.neon-mode .text-neutral-900 { color: #f8fafc !important; }
+body.neon-mode .text-slate-700,
+body.neon-mode .text-zinc-700,
+body.neon-mode .text-neutral-700 { color: #dbeafe !important; }
+body.neon-mode .text-slate-600,
+body.neon-mode .text-zinc-600,
+body.neon-mode .text-neutral-600 { color: #c7d2fe !important; }
+body.neon-mode .text-slate-500,
+body.neon-mode .text-zinc-500,
+body.neon-mode .text-neutral-500 { color: #a5b4fc !important; }
+body.neon-mode .text-black { color: #f8fafc !important; }
+body.neon-mode .text-primary-600,
+body.neon-mode .text-primary-500,
+body.neon-mode .text-purple-600,
+body.neon-mode .text-blue-600,
+body.neon-mode .text-pink-600 { color: #5eead4 !important; }
+
+body.neon-mode a {
+  color: #67e8f9;
+}
+
+body.neon-mode a:hover {
+  color: #22d3ee;
+}
+
+body.neon-mode h1,
+body.neon-mode h2,
+body.neon-mode h3 {
+  text-shadow: 0 0 20px rgba(34, 211, 238, 0.5);
+}
+
+body.neon-mode .bg-clip-text {
+  background-image: linear-gradient(90deg, #f8fafc 0%, #5eead4 40%, #22d3ee 60%, #a78bfa 100%) !important;
+  -webkit-text-fill-color: transparent;
+}
+
+body.neon-mode .text-transparent:not(.bg-clip-text) {
+  color: #f8fafc !important;
+  -webkit-text-fill-color: #f8fafc;
+}
+
+body.neon-mode p,
+body.neon-mode li,
+body.neon-mode span {
+  color: inherit;
+}
+
+body.neon-mode .text-green-900,
+body.neon-mode .text-green-800,
+body.neon-mode .text-green-700,
+body.neon-mode .text-green-600,
+body.neon-mode .text-emerald-800,
+body.neon-mode .text-emerald-700,
+body.neon-mode .text-emerald-600 {
+  color: #6ee7b7 !important;
+}
+
+body.neon-mode .text-yellow-800,
+body.neon-mode .text-yellow-700,
+body.neon-mode .text-yellow-600,
+body.neon-mode .text-amber-700,
+body.neon-mode .text-amber-600,
+body.neon-mode .text-amber-500 {
+  color: #fde68a !important;
+}
+
+body.neon-mode .text-orange-700,
+body.neon-mode .text-orange-600 {
+  color: #fdba74 !important;
+}
+
+body.neon-mode .text-rose-700,
+body.neon-mode .text-rose-600,
+body.neon-mode .text-pink-600,
+body.neon-mode .text-pink-500 {
+  color: #f9a8d4 !important;
+}
+
+body.neon-mode .text-red-600,
+body.neon-mode .text-red-500 {
+  color: #fca5a5 !important;
+}
+
+body.neon-mode .tech-surface {
+  background-color: rgba(7, 11, 24, 0.92) !important;
+  background-image: linear-gradient(135deg, rgba(12, 18, 38, 0.95), rgba(6, 10, 22, 0.9)) !important;
+  border-color: rgba(45, 212, 191, 0.45) !important;
+  box-shadow:
+    0 0 0 1px rgba(45, 212, 191, 0.2),
+    0 20px 50px rgba(5, 7, 18, 0.75),
+    0 0 32px rgba(34, 211, 238, 0.3) !important;
+  backdrop-filter: blur(18px);
+}
+
+body.neon-mode svg {
+  filter: drop-shadow(0 0 6px rgba(45, 212, 191, 0.35));
+}
+
+body.neon-mode .text-gradient,
+body.neon-mode .text-gradient-warm,
+body.neon-mode .text-gradient-cool {
+  background-image: linear-gradient(90deg, #f8fafc 0%, #5eead4 40%, #22d3ee 60%, #a78bfa 100%) !important;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(34, 211, 238, 0.45);
+}
+
+body.neon-mode .shadow,
+body.neon-mode .shadow-sm,
+body.neon-mode .shadow-md,
+body.neon-mode .shadow-lg,
+body.neon-mode .shadow-xl,
+body.neon-mode .shadow-2xl {
+  box-shadow:
+    0 20px 50px rgba(4, 6, 14, 0.78),
+    0 0 26px rgba(34, 211, 238, 0.25) !important;
+}
+
+body.neon-mode .badge,
+body.neon-mode .badge-primary,
+body.neon-mode .badge-success,
+body.neon-mode .badge-warning,
+body.neon-mode .badge-danger {
+  background-color: rgba(45, 212, 191, 0.16) !important;
+  color: #e0f2fe !important;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+}
+
+body.neon-mode button,
+body.neon-mode .btn {
+  box-shadow:
+    0 0 0 1px rgba(45, 212, 191, 0.22) inset,
+    0 0 20px rgba(34, 211, 238, 0.32);
+}
+
+body.neon-mode input,
+body.neon-mode textarea,
+body.neon-mode select {
+  background-color: rgba(6, 10, 22, 0.92) !important;
+  color: #f8fafc;
+  border-color: rgba(45, 212, 191, 0.5) !important;
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.2) inset;
+}
+
+body.neon-mode input::placeholder,
+body.neon-mode textarea::placeholder {
+  color: rgba(199, 210, 254, 0.8);
+}
+
+@keyframes neonPulse {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate3d(2%, -1%, 0) scale(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.75;
+  }
+}
+
+@keyframes neonGrid {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-40px);
+  }
+}
+
+@keyframes neonSweep {
+  0% {
+    transform: translateY(-65%);
+  }
+  100% {
+    transform: translateY(65%);
+  }
+}
+
 @keyframes techAurora {
   0% {
     transform: translate3d(0, 0, 0) scale(1);

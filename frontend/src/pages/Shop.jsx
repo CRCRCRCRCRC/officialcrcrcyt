@@ -9,6 +9,7 @@ import { coinAPI } from '../services/api'
 import defaultAvatar from '../assets/default-avatar.svg'
 
 const TECH_EFFECT_PRODUCT_ID = 'site-tech-effect'
+const NEON_EFFECT_PRODUCT_ID = 'site-neon-matrix'
 
 const PRODUCTS = [
   {
@@ -24,6 +25,13 @@ const PRODUCTS = [
     price: 2000,
     description: '解鎖科技感特效按鈕，一鍵切換全站酷炫視覺。',
     unlockTechEffect: true
+  },
+  {
+    id: NEON_EFFECT_PRODUCT_ID,
+    name: '網站特效 - 霓虹矩陣',
+    price: 2500,
+    description: '解鎖霓虹矩陣特效，一鍵切換全站霓虹視覺。',
+    unlockNeonEffect: true
   },
   {
     id: 'crcrcoin-pack-50',
@@ -87,6 +95,7 @@ const Shop = () => {
   const { isLoggedIn, hydrated, balance, refreshWallet } = useCoin()
   const { user, refreshUser } = useWebsiteAuth()
   const techEffectUnlocked = Boolean(user?.techEffectUnlocked || user?.tech_effect_unlocked)
+  const neonEffectUnlocked = Boolean(user?.neonEffectUnlocked || user?.neon_effect_unlocked)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [step, setStep] = useState('idle')
   const [discordId, setDiscordId] = useState('')
@@ -316,7 +325,7 @@ const Shop = () => {
       toast.success('購買成功！')
       closeModals()
       await refreshWallet()
-      if (purchasedId === TECH_EFFECT_PRODUCT_ID) {
+      if (purchasedId === TECH_EFFECT_PRODUCT_ID || purchasedId === NEON_EFFECT_PRODUCT_ID) {
         await refreshUser()
       }
     } catch (error) {
@@ -365,7 +374,10 @@ const Shop = () => {
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
             {PRODUCTS.map((product) => {
               const isTechEffect = product.id === TECH_EFFECT_PRODUCT_ID
-              const alreadyOwned = isTechEffect && techEffectUnlocked
+              const isNeonEffect = product.id === NEON_EFFECT_PRODUCT_ID
+              const alreadyOwned =
+                (isTechEffect && techEffectUnlocked) ||
+                (isNeonEffect && neonEffectUnlocked)
               const disabled =
                 alreadyOwned ||
                 !isLoggedIn ||

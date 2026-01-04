@@ -151,6 +151,10 @@ class NeonDatabase {
         ALTER TABLE users
         ADD COLUMN IF NOT EXISTS tech_effect_unlocked BOOLEAN DEFAULT false
       `);
+      await this.pool.query(`
+        ALTER TABLE users
+        ADD COLUMN IF NOT EXISTS neon_effect_unlocked BOOLEAN DEFAULT false
+      `);
 
       await this.pool.query(`
         ALTER TABLE users
@@ -629,6 +633,11 @@ class NeonDatabase {
     if (Object.prototype.hasOwnProperty.call(profileData, 'techEffectUnlocked')) {
       fields.push(`tech_effect_unlocked = $${index++}`);
       values.push(profileData.techEffectUnlocked ? true : false);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(profileData, 'neonEffectUnlocked')) {
+      fields.push(`neon_effect_unlocked = $${index++}`);
+      values.push(profileData.neonEffectUnlocked ? true : false);
     }
 
     if (!fields.length) {

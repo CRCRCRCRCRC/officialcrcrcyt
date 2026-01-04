@@ -93,7 +93,7 @@ const Backpack = () => {
       if (res.data?.wallet) {
         await refreshWallet()
       }
-      if (res.data?.techEffectUnlocked) {
+      if (res.data?.techEffectUnlocked || res.data?.neonEffectUnlocked) {
         await refreshUser()
       }
 

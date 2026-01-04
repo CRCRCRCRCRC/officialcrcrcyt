@@ -88,6 +88,7 @@ const isSameTaipeiDay = (a, b = Date.now()) => {
 const PROMOTION_PRODUCT_ID = 'promotion-service';
 const DISCORD_ROLE_PRODUCT_ID = 'discord-role-king';
 const TECH_EFFECT_PRODUCT_ID = 'site-tech-effect';
+const NEON_EFFECT_PRODUCT_ID = 'site-neon-matrix';
 const PROMOTION_ACCEPTED_MESSAGE =
   '您購買的宣傳服務已經過管理員批准，請至Discord與管理員詳談您要宣傳的內容';
 const formatPromotionRefundAmount = (price) => {
@@ -116,6 +117,13 @@ const SHOP_PRODUCTS = [
     price: 2000,
     description: '解鎖科技感特效按鈕，切換全站酷炫視覺。',
     unlockTechEffect: true
+  },
+  {
+    id: NEON_EFFECT_PRODUCT_ID,
+    name: '網站特效 - 霓虹矩陣',
+    price: 2500,
+    description: '解鎖霓虹矩陣特效，切換全站霓虹視覺。',
+    unlockNeonEffect: true
   },
   {
     id: 'crcrcoin-pack-50',
@@ -147,6 +155,7 @@ const buildProductMeta = (product) => {
     requirePromotionContent: Boolean(product.requirePromotionContent),
     allowQuantity: Boolean(product.allowQuantity),
     unlockTechEffect: Boolean(product.unlockTechEffect),
+    unlockNeonEffect: Boolean(product.unlockNeonEffect),
     rewardCoins: Number(product.rewardCoins) || 0
   };
 };
@@ -669,11 +678,19 @@ router.post('/gift', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: '不能贈禮給自己' });
     }
 
+    const isTechEffectProduct = product.id === TECH_EFFECT_PRODUCT_ID;
+    const isNeonEffectProduct = product.id === NEON_EFFECT_PRODUCT_ID;
     if (
-      product.id === TECH_EFFECT_PRODUCT_ID &&
+      isTechEffectProduct &&
       (isEnabledFlag(recipient?.tech_effect_unlocked) || isEnabledFlag(recipient?.techEffectUnlocked))
     ) {
       return res.status(400).json({ error: '對方已擁有此網站特效' });
+    }
+    if (
+      isNeonEffectProduct &&
+      (isEnabledFlag(recipient?.neon_effect_unlocked) || isEnabledFlag(recipient?.neonEffectUnlocked))
+    ) {
+      return res.status(400).json({ error: '對方已擁有此霓虹矩陣特效' });
     }
 
     let qty = 1;
@@ -1062,6 +1079,30 @@ router.post('/redeem', authenticateToken, async (req, res) => {
           success: true,
           reward: { type: 'product', productId: product.id, productName: product.name },
           message: '兌換成功，已解鎖科技感特效'
+        });
+      }
+
+      if (product.id === NEON_EFFECT_PRODUCT_ID) {
+        const user = await database.getUserById(req.user.id);
+        if (isEnabledFlag(user?.neon_effect_unlocked) || isEnabledFlag(user?.neonEffectUnlocked)) {
+          await rollback();
+          return res.status(400).json({ error: '你已擁有此霓虹矩陣特效' });
+        }
+        try {
+          const updatedUser = await database.updateUserProfile(req.user.id, { neonEffectUnlocked: true });
+          if (!isEnabledFlag(updatedUser?.neon_effect_unlocked) && !isEnabledFlag(updatedUser?.neonEffectUnlocked)) {
+            throw new Error('unlock_failed');
+          }
+        } catch (error) {
+          console.error('兌換解鎖霓虹矩陣特效失敗:', error);
+          await rollback();
+          return res.status(500).json({ error: '霓虹矩陣特效解鎖失敗，請稍後再試' });
+        }
+
+        return res.json({
+          success: true,
+          reward: { type: 'product', productId: product.id, productName: product.name },
+          message: '兌換成功，已解鎖霓虹矩陣特效'
         });
       }
 
@@ -1840,15 +1881,19 @@ router.post('/purchase', authenticateToken, async (req, res) => {
     const requiresPromotionContent = Boolean(product.requirePromotionContent);
     const isDiscordRoleProduct = product.id === DISCORD_ROLE_PRODUCT_ID;
     const isTechEffectProduct = product.id === TECH_EFFECT_PRODUCT_ID;
+    const isNeonEffectProduct = product.id === NEON_EFFECT_PRODUCT_ID;
 
     // 如果需要 Discord ID，優先使用用戶綁定的 Discord ID
     let finalDiscordId = (discordId || '').toString().trim();
     let user = null;
-    if (requiresDiscord || isTechEffectProduct) {
+    if (requiresDiscord || isTechEffectProduct || isNeonEffectProduct) {
       user = await database.getUserById(req.user.id);
     }
     if (isTechEffectProduct && (isEnabledFlag(user?.tech_effect_unlocked) || isEnabledFlag(user?.techEffectUnlocked))) {
       return res.status(400).json({ error: '你已擁有此網站特效' });
+    }
+    if (isNeonEffectProduct && (isEnabledFlag(user?.neon_effect_unlocked) || isEnabledFlag(user?.neonEffectUnlocked))) {
+      return res.status(400).json({ error: '你已擁有此霓虹矩陣特效' });
     }
     if (requiresDiscord) {
       const userBoundDiscordId = user?.discord_id || user?.discordId || '';
@@ -1950,6 +1995,23 @@ router.post('/purchase', authenticateToken, async (req, res) => {
           console.error('自動退款失敗，請人工協助:', refundError);
         }
         return res.status(500).json({ error: '網站特效解鎖失敗，已嘗試退款' });
+      }
+    }
+    if (isNeonEffectProduct) {
+      try {
+        const updatedUser = await database.updateUserProfile(req.user.id, { neonEffectUnlocked: true });
+        if (!isEnabledFlag(updatedUser?.neon_effect_unlocked) && !isEnabledFlag(updatedUser?.neonEffectUnlocked)) {
+          throw new Error('unlock_failed');
+        }
+        responsePayload.neonEffectUnlocked = true;
+      } catch (error) {
+        console.error('解鎖霓虹矩陣特效失敗:', error);
+        try {
+          await database.addCoins(req.user.id, totalPrice, '霓虹矩陣特效解鎖失敗退款');
+        } catch (refundError) {
+          console.error('自動退款失敗，請人工協助:', refundError);
+        }
+        return res.status(500).json({ error: '霓虹矩陣特效解鎖失敗，已嘗試退款' });
       }
     }
 
@@ -2097,10 +2159,11 @@ router.post('/backpack/:itemId/use', authenticateToken, async (req, res) => {
 
     const isDiscordRoleProduct = product.id === DISCORD_ROLE_PRODUCT_ID;
     const isTechEffectProduct = product.id === TECH_EFFECT_PRODUCT_ID;
+    const isNeonEffectProduct = product.id === NEON_EFFECT_PRODUCT_ID;
     const requiresPromotionContent = Boolean(product.requirePromotionContent);
 
     let user = null;
-    if (isDiscordRoleProduct || isTechEffectProduct || product.requireDiscordId) {
+    if (isDiscordRoleProduct || isTechEffectProduct || isNeonEffectProduct || product.requireDiscordId) {
       user = await database.getUserById(req.user.id);
     }
 
@@ -2116,6 +2179,20 @@ router.post('/backpack/:itemId/use', authenticateToken, async (req, res) => {
       } catch (error) {
         console.error('解鎖科技感特效失敗:', error);
         return res.status(500).json({ error: '解鎖科技感特效失敗，請稍後再試' });
+      }
+    }
+    if (isNeonEffectProduct) {
+      if (isEnabledFlag(user?.neon_effect_unlocked) || isEnabledFlag(user?.neonEffectUnlocked)) {
+        return res.status(400).json({ error: '已解鎖霓虹矩陣特效' });
+      }
+      try {
+        const updatedUser = await database.updateUserProfile(req.user.id, { neonEffectUnlocked: true });
+        if (!isEnabledFlag(updatedUser?.neon_effect_unlocked) && !isEnabledFlag(updatedUser?.neonEffectUnlocked)) {
+          throw new Error('unlock_failed');
+        }
+      } catch (error) {
+        console.error('解鎖霓虹矩陣特效失敗:', error);
+        return res.status(500).json({ error: '解鎖霓虹矩陣特效失敗，請稍後再試' });
       }
     }
 
@@ -2186,6 +2263,9 @@ router.post('/backpack/:itemId/use', authenticateToken, async (req, res) => {
     }
     if (isTechEffectProduct) {
       responsePayload.techEffectUnlocked = true;
+    }
+    if (isNeonEffectProduct) {
+      responsePayload.neonEffectUnlocked = true;
     }
 
     return res.json({

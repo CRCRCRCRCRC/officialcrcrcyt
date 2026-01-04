@@ -144,6 +144,10 @@ class KVDatabase {
       payload.tech_effect_unlocked = profileData.techEffectUnlocked ? 'true' : 'false';
     }
 
+    if (Object.prototype.hasOwnProperty.call(profileData, 'neonEffectUnlocked')) {
+      payload.neon_effect_unlocked = profileData.neonEffectUnlocked ? 'true' : 'false';
+    }
+
     if (!Object.keys(payload).length) {
       return await this.getUserById(userId);
     }

@@ -18,6 +18,7 @@ const formatCoin = (value) => {
 const PROMOTION_CONTENT_MIN = 10
 const PROMOTION_CONTENT_MAX = 500
 const TECH_EFFECT_PRODUCT_ID = 'site-tech-effect'
+const NEON_EFFECT_PRODUCT_ID = 'site-neon-matrix'
 
 const normalizeCode = (value) => (value || '').toString().trim().toUpperCase()
 
@@ -89,7 +90,10 @@ const RedeemCode = () => {
       setNeedsPromotion(false)
       setPromotionProductName('')
       await refreshWallet()
-      if (reward?.type === 'product' && reward?.productId === TECH_EFFECT_PRODUCT_ID) {
+      if (
+        reward?.type === 'product' &&
+        (reward?.productId === TECH_EFFECT_PRODUCT_ID || reward?.productId === NEON_EFFECT_PRODUCT_ID)
+      ) {
         await refreshUser()
       }
     } catch (error) {
