@@ -566,223 +566,70 @@
 }
 
 /* =========================================
-   THEME: Ethereal Flow (夢幻流光)
+   THEME: Ethereal Flow (夢幻流光) - MINIMAL
    ========================================= */
 body.mode-ethereal {
-  @apply bg-gray-50 text-gray-900;
-  background:
-    radial-gradient(at 0% 0%, rgba(199, 210, 254, 0.4) 0px, transparent 50%),
-    radial-gradient(at 50% 0%, rgba(221, 214, 254, 0.4) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(251, 207, 232, 0.4) 0px, transparent 50%);
+  background: linear-gradient(135deg, #f0f4ff 0%, #fef2f8 50%, #f5f0ff 100%);
   background-attachment: fixed;
-  position: relative;
+  color: #1e293b;
 }
 
-/* 緩慢流動的背景層 */
-body.mode-ethereal::before {
-  content: '';
-  position: fixed;
-  top: -50%;
-  left: -50%;
-  right: -50%;
-  bottom: -50%;
-  width: 200%;
-  height: 200%;
-  background:
-    conic-gradient(from 180deg at 50% 50%,
-      #d4fff8 0deg,
-      #e8dff5 72deg,
-      #fef3c7 144deg,
-      #dcfce7 216deg,
-      #e0f2fe 288deg,
-      #d4fff8 360deg);
-  filter: blur(80px);
-  opacity: 0.6;
-  z-index: -1;
-  animation: ethereal-flow 25s linear infinite;
-  transform-origin: center;
-}
-
-@keyframes ethereal-flow {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Ethereal 文字與元件樣式 - 確保高對比度 */
 body.mode-ethereal .card,
 body.mode-ethereal .card-glass,
-body.mode-ethereal .card-gradient {
-  @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-xl;
+body.mode-ethereal .card-gradient,
+body.mode-ethereal [class*="bg-white"],
+body.mode-ethereal [class*="bg-gray-50"] {
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(199, 210, 254, 0.5) !important;
+  box-shadow: 0 4px 24px rgba(99, 102, 241, 0.08);
 }
 
 body.mode-ethereal h1,
 body.mode-ethereal h2,
-body.mode-ethereal h3,
-body.mode-ethereal .text-gradient {
-  background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: none;
-  /* 移除陰影以保持乾淨 */
+body.mode-ethereal h3 {
+  color: #4f46e5;
 }
 
 /* =========================================
-   THEME: Cosmic Void (深邃宇宙)
+   THEME: Cosmic Void (深邃宇宙) - MINIMAL
    ========================================= */
 body.mode-cosmic {
-  background-color: #030712;
-  /* gray-950 */
-  color: #f3f4f6;
-  /* gray-100 */
-  position: relative;
-  overflow-x: hidden;
+  background-color: #0f172a;
+  color: #f1f5f9;
 }
 
-/* 星星背景 */
-body.mode-cosmic::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    radial-gradient(1px 1px at 10% 10%, #fff 100%, transparent),
-    radial-gradient(1px 1px at 20% 20%, #fff 100%, transparent),
-    radial-gradient(2px 2px at 30% 30%, #ffffff 100%, transparent),
-    radial-gradient(1px 1px at 40% 40%, #fff 100%, transparent),
-    radial-gradient(1px 1px at 50% 50%, #fff 100%, transparent),
-    radial-gradient(2px 2px at 60% 60%, #ffffff 100%, transparent),
-    radial-gradient(1px 1px at 70% 70%, #fff 100%, transparent),
-    radial-gradient(1px 1px at 80% 80%, #fff 100%, transparent),
-    radial-gradient(1px 1px at 90% 90%, #fff 100%, transparent);
-  background-size: 550px 550px;
-  opacity: 0.3;
-  z-index: -2;
-}
-
-/* 深空迷霧 */
-body.mode-cosmic::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(circle at 15% 50%, rgba(76, 29, 149, 0.15), transparent 40%),
-    radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.1), transparent 40%);
-  z-index: -1;
-  animation: cosmic-pulse 10s ease-in-out infinite alternate;
-}
-
-@keyframes cosmic-pulse {
-  0% {
-    opacity: 0.4;
-    transform: scale(1);
-  }
-
-  100% {
-    opacity: 0.7;
-    transform: scale(1.1);
-  }
-}
-
-/* Cosmic 元件樣式 */
 body.mode-cosmic .card,
 body.mode-cosmic .card-glass,
 body.mode-cosmic .card-gradient,
-body.mode-cosmic .bg-white,
-body.mode-cosmic .bg-gray-50 {
-  background-color: rgba(17, 24, 39, 0.75) !important;
-  /* gray-900 with opacity */
-  backdrop-filter: blur(12px);
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #f3f4f6;
+body.mode-cosmic [class*="bg-white"],
+body.mode-cosmic [class*="bg-gray-50"],
+body.mode-cosmic [class*="bg-gray-100"] {
+  background-color: rgba(30, 41, 59, 0.9) !important;
+  border-color: rgba(100, 116, 139, 0.3) !important;
+  color: #e2e8f0;
 }
 
-/* 強制將在 Cosmic 模式下的深色文字轉為淺色 */
 body.mode-cosmic .text-gray-900,
 body.mode-cosmic .text-gray-800,
-body.mode-cosmic .text-gray-700,
-body.mode-cosmic .text-slate-900 {
-  color: #f9fafb !important;
-  /* gray-50 */
+body.mode-cosmic .text-gray-700 {
+  color: #f8fafc !important;
 }
 
 body.mode-cosmic .text-gray-600,
 body.mode-cosmic .text-gray-500 {
-  color: #d1d5db !important;
-  /* gray-300 */
+  color: #cbd5e1 !important;
 }
 
-/* 按鈕微調 */
-body.mode-cosmic .btn-ghost {
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #fff;
+body.mode-cosmic a {
+  color: #93c5fd;
 }
 
-body.mode-cosmic .btn-ghost:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+body.mode-cosmic a:hover {
+  color: #60a5fa;
 }
 
-body.tech-mode .shadow-2xl {
-  box-shadow:
-    0 20px 50px rgba(3, 9, 22, 0.75),
-    0 0 26px rgba(34, 211, 238, 0.25) !important;
-}
-
-body.tech-mode .badge,
-body.tech-mode .badge-primary,
-body.tech-mode .badge-success,
-body.tech-mode .badge-warning,
-body.tech-mode .badge-danger {
-  background-color: rgba(14, 165, 233, 0.18) !important;
-  color: #e0f2fe !important;
-  border: 1px solid rgba(56, 189, 248, 0.35);
-}
-
-body.tech-mode button,
-body.tech-mode .btn {
-  box-shadow:
-    0 0 0 1px rgba(56, 189, 248, 0.25) inset,
-    0 0 22px rgba(34, 211, 238, 0.35);
-}
-
-body.tech-mode input,
-body.tech-mode textarea,
-body.tech-mode select {
-  background-color: rgba(6, 16, 34, 0.9) !important;
-  color: #f1f7ff;
-  border-color: rgba(56, 189, 248, 0.5) !important;
-  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.25) inset;
-}
-
-body.tech-mode input::placeholder,
-body.tech-mode textarea::placeholder {
-  color: rgba(191, 219, 254, 0.85);
-}
-
-/* Neon matrix effect mode */
-body.neon-mode {
-  position: relative;
-  isolation: isolate;
-  color: #f8fafc;
-  color-scheme: dark;
-  background:
-    radial-gradient(1100px 620px at 12% 10%, rgba(16, 185, 129, 0.55), transparent 62%),
-    radial-gradient(900px 600px at 88% 20%, rgba(14, 116, 144, 0.35), transparent 65%),
-    radial-gradient(800px 520px at 85% 88%, rgba(168, 85, 247, 0.28), transparent 70%),
-    radial-gradient(650px 420px at 24% 80%, rgba(52, 211, 153, 0.28), transparent 68%),
-    linear-gradient(140deg, #030408 0%, #071b16 48%, #05060d 100%);
-  background-attachment: fixed;
-}
-
-body.neon-mode::before,
-body.neon-mode::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
+body.mode-cosmic h1,
+body.mode-cosmic h2,
+body.mode-cosmic h3 {
+  color: #e0e7ff;
 }

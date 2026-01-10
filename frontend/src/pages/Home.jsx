@@ -148,51 +148,9 @@ const Home = () => {
     <div className="min-h-full">
       {/* Hero Section */}
       <section ref={heroRef} className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
-        {/* 動態背景 */}
-        {/* 動態背景 - 柔和極光波浪 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50 opacity-100 dark:from-gray-900 dark:via-gray-800 dark:to-black transition-colors duration-1000"></div>
-
-        {/* 主要視覺核心 - 呼吸光暈 */}
-        <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-tr from-blue-400/20 via-purple-500/20 to-pink-400/20 blur-[100px]"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.6, 0.3],
-            rotate: [0, 90, 0]
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-
-        {/* 互動式流動線條 (可選，這裡用簡單的裝飾線代替複雜Canvas) */}
-        <div className="absolute inset-0 overflow-hidden">
-          <svg className="absolute w-full h-full opacity-30" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <motion.path
-              d="M0 50 Q 25 20, 50 50 T 100 50"
-              stroke="url(#gradient-line)"
-              strokeWidth="0.5"
-              fill="none"
-              animate={{
-                d: [
-                  "M0 50 Q 25 30, 50 50 T 100 50",
-                  "M0 50 Q 25 70, 50 50 T 100 50",
-                  "M0 50 Q 25 30, 50 50 T 100 50"
-                ]
-              }}
-              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <defs>
-              <linearGradient id="gradient-line" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#60A5FA" stopOpacity="0" />
-                <stop offset="50%" stopColor="#A78BFA" stopOpacity="1" />
-                <stop offset="100%" stopColor="#F472B6" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
+        {/* 靜態漸層背景 - 高效能 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600"></div>
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-transparent to-yellow-400/10"></div>
 
         <div className="relative container-custom py-16 lg:py-24 text-center">
           <motion.div
