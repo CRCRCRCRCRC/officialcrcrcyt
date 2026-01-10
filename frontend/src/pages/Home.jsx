@@ -149,37 +149,50 @@ const Home = () => {
       {/* Hero Section */}
       <section ref={heroRef} className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
         {/* 動態背景 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600"></div>
-        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/30 via-transparent to-yellow-400/30"></div>
+        {/* 動態背景 - 柔和極光波浪 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-white to-purple-50 opacity-100 dark:from-gray-900 dark:via-gray-800 dark:to-black transition-colors duration-1000"></div>
 
-        {/* 動態粒子效果 */}
-        <div className="absolute inset-0">
-          {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-2 h-2 bg-white/20 rounded-full"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
+        {/* 主要視覺核心 - 呼吸光暈 */}
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-tr from-blue-400/20 via-purple-500/20 to-pink-400/20 blur-[100px]"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.6, 0.3],
+            rotate: [0, 90, 0]
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+
+        {/* 互動式流動線條 (可選，這裡用簡單的裝飾線代替複雜Canvas) */}
+        <div className="absolute inset-0 overflow-hidden">
+          <svg className="absolute w-full h-full opacity-30" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <motion.path
+              d="M0 50 Q 25 20, 50 50 T 100 50"
+              stroke="url(#gradient-line)"
+              strokeWidth="0.5"
+              fill="none"
               animate={{
-                y: [0, -30, 0],
-                opacity: [0.2, 0.8, 0.2],
-                scale: [1, 1.5, 1],
+                d: [
+                  "M0 50 Q 25 30, 50 50 T 100 50",
+                  "M0 50 Q 25 70, 50 50 T 100 50",
+                  "M0 50 Q 25 30, 50 50 T 100 50"
+                ]
               }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
+              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
             />
-          ))}
+            <defs>
+              <linearGradient id="gradient-line" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#60A5FA" stopOpacity="0" />
+                <stop offset="50%" stopColor="#A78BFA" stopOpacity="1" />
+                <stop offset="100%" stopColor="#F472B6" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+          </svg>
         </div>
-
-        {/* 漸變光暈 */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-pink-400/30 to-purple-600/30 rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-r from-blue-400/30 to-cyan-600/30 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-yellow-400/20 to-orange-600/20 rounded-full blur-3xl animate-glow"></div>
 
         <div className="relative container-custom py-16 lg:py-24 text-center">
           <motion.div
@@ -306,43 +319,43 @@ const Home = () => {
                   className="card-gradient overflow-hidden hover:shadow-[0_10px_40px_rgba(59,130,246,0.18)] transition-all duration-500"
                 >
                   <Link to={`/announcements/${announcement.slug}`} className="block group">
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {(() => {
-                          if (!announcement.created_at || announcement.created_at === 'null') {
-                            return '未知日期'
-                          }
-
-                          let date = new Date(announcement.created_at)
-                          if (isNaN(date.getTime())) {
-                            date = new Date(announcement.created_at.replace(' ', 'T'))
-                            if (isNaN(date.getTime())) {
-                              return '日期格式錯誤'
+                    <div className="p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Calendar className="w-4 h-4 mr-2" />
+                          {(() => {
+                            if (!announcement.created_at || announcement.created_at === 'null') {
+                              return '未知日期'
                             }
-                          }
 
-                          return date.toLocaleDateString('zh-TW')
-                        })()}
+                            let date = new Date(announcement.created_at)
+                            if (isNaN(date.getTime())) {
+                              date = new Date(announcement.created_at.replace(' ', 'T'))
+                              if (isNaN(date.getTime())) {
+                                return '日期格式錯誤'
+                              }
+                            }
+
+                            return date.toLocaleDateString('zh-TW')
+                          })()}
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                    </div>
 
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
-                      {decodeHtmlEntities(announcement.title)}
-                    </h3>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
+                        {decodeHtmlEntities(announcement.title)}
+                      </h3>
 
-                    <div className="text-gray-600 text-sm line-clamp-3">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        disallowedElements={['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'code', 'blockquote']}
-                        unwrapDisallowed={true}
-                      >
-                        {announcement.content.substring(0, 150).replace(/[#*`]/g, '') + (announcement.content.length > 150 ? '...' : '')}
-                      </ReactMarkdown>
+                      <div className="text-gray-600 text-sm line-clamp-3">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          disallowedElements={['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'pre', 'code', 'blockquote']}
+                          unwrapDisallowed={true}
+                        >
+                          {announcement.content.substring(0, 150).replace(/[#*`]/g, '') + (announcement.content.length > 150 ? '...' : '')}
+                        </ReactMarkdown>
+                      </div>
                     </div>
-                  </div>
                   </Link>
                 </motion.div>
               ))}

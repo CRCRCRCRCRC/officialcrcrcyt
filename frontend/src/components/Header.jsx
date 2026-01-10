@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings, Bell, Zap, Package } from 'lucide-react'
+import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings, Bell, Zap, Package, Sparkles, Moon } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 import { useCoin } from '../contexts/CoinContext'
@@ -45,13 +45,19 @@ const Header = () => {
   const userDisplayName = user?.displayName || user?.name || user?.username || user?.email
   const rawUserAvatar = user?.picture || user?.avatarUrl || ''
   const userAvatar = resolveAvatarSrc(rawUserAvatar) || defaultAvatar
+  
+  // Reuse existing flags from DB but map them to new themes
+  // techEffectUnlocked -> Maps to Ethereal
+  // neonEffectUnlocked -> Maps to Cosmic
   const techEffectUnlocked = Boolean(user?.techEffectUnlocked || user?.tech_effect_unlocked)
   const neonEffectUnlocked = Boolean(user?.neonEffectUnlocked || user?.neon_effect_unlocked)
   const hasEffectUnlocked = techEffectUnlocked || neonEffectUnlocked
+  
   const techStorageKey = getTechEffectStorageKey(user?.id)
   const effectStorageKey = getEffectModeStorageKey(user?.id)
+  
   const effectLabel =
-    effectMode === 'tech' ? '科技感' : effectMode === 'neon' ? '霓虹矩陣' : '特效關閉'
+    effectMode === 'ethereal' ? '夢幻流光' : effectMode === 'cosmic' ? '深邃宇宙' : '特效關閉'
 
   useEffect(() => {
     const handleDocClick = (event) => {
@@ -70,23 +76,29 @@ const Header = () => {
     if (!hasEffectUnlocked) {
       setEffectMode('none')
       if (typeof document !== 'undefined') {
-        document.body.classList.remove('tech-mode', 'neon-mode')
+        document.body.classList.remove('mode-ethereal', 'mode-cosmic')
       }
       return
     }
-    const storedMode = (localStorage.getItem(effectStorageKey) || '').toLowerCase()
+    
+    // Map legacy stored values to new values
+    let storedMode = (localStorage.getItem(effectStorageKey) || '').toLowerCase()
+    if (storedMode === 'tech') storedMode = 'ethereal'
+    if (storedMode === 'neon') storedMode = 'cosmic'
+    
     let nextMode = storedMode
     if (!nextMode) {
       const legacy = localStorage.getItem(techStorageKey)
-      nextMode = legacy === 'true' ? 'tech' : 'none'
+      nextMode = legacy === 'true' ? 'ethereal' : 'none'
     }
-    if (nextMode === 'tech' && !techEffectUnlocked) {
-      nextMode = neonEffectUnlocked ? 'neon' : 'none'
+    
+    if (nextMode === 'ethereal' && !techEffectUnlocked) {
+      nextMode = neonEffectUnlocked ? 'cosmic' : 'none'
     }
-    if (nextMode === 'neon' && !neonEffectUnlocked) {
-      nextMode = techEffectUnlocked ? 'tech' : 'none'
+    if (nextMode === 'cosmic' && !neonEffectUnlocked) {
+      nextMode = techEffectUnlocked ? 'ethereal' : 'none'
     }
-    if (!['tech', 'neon'].includes(nextMode)) {
+    if (!['ethereal', 'cosmic'].includes(nextMode)) {
       nextMode = 'none'
     }
     setEffectMode(nextMode)
@@ -94,23 +106,24 @@ const Header = () => {
 
   useEffect(() => {
     if (typeof document === 'undefined') return
-    document.body.classList.remove('tech-mode', 'neon-mode')
+    document.body.classList.remove('mode-ethereal', 'mode-cosmic')
     if (!hasEffectUnlocked) {
       return
     }
-    if (effectMode === 'tech') {
-      document.body.classList.add('tech-mode')
-    } else if (effectMode === 'neon') {
-      document.body.classList.add('neon-mode')
+    if (effectMode === 'ethereal') {
+      document.body.classList.add('mode-ethereal')
+    } else if (effectMode === 'cosmic') {
+      document.body.classList.add('mode-cosmic')
     }
     localStorage.setItem(effectStorageKey, effectMode)
-    localStorage.setItem(techStorageKey, effectMode === 'tech' ? 'true' : 'false')
+    // Legacy support
+    localStorage.setItem(techStorageKey, effectMode === 'ethereal' ? 'true' : 'false')
   }, [effectMode, hasEffectUnlocked, effectStorageKey, techStorageKey])
 
   useEffect(() => {
     return () => {
       if (typeof document !== 'undefined') {
-        document.body.classList.remove('tech-mode', 'neon-mode')
+        document.body.classList.remove('mode-ethereal', 'mode-cosmic')
       }
     }
   }, [])
@@ -127,7 +140,7 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-white/95 backdrop-blur-custom border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-white/95 backdrop-blur-custom border-b border-gray-200 sticky top-0 z-50 transition-colors duration-500">
         <div className="w-full px-4 md:px-8">
           <div className="relative flex items-center justify-between h-16 w-full">
             {/* Logo - 最左邊 */}
@@ -170,20 +183,22 @@ const Header = () => {
                     type="button"
                     onClick={() => setIsEffectMenuOpen((prev) => !prev)}
                     className={`relative rounded-full p-2 transition-colors duration-200 ${
-                      effectMode === 'tech'
-                        ? 'bg-cyan-100 text-cyan-700 ring-2 ring-cyan-300/60'
-                        : effectMode === 'neon'
-                          ? 'bg-fuchsia-100 text-fuchsia-700 ring-2 ring-fuchsia-300/60'
+                      effectMode === 'ethereal'
+                        ? 'bg-pink-100 text-pink-700 ring-2 ring-pink-300/60'
+                        : effectMode === 'cosmic'
+                          ? 'bg-indigo-950 text-indigo-300 ring-2 ring-indigo-500/60'
                           : 'text-gray-600 hover:text-cyan-600 hover:bg-cyan-50'
                     }`}
                     aria-expanded={isEffectMenuOpen}
                     aria-label="特效切換"
                     title={`特效切換：${effectLabel}`}
                   >
-                    <Zap className="w-5 h-5" />
+                    {effectMode === 'ethereal' ? <Sparkles className="w-5 h-5" /> : 
+                     effectMode === 'cosmic' ? <Moon className="w-5 h-5" /> :
+                     <Zap className="w-5 h-5" />}
                   </button>
                   {isEffectMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-44 rounded-xl border border-gray-200 bg-white/95 p-2 shadow-lg backdrop-blur">
+                    <div className="absolute right-0 mt-2 w-48 rounded-xl border border-gray-200 bg-white/95 p-2 shadow-lg backdrop-blur z-[100]">
                       <button
                         type="button"
                         onClick={() => {
@@ -196,38 +211,40 @@ const Header = () => {
                             : 'text-gray-600 hover:bg-gray-50'
                         }`}
                       >
-                        特效關閉
+                        <span className="flex items-center gap-2"><Zap className="w-4 h-4" /> 特效關閉</span>
                       </button>
+                      
                       {techEffectUnlocked && (
                         <button
                           type="button"
                           onClick={() => {
-                            setEffectMode('tech')
+                            setEffectMode('ethereal')
                             setIsEffectMenuOpen(false)
                           }}
-                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
-                            effectMode === 'tech'
-                              ? 'bg-cyan-100 text-cyan-700'
-                              : 'text-gray-600 hover:bg-gray-50'
+                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition mt-1 ${
+                            effectMode === 'ethereal'
+                              ? 'bg-pink-100 text-pink-700'
+                              : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600'
                           }`}
                         >
-                          科技感
+                          <span className="flex items-center gap-2"><Sparkles className="w-4 h-4" /> 夢幻流光</span>
                         </button>
                       )}
+                      
                       {neonEffectUnlocked && (
                         <button
                           type="button"
                           onClick={() => {
-                            setEffectMode('neon')
+                            setEffectMode('cosmic')
                             setIsEffectMenuOpen(false)
                           }}
-                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
-                            effectMode === 'neon'
-                              ? 'bg-fuchsia-100 text-fuchsia-700'
-                              : 'text-gray-600 hover:bg-gray-50'
+                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition mt-1 ${
+                            effectMode === 'cosmic'
+                              ? 'bg-indigo-950 text-indigo-300'
+                              : 'text-gray-600 hover:bg-indigo-900 hover:text-indigo-300'
                           }`}
                         >
-                          霓虹矩陣
+                          <span className="flex items-center gap-2"><Moon className="w-4 h-4" /> 深邃宇宙</span>
                         </button>
                       )}
                     </div>
@@ -259,7 +276,7 @@ const Header = () => {
                           event.currentTarget.src = defaultAvatar
                         }}
                       />
-                      <span className="text-sm font-medium text-gray-700">{userDisplayName || user?.email}</span>
+                      <span className="text-sm font-medium text-gray-700 max-w-[100px] truncate">{userDisplayName || user?.email}</span>
                       <ChevronDown className="w-4 h-4 text-gray-500" />
                     </button>
                     {isUserMenuOpen && (
@@ -373,34 +390,34 @@ const Header = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              setEffectMode('tech')
+                              setEffectMode('ethereal')
                               setIsMenuOpen(false)
                             }}
                             className={`flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                              effectMode === 'tech'
-                                ? 'bg-cyan-100 text-cyan-700'
+                              effectMode === 'ethereal'
+                                ? 'bg-pink-100 text-pink-700'
                                 : 'text-gray-700 hover:bg-gray-50'
                             }`}
                           >
-                            <Zap className="w-4 h-4" />
-                            科技感
+                            <Sparkles className="w-4 h-4" />
+                            夢幻流光
                           </button>
                         )}
                         {neonEffectUnlocked && (
                           <button
                             type="button"
                             onClick={() => {
-                              setEffectMode('neon')
+                              setEffectMode('cosmic')
                               setIsMenuOpen(false)
                             }}
                             className={`flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                              effectMode === 'neon'
-                                ? 'bg-fuchsia-100 text-fuchsia-700'
+                              effectMode === 'cosmic'
+                                ? 'bg-indigo-950 text-indigo-300'
                                 : 'text-gray-700 hover:bg-gray-50'
                             }`}
                           >
-                            <Zap className="w-4 h-4" />
-                            霓虹矩陣
+                            <Moon className="w-4 h-4" />
+                            深邃宇宙
                           </button>
                         )}
                       </div>
