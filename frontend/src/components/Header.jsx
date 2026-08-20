@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings, Bell, Zap, Package, Sparkles, Moon } from 'lucide-react'
+import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings, Bell, Zap, Package, Cpu, Terminal } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 import { useCoin } from '../contexts/CoinContext'
@@ -30,6 +30,64 @@ const getEffectModeStorageKey = (userId) => {
   return `${EFFECT_MODE_STORAGE_PREFIX}${userId}`
 }
 
+const MATRIX_STREAMS = [
+  '01001011 11010010 CRCRC 00110101 10100110',
+  '10110100 00101101 SYSTEM 11001010 01110100',
+  '00111001 11100100 ONLINE 01011011 10001101',
+  '11001001 01101010 MATRIX 10110100 00101110',
+  '01110110 10010011 ACCESS 01001101 11100010',
+  '10001101 00110110 SIGNAL 11010001 01001011',
+]
+
+const MATRIX_COLUMNS = Array.from({ length: 20 }, (_, index) => ({
+  id: index,
+  text: MATRIX_STREAMS[index % MATRIX_STREAMS.length],
+  left: `${2 + index * 5}%`,
+  delay: `${-((index * 0.83) % 9)}s`,
+  duration: `${7 + (index % 5) * 1.15}s`,
+}))
+
+const SiteEffectOverlay = ({ mode }) => {
+  if (mode !== 'tech' && mode !== 'neon') return null
+
+  return (
+    <div className={`site-effect-overlay site-effect-overlay--${mode}`} aria-hidden="true">
+      {mode === 'tech' ? (
+        <>
+          <div className="tech-hud-grid" />
+          <div className="tech-hud-scan" />
+          <div className="tech-hud-corner tech-hud-corner--top-left" />
+          <div className="tech-hud-corner tech-hud-corner--top-right" />
+          <div className="tech-hud-corner tech-hud-corner--bottom-left" />
+          <div className="tech-hud-corner tech-hud-corner--bottom-right" />
+          <div className="tech-hud-reticle"><span /><span /></div>
+          <div className="tech-hud-readout tech-hud-readout--left">CRCRC // HUD <strong>ONLINE</strong></div>
+          <div className="tech-hud-readout tech-hud-readout--right">SIGNAL 100% // 25.04</div>
+        </>
+      ) : (
+        <>
+          <div className="matrix-rain">
+            {MATRIX_COLUMNS.map((column) => (
+              <span
+                key={column.id}
+                style={{
+                  '--matrix-left': column.left,
+                  '--matrix-delay': column.delay,
+                  '--matrix-duration': column.duration,
+                }}
+              >
+                {column.text}<br />{column.text}<br />{column.text}
+              </span>
+            ))}
+          </div>
+          <div className="matrix-vignette" />
+          <div className="matrix-status">MATRIX // CRCRC // CONNECTED</div>
+        </>
+      )}
+    </div>
+  )
+}
+
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -47,8 +105,6 @@ const Header = () => {
   const userAvatar = resolveAvatarSrc(rawUserAvatar) || defaultAvatar
   
   // Reuse existing flags from DB but map them to new themes
-  // techEffectUnlocked -> Maps to Ethereal
-  // neonEffectUnlocked -> Maps to Cosmic
   const techEffectUnlocked = Boolean(user?.techEffectUnlocked || user?.tech_effect_unlocked)
   const neonEffectUnlocked = Boolean(user?.neonEffectUnlocked || user?.neon_effect_unlocked)
   const hasEffectUnlocked = techEffectUnlocked || neonEffectUnlocked
@@ -57,7 +113,7 @@ const Header = () => {
   const effectStorageKey = getEffectModeStorageKey(user?.id)
   
   const effectLabel =
-    effectMode === 'ethereal' ? '夢幻流光' : effectMode === 'cosmic' ? '深邃宇宙' : '特效關閉'
+    effectMode === 'tech' ? '科技感 HUD' : effectMode === 'neon' ? '霓虹矩陣' : '特效關閉'
 
   useEffect(() => {
     const handleDocClick = (event) => {
@@ -76,29 +132,28 @@ const Header = () => {
     if (!hasEffectUnlocked) {
       setEffectMode('none')
       if (typeof document !== 'undefined') {
-        document.body.classList.remove('mode-ethereal', 'mode-cosmic')
+        document.body.classList.remove('tech-mode', 'neon-mode', 'mode-ethereal', 'mode-cosmic')
       }
       return
     }
     
-    // Map legacy stored values to new values
     let storedMode = (localStorage.getItem(effectStorageKey) || '').toLowerCase()
-    if (storedMode === 'tech') storedMode = 'ethereal'
-    if (storedMode === 'neon') storedMode = 'cosmic'
+    if (storedMode === 'ethereal') storedMode = 'tech'
+    if (storedMode === 'cosmic') storedMode = 'neon'
     
     let nextMode = storedMode
     if (!nextMode) {
       const legacy = localStorage.getItem(techStorageKey)
-      nextMode = legacy === 'true' ? 'ethereal' : 'none'
+      nextMode = legacy === 'true' ? 'tech' : 'none'
     }
     
-    if (nextMode === 'ethereal' && !techEffectUnlocked) {
-      nextMode = neonEffectUnlocked ? 'cosmic' : 'none'
+    if (nextMode === 'tech' && !techEffectUnlocked) {
+      nextMode = neonEffectUnlocked ? 'neon' : 'none'
     }
-    if (nextMode === 'cosmic' && !neonEffectUnlocked) {
-      nextMode = techEffectUnlocked ? 'ethereal' : 'none'
+    if (nextMode === 'neon' && !neonEffectUnlocked) {
+      nextMode = techEffectUnlocked ? 'tech' : 'none'
     }
-    if (!['ethereal', 'cosmic'].includes(nextMode)) {
+    if (!['tech', 'neon'].includes(nextMode)) {
       nextMode = 'none'
     }
     setEffectMode(nextMode)
@@ -106,24 +161,24 @@ const Header = () => {
 
   useEffect(() => {
     if (typeof document === 'undefined') return
-    document.body.classList.remove('mode-ethereal', 'mode-cosmic')
+    document.body.classList.remove('tech-mode', 'neon-mode', 'mode-ethereal', 'mode-cosmic')
     if (!hasEffectUnlocked) {
       return
     }
-    if (effectMode === 'ethereal') {
-      document.body.classList.add('mode-ethereal')
-    } else if (effectMode === 'cosmic') {
-      document.body.classList.add('mode-cosmic')
+    if (effectMode === 'tech') {
+      document.body.classList.add('tech-mode')
+    } else if (effectMode === 'neon') {
+      document.body.classList.add('neon-mode')
     }
     localStorage.setItem(effectStorageKey, effectMode)
     // Legacy support
-    localStorage.setItem(techStorageKey, effectMode === 'ethereal' ? 'true' : 'false')
+    localStorage.setItem(techStorageKey, effectMode === 'tech' ? 'true' : 'false')
   }, [effectMode, hasEffectUnlocked, effectStorageKey, techStorageKey])
 
   useEffect(() => {
     return () => {
       if (typeof document !== 'undefined') {
-        document.body.classList.remove('mode-ethereal', 'mode-cosmic')
+        document.body.classList.remove('tech-mode', 'neon-mode', 'mode-ethereal', 'mode-cosmic')
       }
     }
   }, [])
@@ -140,6 +195,7 @@ const Header = () => {
 
   return (
     <>
+      <SiteEffectOverlay mode={hasEffectUnlocked ? effectMode : 'none'} />
       <header className="bg-white/95 backdrop-blur-custom border-b border-gray-200 sticky top-0 z-50 transition-colors duration-500">
         <div className="w-full px-4 md:px-8">
           <div className="relative flex items-center justify-between h-16 w-full">
@@ -183,18 +239,18 @@ const Header = () => {
                     type="button"
                     onClick={() => setIsEffectMenuOpen((prev) => !prev)}
                     className={`relative rounded-full p-2 transition-colors duration-200 ${
-                      effectMode === 'ethereal'
-                        ? 'bg-pink-100 text-pink-700 ring-2 ring-pink-300/60'
-                        : effectMode === 'cosmic'
-                          ? 'bg-indigo-950 text-indigo-300 ring-2 ring-indigo-500/60'
+                      effectMode === 'tech'
+                        ? 'bg-cyan-950 text-cyan-300 ring-2 ring-cyan-400/70'
+                        : effectMode === 'neon'
+                          ? 'bg-black text-emerald-300 ring-2 ring-emerald-400/70'
                           : 'text-gray-600 hover:text-cyan-600 hover:bg-cyan-50'
                     }`}
                     aria-expanded={isEffectMenuOpen}
                     aria-label="特效切換"
                     title={`特效切換：${effectLabel}`}
                   >
-                    {effectMode === 'ethereal' ? <Sparkles className="w-5 h-5" /> : 
-                     effectMode === 'cosmic' ? <Moon className="w-5 h-5" /> :
+                    {effectMode === 'tech' ? <Cpu className="w-5 h-5" /> :
+                     effectMode === 'neon' ? <Terminal className="w-5 h-5" /> :
                      <Zap className="w-5 h-5" />}
                   </button>
                   {isEffectMenuOpen && (
@@ -218,16 +274,16 @@ const Header = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            setEffectMode('ethereal')
+                            setEffectMode('tech')
                             setIsEffectMenuOpen(false)
                           }}
                           className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition mt-1 ${
-                            effectMode === 'ethereal'
-                              ? 'bg-pink-100 text-pink-700'
-                              : 'text-gray-600 hover:bg-pink-50 hover:text-pink-600'
+                            effectMode === 'tech'
+                              ? 'bg-cyan-950 text-cyan-300'
+                              : 'text-gray-600 hover:bg-cyan-50 hover:text-cyan-700'
                           }`}
                         >
-                          <span className="flex items-center gap-2"><Sparkles className="w-4 h-4" /> 夢幻流光</span>
+                          <span className="flex items-center gap-2"><Cpu className="w-4 h-4" /> 科技感 HUD</span>
                         </button>
                       )}
                       
@@ -235,16 +291,16 @@ const Header = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            setEffectMode('cosmic')
+                            setEffectMode('neon')
                             setIsEffectMenuOpen(false)
                           }}
                           className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition mt-1 ${
-                            effectMode === 'cosmic'
-                              ? 'bg-indigo-950 text-indigo-300'
-                              : 'text-gray-600 hover:bg-indigo-900 hover:text-indigo-300'
+                            effectMode === 'neon'
+                              ? 'bg-black text-emerald-300'
+                              : 'text-gray-600 hover:bg-emerald-950 hover:text-emerald-300'
                           }`}
                         >
-                          <span className="flex items-center gap-2"><Moon className="w-4 h-4" /> 深邃宇宙</span>
+                          <span className="flex items-center gap-2"><Terminal className="w-4 h-4" /> 霓虹矩陣</span>
                         </button>
                       )}
                     </div>
@@ -390,34 +446,34 @@ const Header = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              setEffectMode('ethereal')
+                              setEffectMode('tech')
                               setIsMenuOpen(false)
                             }}
                             className={`flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                              effectMode === 'ethereal'
-                                ? 'bg-pink-100 text-pink-700'
+                              effectMode === 'tech'
+                                ? 'bg-cyan-950 text-cyan-300'
                                 : 'text-gray-700 hover:bg-gray-50'
                             }`}
                           >
-                            <Sparkles className="w-4 h-4" />
-                            夢幻流光
+                            <Cpu className="w-4 h-4" />
+                            科技感 HUD
                           </button>
                         )}
                         {neonEffectUnlocked && (
                           <button
                             type="button"
                             onClick={() => {
-                              setEffectMode('cosmic')
+                              setEffectMode('neon')
                               setIsMenuOpen(false)
                             }}
                             className={`flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                              effectMode === 'cosmic'
-                                ? 'bg-indigo-950 text-indigo-300'
+                              effectMode === 'neon'
+                                ? 'bg-black text-emerald-300'
                                 : 'text-gray-700 hover:bg-gray-50'
                             }`}
                           >
-                            <Moon className="w-4 h-4" />
-                            深邃宇宙
+                            <Terminal className="w-4 h-4" />
+                            霓虹矩陣
                           </button>
                         )}
                       </div>
