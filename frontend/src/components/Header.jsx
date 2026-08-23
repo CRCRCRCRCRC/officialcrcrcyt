@@ -39,10 +39,10 @@ const MATRIX_STREAMS = [
   '10001101 00110110 SIGNAL 11010001 01001011',
 ]
 
-const MATRIX_COLUMNS = Array.from({ length: 20 }, (_, index) => ({
+const MATRIX_COLUMNS = Array.from({ length: 14 }, (_, index) => ({
   id: index,
   text: MATRIX_STREAMS[index % MATRIX_STREAMS.length],
-  left: `${2 + index * 5}%`,
+  left: `${2 + index * 7.4}%`,
   delay: `${-((index * 0.83) % 9)}s`,
   duration: `${7 + (index % 5) * 1.15}s`,
 }))
@@ -54,15 +54,9 @@ const SiteEffectOverlay = ({ mode }) => {
     <div className={`site-effect-overlay site-effect-overlay--${mode}`} aria-hidden="true">
       {mode === 'tech' ? (
         <>
+          <div className="tech-hud-glow" />
           <div className="tech-hud-grid" />
           <div className="tech-hud-scan" />
-          <div className="tech-hud-corner tech-hud-corner--top-left" />
-          <div className="tech-hud-corner tech-hud-corner--top-right" />
-          <div className="tech-hud-corner tech-hud-corner--bottom-left" />
-          <div className="tech-hud-corner tech-hud-corner--bottom-right" />
-          <div className="tech-hud-reticle"><span /><span /></div>
-          <div className="tech-hud-readout tech-hud-readout--left">CRCRC // HUD <strong>ONLINE</strong></div>
-          <div className="tech-hud-readout tech-hud-readout--right">SIGNAL 100% // 25.04</div>
         </>
       ) : (
         <>
@@ -81,7 +75,6 @@ const SiteEffectOverlay = ({ mode }) => {
             ))}
           </div>
           <div className="matrix-vignette" />
-          <div className="matrix-status">MATRIX // CRCRC // CONNECTED</div>
         </>
       )}
     </div>
