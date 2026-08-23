@@ -189,12 +189,12 @@ const Header = () => {
   return (
     <>
       <SiteEffectOverlay mode={hasEffectUnlocked ? effectMode : 'none'} />
-      <header className="bg-white/95 backdrop-blur-custom border-b border-gray-200 sticky top-0 z-50 transition-colors duration-500">
-        <div className="w-full px-4 md:px-8">
-          <div className="relative flex items-center justify-between h-16 w-full">
+      <header className="site-header bg-white/95 backdrop-blur-custom border-b border-gray-200 sticky top-0 z-50 transition-colors duration-500">
+        <div className="site-header-inner w-full px-4 md:px-8">
+          <div className="site-header-bar relative flex items-center justify-between h-16 w-full">
             {/* Logo - 最左邊 */}
-            <Link to="/" className="flex items-center space-x-2 z-10">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
+            <Link to="/" className="site-brand flex items-center space-x-2 z-10">
+              <div className="site-brand-mark w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">CR</span>
               </div>
               <div className="flex items-center space-x-1">
@@ -205,12 +205,12 @@ const Header = () => {
 
             {/* Desktop Navigation - 絕對置中 */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <nav className="hidden md:flex items-center space-x-8">
+              <nav className="site-nav hidden md:flex items-center space-x-8">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`flex items-center justify-center px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-lg ${
+                    className={`site-nav-link ${isActive(item.href) ? 'is-active' : ''} flex items-center justify-center px-4 py-2 text-sm font-medium transition-colors duration-200 rounded-lg ${
                       isActive(item.href)
                         ? 'text-primary-600 bg-primary-50'
                         : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
@@ -223,7 +223,7 @@ const Header = () => {
             </div>
 
             {/* Social Links & Mobile Menu Button - 最右邊 */}
-            <div className="flex items-center space-x-4 z-10">
+            <div className="site-header-actions flex items-center space-x-4 z-10">
             {/* Social Links */}
             <div className="hidden sm:flex items-center space-x-3">
               {hasEffectUnlocked && (
@@ -231,7 +231,7 @@ const Header = () => {
                   <button
                     type="button"
                     onClick={() => setIsEffectMenuOpen((prev) => !prev)}
-                    className={`relative rounded-full p-2 transition-colors duration-200 ${
+                    className={`site-effect-trigger relative rounded-full p-2 transition-colors duration-200 ${
                       effectMode === 'tech'
                         ? 'bg-cyan-950 text-cyan-300 ring-2 ring-cyan-400/70'
                         : effectMode === 'neon'
@@ -247,7 +247,7 @@ const Header = () => {
                      <Zap className="w-5 h-5" />}
                   </button>
                   {isEffectMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 rounded-xl border border-gray-200 bg-white/95 p-2 shadow-lg backdrop-blur z-[100]">
+                    <div className="site-dropdown site-effect-dropdown absolute right-0 mt-2 w-48 rounded-xl border border-gray-200 bg-white/95 p-2 shadow-lg backdrop-blur z-[100]">
                       <button
                         type="button"
                         onClick={() => {
@@ -302,7 +302,7 @@ const Header = () => {
               )}
               <Link
                 to="/notifications"
-                className="relative rounded-full p-2 text-gray-600 hover:text-primary-600 transition-colors duration-200"
+                className="site-icon-button relative rounded-full p-2 text-gray-600 hover:text-primary-600 transition-colors duration-200"
                 aria-label="通知中心"
               >
                   <Bell className="w-5 h-5" />
@@ -314,7 +314,7 @@ const Header = () => {
                 {user ? (
                   <div className="relative" ref={userMenuRef}>
                     <button
-                      className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100"
+                      className="site-user-trigger flex items-center gap-2 p-1 rounded-full hover:bg-gray-100"
                       onClick={() => setIsUserMenuOpen((open) => !open)}
                     >
                       <img
@@ -329,7 +329,7 @@ const Header = () => {
                       <ChevronDown className="w-4 h-4 text-gray-500" />
                     </button>
                     {isUserMenuOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg p-2 z-50">
+                      <div className="site-dropdown site-user-dropdown absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg p-2 z-50">
                         <Link
                           to="/profile"
                           className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-50 rounded"
@@ -367,7 +367,7 @@ const Header = () => {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMenuOpen((open) => !open)}
-                className="md:hidden p-2 text-gray-600 hover:text-gray-900 transition-colors duration-200"
+                className="site-icon-button site-mobile-toggle md:hidden p-2 text-gray-600 hover:text-gray-900 transition-colors duration-200"
                 aria-label="Toggle menu"
               >
                 {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -383,7 +383,7 @@ const Header = () => {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.1 }}
-                className="md:hidden border-t border-gray-200 bg-white"
+                className="site-mobile-nav md:hidden border-t border-gray-200 bg-white"
               >
                 <div className="py-4 space-y-2">
                   {navigation.map((item) => (

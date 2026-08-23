@@ -5,13 +5,13 @@ const Footer = () => {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="bg-secondary-900 text-white">
-      <div className="container-custom py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="site-footer bg-secondary-900 text-white">
+      <div className="site-footer-inner container-custom py-12">
+        <div className="site-footer-grid grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
-          <div className="col-span-1 md:col-span-2">
-            <Link to="/" className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
+          <div className="site-footer-brand col-span-1 md:col-span-2">
+            <Link to="/" className="site-brand flex items-center space-x-2 mb-4">
+              <div className="site-brand-mark w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">CR</span>
               </div>
               <span className="text-xl font-display font-bold">CRCRC</span>
@@ -103,7 +103,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom */}
-        <div className="border-t border-gray-700 mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between">
+        <div className="site-footer-bottom border-t border-gray-700 mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between">
           <p className="text-gray-400 text-sm">
             © {currentYear} CRCRC. 版權所有。
           </p>
