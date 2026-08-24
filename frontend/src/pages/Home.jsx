@@ -2,55 +2,25 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useInView } from 'react-intersection-observer'
-import { Play, Youtube, Eye, Star, Sparkles, Music, Heart, TrendingUp, Megaphone, Calendar, ChevronRight, ArrowRight, Users } from 'lucide-react'
-import { videoAPI, channelAPI, settingsAPI, announcementAPI } from '../services/api'
+import { Play, Eye, Star, Sparkles, Heart, TrendingUp, Megaphone, Calendar, ChevronRight, ArrowRight, Users } from 'lucide-react'
+import { channelAPI, announcementAPI } from '../services/api'
 // import youtubeService from '../services/youtube' // 不再使用前端 YouTube 服務
 import LoadingSpinner from '../components/LoadingSpinner'
-import YouTubePlayer from '../components/YouTubePlayer'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { formatDuration, formatNumber, decodeHtmlEntities, getThumbnailUrl } from '../utils/formatters'
+import { formatNumber, decodeHtmlEntities } from '../utils/formatters'
 
 const Home = () => {
-  const [featuredVideos, setFeaturedVideos] = useState([])
-  const [channelInfo, setChannelInfo] = useState({})
   const [stats, setStats] = useState({})
   const [announcements, setAnnouncements] = useState([])
   const [loading, setLoading] = useState(true)
-  const [playerOpen, setPlayerOpen] = useState(false)
-  const [currentVideoId, setCurrentVideoId] = useState('')
-  const [currentVideoTitle, setCurrentVideoTitle] = useState('')
-  const [thumbnailQuality, setThumbnailQuality] = useState('maxres')
-
-
-
-  // 播放影片
-  const playVideo = (video) => {
-    setCurrentVideoId(video.id || video.youtube_id)
-    setCurrentVideoTitle(decodeHtmlEntities(video.title))
-    setPlayerOpen(true)
-  }
 
   const [heroRef, heroInView] = useInView({ threshold: 0.1, triggerOnce: true })
   const [statsRef, statsInView] = useInView({ threshold: 0.1, triggerOnce: true })
-  const [videosRef, videosInView] = useInView({ threshold: 0.1, triggerOnce: true })
-
-
   useEffect(() => {
     const fetchData = async () => {
       try {
         console.log('正在獲取數據...')
-
-        // 首先嘗試獲取設定的熱門影片
-        let featuredVideo = null
-        try {
-          const featuredResponse = await settingsAPI.getFeaturedVideo()
-          featuredVideo = featuredResponse.data.featuredVideo
-          setThumbnailQuality(featuredResponse.data.thumbnailQuality || 'maxres')
-          console.log('設定的熱門影片:', featuredVideo)
-        } catch (error) {
-          console.log('沒有設定熱門影片，使用預設')
-        }
 
         const dashboardResponse = await channelAPI.getPublicData()
         const data = dashboardResponse.data
@@ -68,15 +38,6 @@ const Home = () => {
           setAnnouncements([])
         }
 
-        // 設置 YouTube 數據
-        setChannelInfo({
-          name: data.channelTitle || 'CRCRC',
-          description: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！',
-          subscriber_count: parseInt(data.subscriberCount) || 0,
-          video_count: parseInt(data.totalVideos) || 0,
-          view_count: parseInt(data.totalViews) || 0
-        })
-
         setStats({
           totalVideos: parseInt(data.totalVideos) || 0,
           totalViews: parseInt(data.totalViews) || 0,
@@ -84,50 +45,16 @@ const Home = () => {
           totalLikes: data.latestVideos?.reduce((sum, video) => sum + (video.likeCount || 0), 0) || 0
         })
 
-        // 設置熱門影片：優先使用設定的，否則使用第一個影片
-        if (featuredVideo) {
-          console.log('使用設定的熱門影片:', featuredVideo.title)
-          setFeaturedVideos([featuredVideo])
-        } else if (data.latestVideos && data.latestVideos.length > 0) {
-          console.log('使用最新影片作為熱門影片:', data.latestVideos[0].title)
-          setFeaturedVideos([data.latestVideos[0]])
-        } else {
-          // 如果還沒有熱門影片，嘗試從數據庫獲取精選影片
-          console.log('沒有可用的影片，嘗試獲取精選影片')
-          try {
-            const featuredVideosResponse = await videoAPI.getFeaturedVideos()
-            if (featuredVideosResponse.data && featuredVideosResponse.data.length > 0) {
-              console.log('使用精選影片作為熱門影片:', featuredVideosResponse.data[0].title)
-              setFeaturedVideos([featuredVideosResponse.data[0]])
-            } else {
-              console.log('沒有精選影片')
-              setFeaturedVideos([])
-            }
-          } catch (videoError) {
-            console.log('獲取精選影片失敗:', videoError)
-            setFeaturedVideos([])
-          }
-        }
-
         console.log('YouTube 數據獲取成功:', data)
 
       } catch (error) {
         console.error('獲取 YouTube 數據失敗:', error)
-        // 設置空數據
-        setChannelInfo({
-          name: 'CRCRC',
-          description: '創作空耳與荒野亂鬥內容的頻道，歡迎訂閱！',
-          subscriber_count: 0,
-          video_count: 0,
-          view_count: 0
-        })
         setStats({
           totalVideos: 0,
           totalViews: 0,
           totalSubscribers: 0,
           totalLikes: 0
         })
-        setFeaturedVideos([])
       } finally {
         setLoading(false)
       }
@@ -440,165 +367,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Featured Videos Section */}
-      <section ref={videosRef} className="py-24 relative overflow-hidden">
-        {/* 背景裝飾 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-white/35 to-blue-500/10"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.55),transparent_60%)]"></div>
-        <div className="absolute top-20 left-20 w-64 h-64 bg-gradient-to-r from-blue-200/30 to-purple-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 right-20 w-80 h-80 bg-gradient-to-r from-pink-200/30 to-yellow-200/30 rounded-full blur-3xl"></div>
-
-        <div className="relative container-custom">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={videosInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-          >
-            {/* 標題區塊 */}
-            <div className="text-center mb-16">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={videosInView ? { opacity: 1, scale: 1 } : {}}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="inline-flex items-center space-x-2 bg-gradient-to-r from-primary-500 to-pink-500 rounded-full px-6 py-2 text-white font-medium mb-6"
-              >
-                <Star className="w-5 h-5 animate-pulse" />
-                <span>精選作品</span>
-                <Sparkles className="w-5 h-5 animate-bounce" />
-              </motion.div>
-
-              <h2 className="text-4xl md:text-6xl font-display font-black text-gradient mb-6">
-                熱門影片
-              </h2>
-              <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                探索我們最受歡迎的作品
-              </p>
-            </div>
-
-            {featuredVideos.length > 0 ? (
-              <div className="max-w-4xl mx-auto">
-                {featuredVideos.map((video, index) => (
-                  <motion.div
-                    key={video.id}
-                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                    animate={videosInView ? { opacity: 1, y: 0, scale: 1 } : {}}
-                    transition={{ duration: 0.8, delay: index * 0.15 }}
-                    className="group"
-                  >
-                    <div className="card-gradient p-2 card-hover group-hover:shadow-[0_10px_60px_rgba(236,72,153,0.25)]">
-                      {/* 影片縮圖 */}
-                      <div className="relative overflow-hidden rounded-2xl aspect-video">
-                        <img
-                          src={getThumbnailUrl(video, thumbnailQuality)}
-                          alt={decodeHtmlEntities(video.title) || '無標題'}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                          onError={(e) => {
-                            // 如果指定解析度失敗，嘗試降級
-                            const fallbackUrl = getThumbnailUrl(video, 'high')
-                            if (e.target.src !== fallbackUrl) {
-                              e.target.src = fallbackUrl
-                            }
-                          }}
-                        />
-
-                        {/* 播放覆蓋層 */}
-                        <div
-                          className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer"
-                          onClick={() => playVideo(video)}
-                        >
-                          <motion.div
-                            className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            <Play className="w-8 h-8 text-white ml-1" />
-                          </motion.div>
-                        </div>
-
-                        {/* 時長標籤 */}
-                        {video.duration && (
-                          <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-sm text-white text-xs px-3 py-1 rounded-full font-medium">
-                            {formatDuration(video.duration)}
-                          </div>
-                        )}
-
-                        {/* 熱門標籤 */}
-                        <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-3 py-1 rounded-full font-bold flex items-center space-x-1">
-                          <TrendingUp className="w-3 h-3" />
-                          <span>熱門</span>
-                        </div>
-                      </div>
-
-                      {/* 內容區塊 */}
-                      <div className="p-6">
-                        <h3 className="font-bold text-gray-900 mb-3 line-clamp-2 text-lg group-hover:text-primary-600 transition-colors duration-300">
-                          {decodeHtmlEntities(video.title) || '無標題'}
-                        </h3>
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2 leading-relaxed">
-                          {decodeHtmlEntities(video.description) || '暫無描述'}
-                        </p>
-
-                        {/* 底部資訊 */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2 text-sm text-gray-500">
-                            <Eye className="w-4 h-4" />
-                            <span>{formatNumber(video.view_count || 0)} 次觀看</span>
-                          </div>
-                          <Link
-                            to={`/videos/${video.id}`}
-                            className="btn-small bg-gradient-to-r from-primary-500 to-pink-500 text-white hover:from-primary-600 hover:to-pink-600 group-hover:shadow-lg transition-all duration-300"
-                          >
-                            觀看
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={videosInView ? { opacity: 1, scale: 1 } : {}}
-                transition={{ duration: 0.8 }}
-                className="text-center py-16"
-              >
-                <div className="card-glass p-12 max-w-md mx-auto">
-                  <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">暫無精選影片</p>
-                  <p className="text-gray-400 text-sm mt-2">敬請期待更多精彩內容</p>
-                </div>
-              </motion.div>
-            )}
-
-            {/* CTA 按鈕 */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={videosInView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex justify-center mt-16"
-            >
-              <a
-                href="https://youtube.com/@officialcrcrcyt"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary-500 via-purple-500 to-pink-500 text-white font-bold text-lg rounded-2xl hover:from-primary-600 hover:via-purple-600 hover:to-pink-600 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 group"
-              >
-                <span>前往 YouTube</span>
-              </a>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-
-      {/* YouTube 播放器 */}
-      <YouTubePlayer
-        videoId={currentVideoId}
-        isOpen={playerOpen}
-        onClose={() => setPlayerOpen(false)}
-        title={currentVideoTitle}
-      />
     </div>
   )
 }
