@@ -269,21 +269,6 @@ const Home = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-white/40 to-pink-500/10"></div>
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.6),transparent_60%)]"></div>
         <div className="relative container-custom">
-          {/* 標題 */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={statsInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-display font-bold text-gradient mb-4">
-              我們的成就
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              用數字見證我們的創作熱情與觀眾的喜愛
-            </p>
-          </motion.div>
-
           {/* 統計卡片 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
