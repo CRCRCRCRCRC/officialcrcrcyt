@@ -1,9 +1,7 @@
 import { Link } from 'react-router-dom'
-import { Youtube, MessageCircle, Heart } from 'lucide-react'
+import { Youtube, MessageCircle } from 'lucide-react'
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear()
-
   return (
     <footer className="site-footer bg-secondary-900 text-white">
       <div className="site-footer-inner container-custom py-12">
@@ -102,17 +100,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom */}
-        <div className="site-footer-bottom border-t border-gray-700 mt-8 pt-8 flex flex-col sm:flex-row items-center justify-between">
-          <p className="text-gray-400 text-sm">
-            © {currentYear} CRCRC. 版權所有。
-          </p>
-          <div className="flex items-center space-x-1 text-gray-400 text-sm mt-4 sm:mt-0">
-            <span>Made with</span>
-            <Heart className="w-4 h-4 text-primary-500" />
-            <span>by CRCRC Team</span>
-          </div>
-        </div>
       </div>
     </footer>
   )
