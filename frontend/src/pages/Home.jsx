@@ -172,9 +172,9 @@ const Home = () => {
       {/* Announcements Section */}
       {announcements.length > 0 && (
         <section className="py-24 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-white/20 to-purple-500/10" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.25),transparent_60%)]" />
-          <div className="container-custom">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/10 via-white/20 to-purple-500/10" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.25),transparent_60%)]" />
+          <div className="relative z-10 container-custom">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}

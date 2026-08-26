@@ -2177,6 +2177,60 @@ body:is(.tech-mode, .neon-mode) main tbody tr:hover {
   background: rgba(var(--fx-accent-rgb), 0.055) !important;
 }
 
+body:is(.tech-mode, .neon-mode) .markdown-content {
+  color: var(--fx-text) !important;
+}
+
+body:is(.tech-mode, .neon-mode) .markdown-content :is(h1, h2, h3, h4, h5, h6, p, li, strong, th, td) {
+  color: var(--fx-text) !important;
+}
+
+body:is(.tech-mode, .neon-mode) .markdown-content em {
+  color: var(--fx-muted) !important;
+}
+
+body:is(.tech-mode, .neon-mode) .markdown-content blockquote {
+  color: var(--fx-muted) !important;
+  border-left-color: var(--fx-accent) !important;
+  background: var(--fx-surface-soft) !important;
+}
+
+body:is(.tech-mode, .neon-mode) .markdown-content code {
+  color: #ffb4d6 !important;
+  background: rgba(var(--fx-accent-rgb), 0.1) !important;
+}
+
+body:is(.tech-mode, .neon-mode) .markdown-content pre {
+  color: #eafff2 !important;
+  border: 1px solid var(--fx-border);
+  background: #020a0f !important;
+}
+
+body:is(.tech-mode, .neon-mode) .markdown-content pre code {
+  color: inherit !important;
+  background: transparent !important;
+}
+
+body:is(.tech-mode, .neon-mode) .markdown-content a {
+  color: var(--fx-accent) !important;
+}
+
+body:is(.tech-mode, .neon-mode) .markdown-content a:hover {
+  color: var(--fx-text) !important;
+}
+
+body:is(.tech-mode, .neon-mode) .markdown-content :is(th, td) {
+  border-color: var(--fx-border) !important;
+}
+
+body:is(.tech-mode, .neon-mode) .markdown-content th {
+  background: var(--fx-surface-soft) !important;
+}
+
+body:is(.tech-mode, .neon-mode) .markdown-content hr {
+  border-top-color: var(--fx-border) !important;
+}
+
 body.tech-mode main :is(span, div)[class*="rounded-full"][class*="text-xs"] {
   border: 1px solid rgba(88, 217, 255, 0.22);
   border-radius: 5px !important;
