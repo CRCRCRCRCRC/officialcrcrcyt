@@ -232,12 +232,11 @@ const AnnouncementDetail = () => {
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
             <div className="p-8 md:p-12">
               <div className="prose prose-lg max-w-none">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  className="markdown-content"
-                >
-                  {announcement.content}
-                </ReactMarkdown>
+                <div className="announcement-markdown markdown-content">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {announcement.content}
+                  </ReactMarkdown>
+                </div>
               </div>
             </div>
           </div>

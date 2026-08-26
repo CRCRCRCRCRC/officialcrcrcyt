@@ -2231,6 +2231,32 @@ body:is(.tech-mode, .neon-mode) .markdown-content hr {
   border-top-color: var(--fx-border) !important;
 }
 
+body.tech-mode .announcement-markdown,
+body.tech-mode .announcement-markdown :is(h1, h2, h3, h4, h5, h6, p, li, strong, em, span) {
+  color: #edfaff !important;
+  opacity: 1 !important;
+}
+
+body.neon-mode .announcement-markdown,
+body.neon-mode .announcement-markdown :is(h1, h2, h3, h4, h5, h6, p, li, strong, em, span) {
+  color: #edfff4 !important;
+  opacity: 1 !important;
+}
+
+body.tech-mode .announcement-markdown a {
+  color: #6fe4ff !important;
+  text-decoration-color: rgba(111, 228, 255, 0.62);
+}
+
+body.neon-mode .announcement-markdown a {
+  color: #70ffac !important;
+  text-decoration-color: rgba(112, 255, 172, 0.62);
+}
+
+body:is(.tech-mode, .neon-mode) .announcement-markdown :is(code, pre, blockquote, th, td) {
+  opacity: 1 !important;
+}
+
 body.tech-mode main :is(span, div)[class*="rounded-full"][class*="text-xs"] {
   border: 1px solid rgba(88, 217, 255, 0.22);
   border-radius: 5px !important;
