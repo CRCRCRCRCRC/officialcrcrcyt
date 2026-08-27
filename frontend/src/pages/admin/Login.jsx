@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CornerDownLeft, LoaderCircle, LockKeyhole } from 'lucide-react'
+import { CornerDownLeft, Loader2, LockKeyhole } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GoogleLoginButton from '../../components/GoogleLoginButton'
 import { useAuth } from '../../contexts/AuthContext'
@@ -97,7 +97,7 @@ const Login = () => {
               exit={{ opacity: 0 }}
               className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl"
             >
-              <LoaderCircle className="h-6 w-6 animate-spin text-indigo-200" />
+              <Loader2 className="h-6 w-6 animate-spin text-indigo-200" />
             </motion.div>
           ) : !challenge ? (
             <motion.div
@@ -150,7 +150,7 @@ const Login = () => {
                     className="flex h-10 w-10 shrink-0 items-center justify-center text-slate-600 transition-colors hover:text-cyan-100 focus:outline-none focus-visible:text-cyan-100 disabled:cursor-default disabled:hover:text-slate-600 group-focus-within:text-cyan-200"
                   >
                     {isSubmitting ? (
-                      <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
+                      <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
                     ) : (
                       <CornerDownLeft className="h-5 w-5" aria-hidden="true" />
                     )}

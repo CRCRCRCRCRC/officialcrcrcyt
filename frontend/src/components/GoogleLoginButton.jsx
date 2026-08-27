@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { LoaderCircle } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const GoogleMark = () => (
@@ -83,7 +83,7 @@ const GoogleLoginButton = ({ onCode, className = '', disabled = false }) => {
     <button type="button" onClick={handleClick} disabled={isDisabled} className={buttonClass}>
       <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-indigo-100/70 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
       <span className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
-        {requesting || !googleReady ? <LoaderCircle className="h-5 w-5 animate-spin text-indigo-500" /> : <GoogleMark />}
+        {requesting || !googleReady ? <Loader2 className="h-5 w-5 animate-spin text-indigo-500" /> : <GoogleMark />}
       </span>
       <span className="relative">使用 Google 繼續</span>
     </button>
