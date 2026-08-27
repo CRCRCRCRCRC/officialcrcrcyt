@@ -107,9 +107,9 @@ const Home = () => {
               className="flex flex-wrap items-center justify-center gap-4 mb-12"
             >
               {[
-                { icon: Heart, text: "創意無限", color: "from-pink-400 to-red-400" },
-                { icon: TrendingUp, text: "熱門推薦", color: "from-green-400 to-blue-400" },
-                { icon: Star, text: "品質保證", color: "from-yellow-400 to-orange-400" },
+                { icon: Heart, text: "哈哈哈", color: "from-pink-400 to-red-400" },
+                { icon: TrendingUp, text: "特別好吃（?", color: "from-green-400 to-blue-400" },
+                { icon: Star, text: "嘿嘿嘿", color: "from-yellow-400 to-orange-400" },
               ].map((item, index) => (
                 <motion.div
                   key={index}
