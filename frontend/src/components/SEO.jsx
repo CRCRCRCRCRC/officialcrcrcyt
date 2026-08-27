@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import { toAbsoluteSiteUrl } from '../config/site'
 
 const SEO = ({
   title,
   description,
   keywords,
-  image = 'https://officialcrcrc.vercel.app/og-image.png',
+  image = toAbsoluteSiteUrl('/og-image.png'),
   type = 'website',
   canonicalUrl,
   author,
@@ -14,8 +15,8 @@ const SEO = ({
   structuredData
 }) => {
   const location = useLocation()
-  const baseUrl = 'https://officialcrcrc.vercel.app'
-  const fullUrl = canonicalUrl || `${baseUrl}${location.pathname}`
+  const fullUrl = toAbsoluteSiteUrl(canonicalUrl || location.pathname)
+  const fullImage = toAbsoluteSiteUrl(image)
   const fullTitle = title ? `${title} - CRCRC 官方網站` : 'CRCRC 官方網站 - 空耳歌詞、K-pop 翻唱與遊戲社群'
   const fullDescription = description || 'CRCRC 官方網站 - 提供最新空耳歌詞、K-pop 空耳翻唱、荒野亂鬥遊戲內容。與社群互動、參與排行榜競賽，獲得 CRCR 幣獎勵！'
   const fullKeywords = keywords || 'CRCRC, 空耳歌詞, soramimi, K-pop 空耳, 歌詞翻譯, 荒野亂鬥, Brawl Stars, YouTube 創作者, 音樂翻唱'
@@ -71,7 +72,7 @@ const SEO = ({
     setMetaProperty('og:url', fullUrl)
     setMetaProperty('og:title', fullTitle)
     setMetaProperty('og:description', fullDescription)
-    setMetaProperty('og:image', image)
+    setMetaProperty('og:image', fullImage)
     setMetaProperty('og:site_name', 'CRCRC 官方網站')
     setMetaProperty('og:locale', 'zh_TW')
 
@@ -83,7 +84,7 @@ const SEO = ({
     setMetaTag('twitter:url', fullUrl)
     setMetaTag('twitter:title', fullTitle)
     setMetaTag('twitter:description', fullDescription)
-    setMetaTag('twitter:image', image)
+    setMetaTag('twitter:image', fullImage)
     setMetaTag('twitter:creator', '@officialcrcrcyt')
 
     // JSON-LD 結構化數據
@@ -103,7 +104,7 @@ const SEO = ({
       // 恢復默認 title
       document.title = 'CRCRC 官方網站'
     }
-  }, [fullTitle, fullDescription, fullKeywords, fullUrl, image, type, author, publishedTime, modifiedTime, structuredData])
+  }, [fullTitle, fullDescription, fullKeywords, fullUrl, fullImage, type, author, publishedTime, modifiedTime, structuredData])
 
   return null
 }

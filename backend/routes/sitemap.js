@@ -1,13 +1,38 @@
 const express = require('express');
 const router = express.Router();
 const database = require('../config/database');
+const { getSiteUrl } = require('../config/site');
+
+router.get('/robots.txt', (req, res) => {
+  const baseUrl = getSiteUrl();
+  const robots = [
+    'User-agent: *',
+    'Allow: /',
+    'Allow: /lyrics',
+    'Allow: /lyrics/*',
+    'Allow: /announcements',
+    'Allow: /leaderboard',
+    'Allow: /profile',
+    '',
+    'Disallow: /admin',
+    'Disallow: /api/',
+    'Disallow: /login',
+    'Disallow: /auth',
+    'Disallow: /profile/settings',
+    'Disallow: /notifications',
+    '',
+    `Sitemap: ${baseUrl}/sitemap.xml`,
+    ''
+  ].join('\n');
+
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.type('text/plain').send(robots);
+});
 
 // 生成 sitemap.xml
 router.get('/sitemap.xml', async (req, res) => {
   try {
-    const baseUrl = (process.env.FRONTEND_URL || process.env.SITE_URL || 'https://officialcrcrc.vercel.app')
-      .trim()
-      .replace(/\/+$/, '');
+    const baseUrl = getSiteUrl();
     const currentDate = new Date().toISOString().split('T')[0];
 
     // 靜態頁面

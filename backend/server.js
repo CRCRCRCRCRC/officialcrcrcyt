@@ -23,6 +23,7 @@ const artistsRoutes = require('./routes/artists');
 const lyricCommentsRoutes = require('./routes/lyricComments');
 const sitemapRoutes = require('./routes/sitemap');
 const database = require('./config/database');
+const { getSiteUrl, toSiteOrigin } = require('./config/site');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -36,14 +37,17 @@ const buildCorsOrigins = () => {
   }
 
   const origins = new Set();
-  const frontendUrl = (process.env.FRONTEND_URL || '').trim();
-  const vercelUrl = (process.env.VERCEL_URL || '').trim();
+  const candidates = [
+    process.env.FRONTEND_URL,
+    process.env.SITE_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_URL,
+    getSiteUrl()
+  ];
 
-  if (frontendUrl) origins.add(frontendUrl);
-  if (vercelUrl) origins.add(`https://${vercelUrl}`);
-
-  if (!origins.size) {
-    origins.add('https://officialcrcrc.vercel.app');
+  for (const candidate of candidates) {
+    const origin = toSiteOrigin(candidate);
+    if (origin) origins.add(origin);
   }
 
   return Array.from(origins);
