@@ -57,11 +57,17 @@ const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ error: '用戶不存在' });
     }
 
+    // 管理員權杖必須由新版 Google + 密碼流程核發；舊權杖與公開網站權杖一律不得取得管理員角色。
+    let effectiveRole = decoded.role || user.role || 'user';
+    if (effectiveRole === 'admin' && decoded.authMethod !== 'google-password') {
+      effectiveRole = 'user';
+    }
+
     // 確保用戶對象包含所有必要的屬性
     const fullUser = {
       id: user.id,
       username: user.username,
-      role: decoded.role || user.role || 'user',  // 優先使用 JWT 中的角色，否則使用資料庫角色，默認為 'user'
+      role: effectiveRole,
       display_name: user.display_name || user.displayName,
       avatar_url: user.avatar_url || user.avatarUrl,
       email: user.email || user.username

@@ -130,10 +130,10 @@ const authHeaderForCoin = () => {
 export const authAPI = {
   login: (username, password) =>
     api.post('/auth/login', { username, password }),
-  loginWithGoogle: (id_token) =>
-    api.post('/auth/google', { id_token }),
-  loginWithGoogleCode: (code, passphrase) =>
-    api.post('/auth/google-code', { code, passphrase }),
+  beginAdminGoogleLogin: (code) =>
+    api.post('/auth/google-admin/start', { code }),
+  completeAdminGoogleLogin: (challenge, password) =>
+    api.post('/auth/google-admin/complete', { challenge, password }),
   loginWithGooglePublic: (code) =>
     api.post('/auth/google-public', { code }),
 

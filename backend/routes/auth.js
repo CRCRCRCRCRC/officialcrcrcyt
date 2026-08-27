@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const crypto = require('crypto');
 const database = require('../config/database');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -107,6 +108,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: '用戶名或密碼錯誤' });
     }
 
+    if (user.role === 'admin') {
+      return res.status(403).json({ error: '管理員請使用 Google 雙重驗證登入' });
+    }
+
     let jwtSecret;
     try {
       jwtSecret = getJwtSecret('JWT_SECRET');
@@ -139,7 +144,7 @@ router.get('/verify', authenticateToken, async (req, res) => {
     const freshUser = await ensurePublicId(req.user.id);
     res.json({
       valid: true,
-      user: sanitizeUser(freshUser || req.user)
+      user: sanitizeUser(freshUser || req.user, { role: req.user.role })
     });
   } catch (error) {
     console.error('驗證使用者失敗:', error);
@@ -151,7 +156,7 @@ router.get('/verify', authenticateToken, async (req, res) => {
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const freshUser = await ensurePublicId(req.user.id);
-    res.json({ user: sanitizeUser(freshUser || req.user) });
+    res.json({ user: sanitizeUser(freshUser || req.user, { role: req.user.role }) });
   } catch (error) {
     console.error('取得個人資料失敗:', error);
     res.status(500).json({ error: '取得個人資料失敗' });
@@ -262,175 +267,205 @@ const ensureUserProfile = async (user, displayName, avatarUrl, email) => {
   return sanitizeUser(await ensurePublicId(user.id), { email, name: displayName, picture: avatarUrl });
 };
 
-// Google 登入（使用 id_token）
-router.post('/google', async (req, res) => {
-  try {
-    const { id_token } = req.body;
-    if (!id_token) {
-      return res.status(400).json({ error: '缺少 id_token' });
-    }
+const createRouteError = (status, message, code) => {
+  const error = new Error(message);
+  error.status = status;
+  error.code = code;
+  return error;
+};
 
-    const tokenInfoRes = await axios.get('https://oauth2.googleapis.com/tokeninfo', {
-      params: { id_token }
-    });
-    const info = tokenInfoRes.data;
+const getAdminChallengeSecret = () =>
+  crypto
+    .createHmac('sha256', getJwtSecret('JWT_SECRET'))
+    .update('crcrc-admin-login-challenge-v1')
+    .digest('hex');
 
-    if (info.aud !== process.env.GOOGLE_CLIENT_ID) {
-      return res.status(401).json({ error: '無效的 Google 憑證 (aud 不匹配)' });
-    }
-    if (info.email_verified !== 'true') {
-      return res.status(401).json({ error: 'Google 帳號尚未驗證 email' });
-    }
+const secureTextEquals = (left, right) => {
+  const digest = (value) => crypto.createHash('sha256').update(String(value)).digest();
+  return crypto.timingSafeEqual(digest(left), digest(right));
+};
 
-    const email = info.email;
-    const name = info.name || email.split('@')[0];
-    const picture = info.picture || '';
+const exchangeGoogleCode = async (code) => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
-    const adminEmails = getAdminEmailAllowlist();
-    if (!adminEmails.length) {
-      return res.status(500).json({ error: '伺服器未設定 ADMIN_GOOGLE_EMAILS' });
-    }
-    if (!adminEmails.includes(email.toLowerCase())) {
-      return res.status(403).json({ error: '不允許的管理員帳號' });
-    }
-
-    await database.initializeData();
-
-    let user = await database.getUserByUsername(email);
-    const desiredRole = 'admin';
-    if (!user) {
-      const randomPassword = await bcrypt.hash(`oauth_google_${Date.now()}`, 10);
-      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
-      user = { id: userId, username: email, role: desiredRole };
-    } else if (user.role !== desiredRole) {
-      try {
-        await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole });
-      } catch (error) {
-        console.warn('更新使用者角色失敗:', error.message);
-      }
-      user.role = desiredRole;
-    }
-
-    const sanitizedUser = await ensureAdminProfile(user, name, picture);
-
-    let jwtSecret;
-    try {
-      jwtSecret = getJwtSecret('JWT_SECRET');
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
-
-    const token = jwt.sign(
-      { userId: user.id, username: user.username, role: user.role, name: sanitizedUser.displayName, picture: sanitizedUser.avatarUrl },
-      jwtSecret,
-      { expiresIn: '24h' }
-    );
-
-    res.json({ message: 'Google 登入成功', token, user: sanitizedUser });
-  } catch (error) {
-    console.error('Google 登入錯誤:', error.response?.data || error.message);
-    res.status(401).json({ error: 'Google 登入失敗：' + (error.response?.data?.error_description || error.message) });
+  if (!clientId || !clientSecret) {
+    throw createRouteError(500, '伺服器未設定 GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET');
   }
-});
 
-// Google OAuth 授權碼登入（需 client_id + client_secret）
-router.post('/google-code', async (req, res) => {
+  const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
+    code,
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: 'postmessage',
+    grant_type: 'authorization_code'
+  });
+
+  const { id_token: idToken } = tokenResponse.data || {};
+  if (!idToken) {
+    throw createRouteError(401, 'Google 帳號驗證失敗');
+  }
+
+  const tokenInfoResponse = await axios.get('https://oauth2.googleapis.com/tokeninfo', {
+    params: { id_token: idToken }
+  });
+  const info = tokenInfoResponse.data || {};
+  const isEmailVerified = info.email_verified === true || info.email_verified === 'true';
+
+  if (info.aud !== clientId || !isEmailVerified || !info.email) {
+    throw createRouteError(401, 'Google 帳號驗證失敗');
+  }
+
+  return {
+    email: info.email.toLowerCase(),
+    name: info.name || info.email.split('@')[0],
+    picture: info.picture || ''
+  };
+};
+
+const assertAllowedAdminEmail = (email) => {
+  const adminEmails = getAdminEmailAllowlist();
+  if (!adminEmails.length) {
+    throw createRouteError(500, '伺服器未設定 ADMIN_GOOGLE_EMAILS');
+  }
+  if (!adminEmails.includes(String(email).toLowerCase())) {
+    throw createRouteError(403, '此 Google 帳號沒有管理員權限');
+  }
+};
+
+const provisionAdmin = async ({ email, name, picture }) => {
+  await database.initializeData();
+
+  let user = await database.getUserByUsername(email);
+  const desiredRole = 'admin';
+  if (!user) {
+    const randomPassword = await bcrypt.hash(`oauth_google_${Date.now()}_${crypto.randomUUID()}`, 10);
+    const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
+    user = { id: userId, username: email, role: desiredRole };
+  } else if (user.role !== desiredRole) {
+    await database.updateUser(user.id, {
+      username: user.username,
+      password: user.password,
+      role: desiredRole
+    });
+    user.role = desiredRole;
+  }
+
+  return ensureAdminProfile(user, name, picture);
+};
+
+const sendAdminLoginError = (res, error, fallbackMessage) => {
+  const status = error.status || 500;
+  const message = error.status ? error.message : fallbackMessage;
+  return res.status(status).json({ error: message, ...(error.code ? { code: error.code } : {}) });
+};
+
+// 第一階段：先驗證 Google 帳號，只核發五分鐘內有效的登入挑戰，不核發管理員權杖。
+router.post('/google-admin/start', async (req, res) => {
   try {
-    const { code, passphrase } = req.body;
+    const { code } = req.body;
     if (!code) {
-      return res.status(400).json({ error: '缺少授權碼 code' });
+      return res.status(400).json({ error: '缺少 Google 授權碼' });
     }
 
-    const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-    const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-    if (!CLIENT_ID || !CLIENT_SECRET) {
-      return res.status(500).json({ error: '伺服器未設定 GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET' });
-    }
+    const profile = await exchangeGoogleCode(code);
+    assertAllowedAdminEmail(profile.email);
 
-    const tokenRes = await axios.post('https://oauth2.googleapis.com/token', {
-      code,
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      redirect_uri: 'postmessage',
-      grant_type: 'authorization_code'
-    });
-
-    const { id_token } = tokenRes.data || {};
-    if (!id_token) {
-      return res.status(401).json({ error: '無法取得 id_token' });
-    }
-
-    const tokenInfoRes = await axios.get('https://oauth2.googleapis.com/tokeninfo', { params: { id_token } });
-    const info = tokenInfoRes.data;
-
-    if (info.aud !== CLIENT_ID) {
-      return res.status(401).json({ error: '無效的 Google 憑證 (aud 不匹配)' });
-    }
-    if (info.email_verified !== 'true') {
-      return res.status(401).json({ error: 'Google 帳號尚未驗證 email' });
-    }
-
-    const email = info.email;
-    const name = info.name || email.split('@')[0];
-    const picture = info.picture || '';
-
-    const adminEmails = getAdminEmailAllowlist();
-    if (!adminEmails.length) {
-      return res.status(500).json({ error: '伺服器未設定 ADMIN_GOOGLE_EMAILS' });
-    }
-    if (!adminEmails.includes(email.toLowerCase())) {
-      return res.status(403).json({ error: '錯誤的帳號' });
-    }
-
-    const REQUIRED_PASSPHRASE = process.env.ADMIN_SECOND_FACTOR_PHRASE;
-    if (!REQUIRED_PASSPHRASE) {
-      return res.status(500).json({ error: '伺服器未設定 ADMIN_SECOND_FACTOR_PHRASE' });
-    }
-    if (!passphrase) {
-      return res.status(401).json({ error: '需要二次驗證', code: 'NEEDS_PASSPHRASE' });
-    }
-    if (passphrase !== REQUIRED_PASSPHRASE) {
-      return res.status(401).json({ error: '二次驗證失敗' });
-    }
-
-    await database.initializeData();
-
-    let user = await database.getUserByUsername(email);
-    const desiredRole = 'admin';
-    if (!user) {
-      const randomPassword = await bcrypt.hash(`oauth_google_${Date.now()}`, 10);
-      const userId = await database.createUser({ username: email, password: randomPassword, role: desiredRole });
-      user = { id: userId, username: email, role: desiredRole };
-    } else if (user.role !== desiredRole) {
-      try {
-        await database.updateUser(user.id, { username: user.username, password: user.password, role: desiredRole });
-      } catch (error) {
-        console.warn('更新使用者角色失敗:', error.message);
+    const challenge = jwt.sign(
+      {
+        type: 'admin-login-challenge',
+        email: profile.email,
+        name: profile.name,
+        picture: profile.picture
+      },
+      getAdminChallengeSecret(),
+      {
+        expiresIn: '5m',
+        audience: 'crcrc-admin-login',
+        issuer: 'crcrc-api',
+        jwtid: crypto.randomUUID()
       }
-      user.role = desiredRole;
+    );
+
+    return res.json({ challenge, expiresIn: 300 });
+  } catch (error) {
+    console.error('管理員 Google 驗證錯誤:', error.response?.data || error.message);
+    const routeError = error.response
+      ? createRouteError(401, 'Google 帳號驗證失敗，請再試一次')
+      : error;
+    return sendAdminLoginError(res, routeError, 'Google 帳號驗證失敗，請再試一次');
+  }
+});
+
+// 第二階段：Google 挑戰通過後，再驗證只存在伺服器端的管理員密碼。
+router.post('/google-admin/complete', async (req, res) => {
+  try {
+    const { challenge, password } = req.body;
+    if (!challenge || typeof password !== 'string' || !password) {
+      return res.status(400).json({ error: '缺少登入驗證資料' });
     }
 
-    const sanitizedUser = await ensureAdminProfile(user, name, picture);
-
-    let jwtSecret;
+    const challengeSecret = getAdminChallengeSecret();
+    let challengePayload;
     try {
-      jwtSecret = getJwtSecret('JWT_SECRET');
+      challengePayload = jwt.verify(challenge, challengeSecret, {
+        audience: 'crcrc-admin-login',
+        issuer: 'crcrc-api'
+      });
     } catch (error) {
-      return res.status(500).json({ error: error.message });
+      return res.status(401).json({
+        error: '驗證已逾時，請重新使用 Google 登入',
+        code: 'ADMIN_CHALLENGE_EXPIRED'
+      });
     }
 
+    if (challengePayload.type !== 'admin-login-challenge' || !challengePayload.email) {
+      return res.status(401).json({
+        error: '登入驗證無效，請重新使用 Google 登入',
+        code: 'ADMIN_CHALLENGE_EXPIRED'
+      });
+    }
+
+    assertAllowedAdminEmail(challengePayload.email);
+
+    const adminPassword = process.env.ADMIN_LOGIN_PASSWORD || process.env.ADMIN_SECOND_FACTOR_PHRASE;
+    if (!adminPassword) {
+      throw createRouteError(500, '伺服器未設定 ADMIN_LOGIN_PASSWORD');
+    }
+    if (!secureTextEquals(password, adminPassword)) {
+      return res.status(401).json({ error: '密碼錯誤' });
+    }
+
+    const sanitizedUser = await provisionAdmin({
+      email: challengePayload.email,
+      name: challengePayload.name,
+      picture: challengePayload.picture
+    });
     const token = jwt.sign(
-      { userId: user.id, username: user.username, role: user.role, name: sanitizedUser.displayName, picture: sanitizedUser.avatarUrl },
-      jwtSecret,
+      {
+        userId: sanitizedUser.id,
+        username: sanitizedUser.username,
+        role: 'admin',
+        authMethod: 'google-password',
+        name: sanitizedUser.displayName,
+        picture: sanitizedUser.avatarUrl
+      },
+      getJwtSecret('JWT_SECRET'),
       { expiresIn: '24h' }
     );
 
-    res.json({ message: 'Google 登入成功', token, user: sanitizedUser });
+    return res.json({ message: '登入成功', token, user: sanitizedUser });
   } catch (error) {
-    console.error('Google 授權碼登入錯誤:', error.response?.data || error.message);
-    res.status(401).json({ error: 'Google 授權碼登入失敗：' + (error.response?.data?.error_description || error.message) });
+    console.error('管理員密碼驗證錯誤:', error.message);
+    return sendAdminLoginError(res, error, '管理員登入失敗，請再試一次');
   }
 });
+
+const legacyAdminLoginRemoved = (req, res) =>
+  res.status(410).json({ error: '管理員登入流程已更新，請重新整理頁面' });
+
+router.post('/google', legacyAdminLoginRemoved);
+router.post('/google-code', legacyAdminLoginRemoved);
 
 // 公開網站端 Google 登入（user 角色，無白名單/密語）
 router.post('/google-public', async (req, res) => {
@@ -498,13 +533,14 @@ router.post('/google-public', async (req, res) => {
       return res.status(500).json({ error: error.message });
     }
 
+    const publicUser = { ...sanitizedUser, role: 'user' };
     const token = jwt.sign(
-      { userId: user.id, username: user.username, role: user.role || 'user', name: sanitizedUser.displayName, picture: sanitizedUser.avatarUrl },
+      { userId: user.id, username: user.username, role: 'user', authMethod: 'google-public', name: publicUser.displayName, picture: publicUser.avatarUrl },
       jwtSecret,
       { expiresIn: '7d' }
     );
 
-    res.json({ message: '登入成功', token, user: sanitizedUser });
+    res.json({ message: '登入成功', token, user: publicUser });
   } catch (error) {
     console.error('Google 公開登入錯誤:', error.response?.data || error.message);
     res.status(401).json({ error: 'Google 公開登入失敗：' + (error.response?.data?.error_description || error.message) });

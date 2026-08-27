@@ -3,6 +3,15 @@ import { authAPI } from '../services/api'
 
 const AuthContext = createContext()
 
+const normalizeUser = (userData) => ({
+  id: userData.id,
+  username: userData.username,
+  role: userData.role || 'user',
+  display_name: userData.display_name || userData.displayName,
+  avatar_url: userData.avatar_url || userData.avatarUrl,
+  email: userData.email || userData.username
+})
+
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) {
@@ -16,6 +25,18 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [token, setToken] = useState(localStorage.getItem('token'))
 
+  const saveSession = (newToken, userData) => {
+    if (!newToken || !userData) {
+      throw new Error('登入響應數據不完整')
+    }
+
+    const fullUser = normalizeUser(userData)
+    localStorage.setItem('token', newToken)
+    setToken(newToken)
+    setUser(fullUser)
+    return fullUser
+  }
+
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem('token')
@@ -27,16 +48,7 @@ export const AuthProvider = ({ children }) => {
           const response = await authAPI.verify()
           console.log('✅ Token 驗證成功:', response.data.user)
           
-          // 確保用戶對象包含所有必要的屬性
-          const userData = response.data.user;
-          const fullUser = {
-            id: userData.id,
-            username: userData.username,
-            role: userData.role || 'user',  // 默認為 'user' 角色
-            display_name: userData.display_name || userData.displayName,
-            avatar_url: userData.avatar_url || userData.avatarUrl,
-            email: userData.email || userData.username
-          };
+          const fullUser = normalizeUser(response.data.user)
           
           setUser(fullUser)
           setToken(storedToken)
@@ -64,20 +76,7 @@ export const AuthProvider = ({ children }) => {
       const { token: newToken, user: userData } = response.data
       
       if (newToken && userData) {
-        localStorage.setItem('token', newToken)
-        setToken(newToken)
-        
-        // 確保用戶對象包含所有必要的屬性
-        const fullUser = {
-          id: userData.id,
-          username: userData.username,
-          role: userData.role || 'user',  // 默認為 'user' 角色
-          display_name: userData.display_name || userData.displayName,
-          avatar_url: userData.avatar_url || userData.avatarUrl,
-          email: userData.email || userData.username
-        };
-        
-        setUser(fullUser)
+        const fullUser = saveSession(newToken, userData)
         console.log('登入成功，用戶數據:', fullUser)
         return true
       } else {
@@ -87,6 +86,26 @@ export const AuthProvider = ({ children }) => {
       console.error('登入錯誤:', error)
       throw error
     }
+  }
+
+  const beginAdminGoogleLogin = async (code) => {
+    const response = await authAPI.beginAdminGoogleLogin(code)
+    if (!response.data?.challenge) {
+      throw new Error('Google 驗證資料不完整')
+    }
+    return response.data.challenge
+  }
+
+  const completeAdminGoogleLogin = async (challenge, password) => {
+    const response = await authAPI.completeAdminGoogleLogin(challenge, password)
+    const { token: newToken, user: userData } = response.data || {}
+
+    if (userData?.role !== 'admin') {
+      throw new Error('此帳號沒有管理員權限')
+    }
+
+    saveSession(newToken, userData)
+    return true
   }
 
   const logout = () => {
@@ -112,6 +131,8 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     login,
+    beginAdminGoogleLogin,
+    completeAdminGoogleLogin,
     logout,
     changePassword,
     isAuthenticated: !!user

@@ -1,173 +1,167 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Lock, Key } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { CornerDownLeft, LoaderCircle, LockKeyhole } from 'lucide-react'
+import toast from 'react-hot-toast'
 import GoogleLoginButton from '../../components/GoogleLoginButton'
 import { useAuth } from '../../contexts/AuthContext'
-import LoadingSpinner from '../../components/LoadingSpinner'
-import toast from 'react-hot-toast'
+
+const LoginBackdrop = () => (
+  <>
+    <div className="absolute inset-0 bg-[#060817]" />
+    <motion.div
+      className="absolute left-[12%] top-[8%] h-[34rem] w-[34rem] rounded-full bg-indigo-600/25 blur-[130px]"
+      animate={{ x: [0, 70, 0], y: [0, 35, 0], scale: [1, 1.12, 1] }}
+      transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut' }}
+    />
+    <motion.div
+      className="absolute bottom-[-12rem] right-[5%] h-[38rem] w-[38rem] rounded-full bg-fuchsia-500/20 blur-[150px]"
+      animate={{ x: [0, -55, 0], y: [0, -25, 0], scale: [1.08, 0.96, 1.08] }}
+      transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+    />
+    <div
+      className="absolute inset-0 opacity-[0.11]"
+      style={{
+        backgroundImage:
+          'linear-gradient(rgba(148,163,184,.16) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.16) 1px, transparent 1px)',
+        backgroundSize: '64px 64px',
+        maskImage: 'radial-gradient(circle at center, black, transparent 78%)'
+      }}
+    />
+    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(6,8,23,.22)_50%,rgba(6,8,23,.88)_100%)]" />
+  </>
+)
 
 const Login = () => {
-  const { isAuthenticated, loading, login } = useAuth()
+  const {
+    user,
+    isAuthenticated,
+    loading,
+    beginAdminGoogleLogin,
+    completeAdminGoogleLogin
+  } = useAuth()
   const navigate = useNavigate()
-  const [credentials, setCredentials] = useState({
-    username: '',
-    password: ''
-  })
+  const [challenge, setChallenge] = useState('')
+  const [password, setPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showPasswordLogin, setShowPasswordLogin] = useState(false)
 
-  if (isAuthenticated) {
+  if (isAuthenticated && user?.role === 'admin') {
     return <Navigate to="/admin/dashboard" replace />
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <LoadingSpinner size="large" />
-      </div>
-    )
+  const handleGoogleCode = async (code) => {
+    setIsSubmitting(true)
+    try {
+      const nextChallenge = await beginAdminGoogleLogin(code)
+      setChallenge(nextChallenge)
+      setPassword('')
+    } catch (error) {
+      toast.error(error.response?.data?.error || error.message || 'Google 帳號驗證失敗')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handlePasswordLogin = async (e) => {
-    e.preventDefault()
-    if (!credentials.username || !credentials.password) {
-      toast.error('請輸入用戶名和密碼')
-      return
-    }
+  const handlePasswordSubmit = async (event) => {
+    event.preventDefault()
+    if (!password || isSubmitting) return
 
     setIsSubmitting(true)
     try {
-      await login(credentials.username, credentials.password)
-      toast.success('登入成功')
-      navigate('/admin/dashboard')
+      await completeAdminGoogleLogin(challenge, password)
+      navigate('/admin/dashboard', { replace: true })
     } catch (error) {
-      toast.error(error.response?.data?.error || '登入失敗')
+      const responseData = error.response?.data
+      toast.error(responseData?.error || error.message || '登入失敗')
+      setPassword('')
+
+      if (responseData?.code === 'ADMIN_CHALLENGE_EXPIRED') {
+        setChallenge('')
+      }
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="relative overflow-hidden bg-slate-950">
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#1f1c47] via-[#7f1d1d] to-[#111827]" />
-      <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[#f43f5e]/40 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-[-120px] right-[-80px] h-80 w-80 rounded-full bg-[#6366f1]/40 blur-3xl" />
+    <main className="relative min-h-screen overflow-hidden">
+      <LoginBackdrop />
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="w-full max-w-lg"
-        >
-          <div className="relative overflow-hidden rounded-3xl bg-white/95 shadow-2xl ring-1 ring-white/70 backdrop-blur">
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#f97316] via-[#f43f5e] to-[#6366f1]" />
-            <div className="p-10 sm:p-12">
-              <div className="mb-8 space-y-4 text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ef4444] to-[#f97316] shadow-lg shadow-rose-400/50">
-                  <Lock className="h-8 w-8 text-white" />
-                </div>
-                <div className="space-y-2">
-                  <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">管理員登入</h1>
-                  <p className="text-sm text-gray-600 sm:text-base">
-                    請使用授權的帳號登入 CRCRC 管理後台。
-                  </p>
-                </div>
-              </div>
-
-              {!showPasswordLogin ? (
-                <>
-                  <GoogleLoginButton
-                    className="mt-2"
-                    onSuccess={(data) => {
-                      if (data?.token && data?.user) {
-                        localStorage.setItem('token', data.token)
-                        // 驗證用戶角色
-                        if (data.user.role === 'admin') {
-                          window.location.href = '/admin'
-                        } else {
-                          toast.error('用戶沒有管理員權限')
-                        }
-                      }
-                    }}
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-6 py-12">
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-xl"
+            >
+              <LoaderCircle className="h-6 w-6 animate-spin text-indigo-200" />
+            </motion.div>
+          ) : !challenge ? (
+            <motion.div
+              key="google"
+              initial={{ opacity: 0, y: 18, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -14, scale: 0.97 }}
+              transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full max-w-[340px]"
+            >
+              <GoogleLoginButton onCode={handleGoogleCode} disabled={isSubmitting} />
+            </motion.div>
+          ) : (
+            <motion.form
+              key="password"
+              onSubmit={handlePasswordSubmit}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && !isSubmitting) {
+                  setChallenge('')
+                  setPassword('')
+                }
+              }}
+              initial={{ opacity: 0, y: 18, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -14, scale: 0.96 }}
+              transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full max-w-[430px]"
+              aria-label="管理員密碼驗證"
+            >
+              <div className="group relative rounded-[28px] bg-gradient-to-r from-cyan-300/70 via-indigo-400/80 to-fuchsia-400/70 p-px shadow-[0_28px_100px_-28px_rgba(99,102,241,1)] transition-shadow duration-500 focus-within:shadow-[0_32px_120px_-22px_rgba(129,140,248,1)]">
+                <div className="absolute -inset-3 -z-10 rounded-[36px] bg-gradient-to-r from-cyan-400/20 via-indigo-500/25 to-fuchsia-500/20 blur-2xl transition duration-500 group-focus-within:opacity-100" />
+                <div className="flex items-center rounded-[27px] bg-slate-950/90 px-5 backdrop-blur-2xl">
+                  <LockKeyhole className="h-5 w-5 shrink-0 text-indigo-200" aria-hidden="true" />
+                  <input
+                    type="password"
+                    name="admin-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    disabled={isSubmitting}
+                    autoFocus
+                    autoComplete="current-password"
+                    aria-label="管理員密碼"
+                    placeholder="••••••••"
+                    className="min-w-0 flex-1 border-0 bg-transparent px-4 py-5 text-lg tracking-[0.28em] text-white caret-cyan-300 outline-none placeholder:tracking-[0.22em] placeholder:text-slate-600 disabled:cursor-wait"
                   />
-
-                  <div className="mt-6">
-                    <button
-                      onClick={() => setShowPasswordLogin(true)}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-                    >
-                      <Key className="h-4 w-4" />
-                      使用密碼登入
-                    </button>
-                  </div>
-
-                  <div className="mt-6 space-y-2 text-center text-xs text-gray-500 sm:text-sm">
-                    <p>登入前系統會先要求輸入管理員專用通關密語，以確保權限安全。</p>
-                    <p>完成登入後將自動重新導向至後台首頁。</p>
-                  </div>
-                </>
-              ) : (
-                <form onSubmit={handlePasswordLogin} className="space-y-6">
-                  <div>
-                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                      用戶名
-                    </label>
-                    <input
-                      id="username"
-                      type="text"
-                      value={credentials.username}
-                      onChange={(e) => setCredentials({...credentials, username: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="輸入用戶名"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                      密碼
-                    </label>
-                    <input
-                      id="password"
-                      type="password"
-                      value={credentials.password}
-                      onChange={(e) => setCredentials({...credentials, password: e.target.value})}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="輸入密碼"
-                      disabled={isSubmitting}
-                    />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswordLogin(false)}
-                      className="flex-1 rounded-xl border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                      disabled={isSubmitting}
-                    >
-                      返回
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg hover:shadow-xl transition disabled:opacity-70"
-                    >
-                      {isSubmitting ? '登入中...' : '登入'}
-                    </button>
-                  </div>
-                </form>
-              )}
-
-              <div className="mt-10 text-center">
-                <p className="text-sm font-medium text-gray-500">CRCRC 管理系統 v1.0</p>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !password}
+                    aria-label="送出密碼"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center text-slate-600 transition-colors hover:text-cyan-100 focus:outline-none focus-visible:text-cyan-100 disabled:cursor-default disabled:hover:text-slate-600 group-focus-within:text-cyan-200"
+                  >
+                    {isSubmitting ? (
+                      <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <CornerDownLeft className="h-5 w-5" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
-        </motion.div>
+            </motion.form>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </main>
   )
 }
 

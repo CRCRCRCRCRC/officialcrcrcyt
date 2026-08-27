@@ -1,159 +1,92 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { LoaderCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { authAPI } from '../services/api'
 
-const ADMIN_PASSPHRASE = import.meta.env.VITE_ADMIN_PASSPHRASE || 'howard is a pig'
+const GoogleMark = () => (
+  <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+    <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.98-4.33 2.98-7.41Z" />
+    <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.36l-3.24-2.54c-.9.6-2.05.96-3.38.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.62A10 10 0 0 0 12 22Z" />
+    <path fill="#FBBC05" d="M6.39 13.93A6 6 0 0 1 6.08 12c0-.67.11-1.32.31-1.93V7.45H3.04A10 10 0 0 0 2 12c0 1.61.38 3.14 1.04 4.55l3.35-2.62Z" />
+    <path fill="#EA4335" d="M12 5.94c1.47 0 2.79.5 3.83 1.5l2.87-2.87A9.63 9.63 0 0 0 12 2a10 10 0 0 0-8.96 5.45l3.35 2.62C7.18 7.7 9.39 5.94 12 5.94Z" />
+  </svg>
+)
 
-const GoogleLoginButton = ({ onSuccess, className = '' }) => {
-  const [showPassphraseModal, setShowPassphraseModal] = useState(false)
-  const [passphrase, setPassphrase] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+const GoogleLoginButton = ({ onCode, className = '', disabled = false }) => {
+  const [googleReady, setGoogleReady] = useState(() => Boolean(window.google?.accounts?.oauth2))
+  const [requesting, setRequesting] = useState(false)
 
-  const buttonClass = useMemo(() => {
-    const base = 'group relative inline-flex w-full items-center justify-center gap-3 overflow-hidden rounded-2xl bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-[0_22px_45px_-24px_rgba(66,133,244,0.75)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_30px_55px_-28px_rgba(66,133,244,0.8)] focus:outline-none focus:ring-2 focus:ring-[#4285F4]/40 focus:ring-offset-2'
-    const disabled = submitting ? 'cursor-not-allowed opacity-70' : ''
-    return [base, disabled, className].filter(Boolean).join(' ')
-  }, [className, submitting])
+  useEffect(() => {
+    const checkGoogle = () => setGoogleReady(Boolean(window.google?.accounts?.oauth2))
+    checkGoogle()
+    const intervalId = window.setInterval(checkGoogle, 250)
+    return () => window.clearInterval(intervalId)
+  }, [])
 
-  const openModal = () => {
-    if (submitting) return
-    setShowPassphraseModal(true)
-  }
+  const isDisabled = disabled || requesting || !googleReady
+  const buttonClass = useMemo(
+    () => [
+      'group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-[22px]',
+      'border border-white/70 bg-white/95 px-6 py-4 text-[15px] font-semibold tracking-[0.01em] text-slate-800',
+      'shadow-[0_24px_80px_-28px_rgba(129,140,248,0.9)] backdrop-blur-xl transition duration-300',
+      'hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_30px_90px_-25px_rgba(99,102,241,0.95)]',
+      'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-slate-950',
+      'disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0',
+      className
+    ].filter(Boolean).join(' '),
+    [className]
+  )
 
-  const cancel = () => {
-    if (submitting) return
-    setShowPassphraseModal(false)
-    setPassphrase('')
-    toast('已取消登入')
-  }
-
-  const startGoogleLogin = () => {
-    if (submitting) return
-
-    const normalized = passphrase.trim().toLowerCase()
-    if (!normalized) {
-      toast.error('請輸入管理員通關密語')
-      return
-    }
-
-    if (normalized !== ADMIN_PASSPHRASE) {
-      toast.error('密語錯誤，請聯絡系統管理員')
-      return
-    }
-
-    if (!window.google?.accounts?.oauth2) {
-      toast.error('Google 登入模組尚未載入')
-      return
-    }
+  const handleClick = () => {
+    if (isDisabled) return
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || window.GOOGLE_CLIENT_ID
     if (!clientId) {
-      toast.error('找不到 Google Client ID，請確認環境設定')
+      toast.error('尚未設定 Google Client ID')
       return
     }
 
-    setSubmitting(true)
-
-    const codeClient = window.google.accounts.oauth2.initCodeClient({
-      client_id: clientId,
-      scope: 'openid email profile',
-      ux_mode: 'popup',
-      callback: async (response) => {
-        try {
-          const code = response.code
-          if (!code) {
-            toast.error('未取得授權碼，請再試一次')
-            return
-          }
-
-          console.log('🔍 發送 Google 授權碼登入請求')
-          const res = await authAPI.loginWithGoogleCode(code, passphrase.trim())
-          console.log('✅ Google 授權碼登入響應:', res.data)
-          
-          // 檢查用戶角色
-          if (res.data?.user?.role !== 'admin') {
-            console.error('❌ 用戶角色不是管理員:', res.data?.user?.role)
-            toast.error('用戶沒有管理員權限')
-            return
-          }
-          
-          onSuccess?.(res.data)
-          toast.success('登入成功')
-        } catch (err) {
-          const msg = err.response?.data?.error || err.message
-          console.error('❌ Google 授權碼登入錯誤:', err)
-          toast.error(msg)
-        } finally {
-          setSubmitting(false)
-          setShowPassphraseModal(false)
-          setPassphrase('')
-        }
-      }
-    })
+    setRequesting(true)
 
     try {
+      const codeClient = window.google.accounts.oauth2.initCodeClient({
+        client_id: clientId,
+        scope: 'openid email profile',
+        ux_mode: 'popup',
+        callback: async (response) => {
+          try {
+            if (!response.code) {
+              throw new Error('Google 未回傳授權碼')
+            }
+            await onCode?.(response.code)
+          } catch (error) {
+            if (!error?.handled) {
+              toast.error(error.message || 'Google 登入失敗')
+            }
+          } finally {
+            setRequesting(false)
+          }
+        },
+        error_callback: () => {
+          setRequesting(false)
+          toast.error('Google 登入視窗已關閉')
+        }
+      })
+
       codeClient.requestCode()
-    } catch (error) {
-      toast.error('無法啟動 Google 登入，請稍後再試')
-      setSubmitting(false)
+    } catch {
+      setRequesting(false)
+      toast.error('無法開啟 Google 登入')
     }
   }
 
-  const confirmLabel = submitting ? '處理中…' : '啟動 Google 登入'
-  const mainLabel = submitting ? '啟動登入中…' : '使用 Google 登入'
-
   return (
-    <>
-      <button type="button" onClick={openModal} disabled={submitting} className={buttonClass}>
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4285F4]/10 transition-colors duration-200 group-hover:bg-[#4285F4]/20">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google 標誌" className="h-6 w-6" />
-        </span>
-        <span className="tracking-wide">{mainLabel}</span>
-      </button>
-
-      {showPassphraseModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
-          <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-slate-900/10">
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-slate-900">管理員通關密語</h3>
-              <p className="text-sm text-slate-500">為了安全性，登入前需先驗證管理員專用通關密語。</p>
-            </div>
-
-            <label className="mt-6 block text-sm font-medium text-slate-700" htmlFor="admin-passphrase">
-              通關密語
-            </label>
-            <input
-              id="admin-passphrase"
-              type="password"
-              value={passphrase}
-              onChange={(event) => setPassphrase(event.target.value)}
-              placeholder="請輸入密語"
-              className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-[#4285F4] focus:outline-none focus:ring-2 focus:ring-[#4285F4]/30"
-              autoFocus
-            />
-
-            <div className="mt-6 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={cancel}
-                disabled={submitting}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                取消
-              </button>
-              <button
-                type="button"
-                onClick={startGoogleLogin}
-                disabled={submitting}
-                className="rounded-xl bg-[#4285F4] px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-[#4285F4]/40 transition hover:bg-[#356ac3] disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {confirmLabel}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    <button type="button" onClick={handleClick} disabled={isDisabled} className={buttonClass}>
+      <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-indigo-100/70 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+      <span className="relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
+        {requesting || !googleReady ? <LoaderCircle className="h-5 w-5 animate-spin text-indigo-500" /> : <GoogleMark />}
+      </span>
+      <span className="relative">使用 Google 繼續</span>
+    </button>
   )
 }
 
