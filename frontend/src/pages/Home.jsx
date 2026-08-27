@@ -93,11 +93,7 @@ const Home = () => {
               transition={{ duration: 1, delay: 0.3 }}
               className="text-5xl md:text-7xl lg:text-8xl font-display font-black mb-8 leading-tight"
             >
-              <span className="text-white drop-shadow-2xl">歡迎來到</span>
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-300 to-cyan-300 animate-shimmer">
-                CRCRC
-              </span>
+              <span className="text-white drop-shadow-2xl">你好。</span>
             </motion.h1>
 
             {/* 副標題 */}
