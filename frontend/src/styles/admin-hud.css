@@ -128,7 +128,7 @@
 .admin-hud-sidebar::after {
   content: "";
   position: absolute;
-  top: 78px;
+  top: 24px;
   right: -1px;
   width: 1px;
   height: 110px;
@@ -136,59 +136,11 @@
   box-shadow: 0 0 14px var(--hud-cyan);
 }
 
-.admin-hud-brand {
-  min-height: 92px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 18px;
-  border-bottom: 1px solid var(--hud-line);
-  background: linear-gradient(90deg, rgba(39, 150, 194, 0.08), transparent);
-}
-
-.admin-hud-brand-mark {
-  width: 46px;
-  height: 46px;
-  position: relative;
-  flex: 0 0 auto;
-  display: grid;
-  place-items: center;
-  color: #eaffff;
-  border: 1px solid rgba(110, 231, 255, 0.66);
-  background: linear-gradient(145deg, rgba(31, 185, 216, 0.3), rgba(17, 82, 171, 0.2));
-  clip-path: polygon(0 0, 78% 0, 100% 22%, 100% 100%, 22% 100%, 0 78%);
-  box-shadow: inset 0 0 20px rgba(53, 205, 240, 0.16), 0 0 18px rgba(53, 205, 240, 0.12);
-}
-
-.admin-hud-brand-mark::before {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  border: 1px solid rgba(150, 243, 255, 0.22);
-}
-
-.admin-hud-brand-mark span {
-  position: relative;
-  font-size: 13px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-}
-
-.admin-hud-brand-title {
-  overflow: hidden;
-  color: var(--hud-text);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .admin-hud-navigation {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 14px 12px 18px;
+  padding: 22px 12px 18px;
   scrollbar-width: thin;
   scrollbar-color: rgba(82, 218, 249, 0.35) transparent;
 }

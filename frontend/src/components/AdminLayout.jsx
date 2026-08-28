@@ -12,7 +12,6 @@ import {
   Settings as SettingsIcon,
   User,
   Users,
-  X,
   Zap
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -23,7 +22,7 @@ const navigation = [
   { name: '儀表板', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: '公告管理', href: '/admin/announcements', icon: Megaphone },
   { name: 'CRCRCoin 發放', href: '/admin/add-coins', icon: Coins },
-  { name: '通行券 XP 發放', href: '/admin/add-xp', icon: Zap },
+  { name: '通行券XP發放', href: '/admin/add-xp', icon: Zap },
   { name: '兌換碼管理', href: '/admin/redeem-codes', icon: KeyRound },
   { name: 'Discord 申請', href: '/admin/discord-applications', icon: Users },
   { name: '演唱者管理', href: '/admin/artists', icon: User },
@@ -93,23 +92,6 @@ const AdminLayout = () => {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="admin-hud-brand">
-          <div className="admin-hud-brand-mark" aria-hidden="true">
-            <span>CR</span>
-          </div>
-          <div className="min-w-0">
-            <div className="admin-hud-brand-title">CRCRC 管理後台</div>
-          </div>
-          <button
-            type="button"
-            className="admin-hud-icon-button ml-auto lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="關閉管理選單"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
         <nav className="admin-hud-navigation" aria-label="管理後台功能">
           {navigation.map((item) => {
             const active = location.pathname === item.href
@@ -139,7 +121,7 @@ const AdminLayout = () => {
               <div className="admin-hud-user-menu">
                 <button type="button" onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />
-                  結束管理工作階段
+                  登出
                 </button>
               </div>
             )}
