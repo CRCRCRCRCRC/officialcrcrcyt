@@ -3,11 +3,7 @@ import { motion } from 'framer-motion'
 import {
   AlertTriangle,
   Coins,
-  Database,
-  LockKeyhole,
-  RefreshCw,
-  Settings as SettingsIcon,
-  ShieldCheck
+  RefreshCw
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { coinAPI } from '../../services/api'
@@ -42,51 +38,11 @@ const Settings = () => {
         transition={{ duration: 0.35 }}
         className="hud-page-heading"
       >
-        <div className="hud-page-eyebrow">
-          <SettingsIcon className="h-4 w-4" />
-          SYSTEM CONFIGURATION // SYS-09
-        </div>
         <h2 className="hud-page-title">系統設定</h2>
         <p className="hud-page-description">
           管理網站核心資料。高風險操作會要求再次確認，執行前請先確認影響範圍。
         </p>
       </motion.section>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="hud-panel p-5">
-          <div className="flex items-center gap-3">
-            <span className="admin-hud-current-icon flex">
-              <Database className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-xs tracking-[0.16em] text-cyan-300">DATA CORE</p>
-              <p className="mt-1 font-semibold text-white">資料控制</p>
-            </div>
-          </div>
-        </div>
-        <div className="hud-panel p-5">
-          <div className="flex items-center gap-3">
-            <span className="admin-hud-current-icon flex">
-              <ShieldCheck className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-xs tracking-[0.16em] text-cyan-300">ACCESS</p>
-              <p className="mt-1 font-semibold text-white">管理員限定</p>
-            </div>
-          </div>
-        </div>
-        <div className="hud-panel p-5">
-          <div className="flex items-center gap-3">
-            <span className="admin-hud-current-icon flex">
-              <LockKeyhole className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-xs tracking-[0.16em] text-cyan-300">PROTOCOL</p>
-              <p className="mt-1 font-semibold text-white">二次確認啟用</p>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <motion.section
         initial={{ opacity: 0, y: 14 }}
@@ -97,10 +53,9 @@ const Settings = () => {
         <div className="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
             <div className="mb-4 flex flex-wrap items-center gap-2">
-              <span className="hud-chip border-red-400/30 bg-red-500/10 text-red-200">
-                <AlertTriangle className="h-3.5 w-3.5" /> DANGER ZONE
+              <span className="flex items-center gap-2 text-sm font-semibold text-red-200">
+                <AlertTriangle className="h-4 w-4" /> 高風險操作
               </span>
-              <span className="hud-chip">COIN DATABASE</span>
             </div>
             <div className="flex items-start gap-4">
               <span className="grid h-12 w-12 shrink-0 place-items-center border border-red-400/40 bg-red-500/10 text-red-200">

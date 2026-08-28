@@ -184,32 +184,11 @@
   white-space: nowrap;
 }
 
-.admin-hud-brand-subtitle {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 5px;
-  color: var(--hud-cyan);
-  font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 9px;
-  letter-spacing: 0.18em;
-}
-
-.admin-hud-side-label {
-  display: flex;
-  justify-content: space-between;
-  padding: 18px 20px 10px;
-  color: #658f9b;
-  font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 9px;
-  letter-spacing: 0.12em;
-}
-
 .admin-hud-navigation {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 12px 18px;
+  padding: 14px 12px 18px;
   scrollbar-width: thin;
   scrollbar-color: rgba(82, 218, 249, 0.35) transparent;
 }
@@ -284,8 +263,7 @@
   box-shadow: inset 0 0 12px rgba(82, 225, 255, 0.1);
 }
 
-.admin-hud-nav-name,
-.admin-hud-nav-code {
+.admin-hud-nav-name {
   display: block;
 }
 
@@ -296,18 +274,6 @@
   letter-spacing: 0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.admin-hud-nav-code {
-  margin-top: 3px;
-  color: #547f8c;
-  font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 8px;
-  letter-spacing: 0.15em;
-}
-
-.admin-hud-nav-link.is-active .admin-hud-nav-code {
-  color: #6fcfe2;
 }
 
 .admin-hud-nav-state {
@@ -327,31 +293,6 @@
   padding: 12px;
   border-top: 1px solid var(--hud-line);
   background: rgba(1, 8, 14, 0.42);
-}
-
-.admin-hud-system-readout {
-  display: flex;
-  justify-content: space-between;
-  padding: 2px 5px 10px;
-  color: #618b97;
-  font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 8px;
-  letter-spacing: 0.1em;
-}
-
-.admin-hud-system-readout > div {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.admin-hud-pulse-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--hud-green);
-  box-shadow: 0 0 8px var(--hud-green);
-  animation: admin-hud-pulse 1.8s ease-in-out infinite;
 }
 
 .admin-hud-user {
@@ -479,18 +420,7 @@
   background: rgba(17, 105, 132, 0.4);
 }
 
-.admin-hud-kicker {
-  overflow: hidden;
-  color: #63b8cb;
-  font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 9px;
-  letter-spacing: 0.14em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .admin-hud-current-title {
-  margin-top: 2px;
   overflow: hidden;
   color: var(--hud-text);
   font-size: 17px;
@@ -526,46 +456,8 @@
   letter-spacing: 0.08em;
 }
 
-.admin-hud-online,
-.admin-hud-version {
-  height: 34px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 10px;
-  font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 9px;
-  letter-spacing: 0.09em;
-  white-space: nowrap;
-}
-
-.admin-hud-online {
-  color: #88ffd0;
-  border: 1px solid rgba(73, 234, 164, 0.28);
-  background: rgba(25, 126, 87, 0.12);
-}
-
-.admin-hud-version {
-  color: #86cfe0;
-  border: 1px solid rgba(70, 181, 209, 0.2);
-  background: rgba(12, 57, 75, 0.18);
-}
-
 .admin-hud-content {
   min-height: calc(100vh - 76px);
-}
-
-.admin-hud-content-rail {
-  max-width: 80rem;
-  display: flex;
-  justify-content: space-between;
-  margin: 0 auto 12px;
-  padding: 0 2px 8px;
-  color: #496f7a;
-  border-bottom: 1px solid rgba(77, 190, 218, 0.13);
-  font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 8px;
-  letter-spacing: 0.14em;
 }
 
 /* 將既有管理頁的淺色元件統一轉成 HUD 面板，同時維持文字對比。 */
@@ -860,17 +752,6 @@
   z-index: 1;
 }
 
-.hud-page-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  color: var(--hud-cyan);
-  font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 10px;
-  letter-spacing: 0.15em;
-}
-
 .hud-page-title {
   color: #f2fcff;
   font-size: clamp(1.65rem, 4vw, 2.4rem);
@@ -915,20 +796,6 @@
   bottom: 22px;
   width: 1px;
   height: 42px;
-}
-
-.hud-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 28px;
-  padding: 0 10px;
-  color: #8ed9e9;
-  border: 1px solid rgba(81, 211, 241, 0.25);
-  background: rgba(15, 75, 94, 0.16);
-  font-family: "Cascadia Code", Consolas, monospace;
-  font-size: 9px;
-  letter-spacing: 0.08em;
 }
 
 .hud-danger-panel {
@@ -978,19 +845,9 @@
   to { transform: translateY(130vh); }
 }
 
-@keyframes admin-hud-pulse {
-  0%, 100% { opacity: 0.45; transform: scale(0.82); }
-  50% { opacity: 1; transform: scale(1.12); }
-}
-
 @media (max-width: 639px) {
-  .admin-hud-content-rail span:last-child {
-    display: none;
-  }
-
-  .admin-hud-online,
-  .admin-hud-version {
-    padding: 0 8px;
+  .admin-hud-current-title {
+    font-size: 15px;
   }
 }
 

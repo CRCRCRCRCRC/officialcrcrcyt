@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
-  Activity,
   ChevronDown,
   Coins,
   KeyRound,
@@ -10,9 +9,7 @@ import {
   Megaphone,
   Menu,
   Music,
-  Radio,
   Settings as SettingsIcon,
-  ShieldCheck,
   User,
   Users,
   X,
@@ -23,15 +20,15 @@ import { useAuth } from '../contexts/AuthContext'
 import '../styles/admin-hud.css'
 
 const navigation = [
-  { name: '儀表板', code: 'CORE-01', href: '/admin/dashboard', icon: LayoutDashboard },
-  { name: '公告管理', code: 'COM-02', href: '/admin/announcements', icon: Megaphone },
-  { name: 'CRCRCoin 發放', code: 'COIN-03', href: '/admin/add-coins', icon: Coins },
-  { name: '通行券 XP 發放', code: 'XP-04', href: '/admin/add-xp', icon: Zap },
-  { name: '兌換碼管理', code: 'KEY-05', href: '/admin/redeem-codes', icon: KeyRound },
-  { name: 'Discord 申請', code: 'DC-06', href: '/admin/discord-applications', icon: Users },
-  { name: '演唱者管理', code: 'ART-07', href: '/admin/artists', icon: User },
-  { name: '歌詞管理', code: 'LYRIC-08', href: '/admin/lyrics', icon: Music },
-  { name: '系統設定', code: 'SYS-09', href: '/admin/settings', icon: SettingsIcon }
+  { name: '儀表板', href: '/admin/dashboard', icon: LayoutDashboard },
+  { name: '公告管理', href: '/admin/announcements', icon: Megaphone },
+  { name: 'CRCRCoin 發放', href: '/admin/add-coins', icon: Coins },
+  { name: '通行券 XP 發放', href: '/admin/add-xp', icon: Zap },
+  { name: '兌換碼管理', href: '/admin/redeem-codes', icon: KeyRound },
+  { name: 'Discord 申請', href: '/admin/discord-applications', icon: Users },
+  { name: '演唱者管理', href: '/admin/artists', icon: User },
+  { name: '歌詞管理', href: '/admin/lyrics', icon: Music },
+  { name: '系統設定', href: '/admin/settings', icon: SettingsIcon }
 ]
 
 const AdminLayout = () => {
@@ -101,10 +98,7 @@ const AdminLayout = () => {
             <span>CR</span>
           </div>
           <div className="min-w-0">
-            <div className="admin-hud-brand-title">CRCRC // CONTROL</div>
-            <div className="admin-hud-brand-subtitle">
-              <Radio className="h-3 w-3" /> ADMIN NETWORK
-            </div>
+            <div className="admin-hud-brand-title">CRCRC 管理後台</div>
           </div>
           <button
             type="button"
@@ -114,11 +108,6 @@ const AdminLayout = () => {
           >
             <X className="h-5 w-5" />
           </button>
-        </div>
-
-        <div className="admin-hud-side-label">
-          <span>MODULE DIRECTORY</span>
-          <span>{String(navigation.length).padStart(2, '0')} UNITS</span>
         </div>
 
         <nav className="admin-hud-navigation" aria-label="管理後台功能">
@@ -137,7 +126,6 @@ const AdminLayout = () => {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="admin-hud-nav-name">{item.name}</span>
-                  <span className="admin-hud-nav-code">{item.code}</span>
                 </span>
                 <span className="admin-hud-nav-state" aria-hidden="true" />
               </Link>
@@ -146,14 +134,6 @@ const AdminLayout = () => {
         </nav>
 
         <div className="admin-hud-sidebar-footer">
-          <div className="admin-hud-system-readout">
-            <div>
-              <span className="admin-hud-pulse-dot" />
-              SECURE SESSION
-            </div>
-            <span>ENCRYPTED</span>
-          </div>
-
           <div className="relative">
             {userMenuOpen && (
               <div className="admin-hud-user-menu">
@@ -174,8 +154,8 @@ const AdminLayout = () => {
                 <User className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1 text-left">
-                <span className="admin-hud-user-name">{user?.username || user?.name || 'Administrator'}</span>
-                <span className="admin-hud-user-role">LEVEL 01 // 管理員</span>
+                <span className="admin-hud-user-name">{user?.username || user?.name || '管理員'}</span>
+                <span className="admin-hud-user-role">管理員</span>
               </span>
               <ChevronDown className={`h-4 w-4 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -200,7 +180,6 @@ const AdminLayout = () => {
                 <currentSection.icon className="h-5 w-5" />
               </span>
               <div className="min-w-0">
-                <div className="admin-hud-kicker">ACTIVE MODULE // {currentSection.code}</div>
                 <h1 className="admin-hud-current-title">{currentSection.name}</h1>
               </div>
             </div>
@@ -210,23 +189,11 @@ const AdminLayout = () => {
                 <span>{clock.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
                 <strong>{clock.toLocaleTimeString('zh-TW', { hour12: false })}</strong>
               </div>
-              <div className="admin-hud-online">
-                <Activity className="h-4 w-4" />
-                <span className="hidden sm:inline">SYSTEM</span> ONLINE
-              </div>
-              <div className="admin-hud-version hidden sm:flex">
-                <ShieldCheck className="h-4 w-4" />
-                v1.0.02
-              </div>
             </div>
           </div>
         </header>
 
         <main className="admin-hud-content relative p-4 sm:p-6 lg:p-8">
-          <div className="admin-hud-content-rail" aria-hidden="true">
-            <span>CRCRC ADMINISTRATION SYSTEM</span>
-            <span>AUTHORIZED ACCESS ONLY</span>
-          </div>
           <Outlet />
         </main>
       </div>
