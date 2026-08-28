@@ -1,105 +1,71 @@
-import { useState, useEffect } from 'react'
-import { Link, useLocation, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard,
-  Video,
-  Settings as SettingsIcon,
-  Users,
-  BarChart3,
-  LogOut,
-  Menu,
-  X,
-  Bell,
-  Search,
-  User,
+  Activity,
   ChevronDown,
-  KeyRound,
-  Sparkles,
-  Zap,
-  TrendingUp,
-  Megaphone,
   Coins,
-  Music
+  KeyRound,
+  LayoutDashboard,
+  LogOut,
+  Megaphone,
+  Menu,
+  Music,
+  Radio,
+  Settings as SettingsIcon,
+  ShieldCheck,
+  User,
+  Users,
+  X,
+  Zap
 } from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
+import { useAuth } from '../contexts/AuthContext'
+import '../styles/admin-hud.css'
+
+const navigation = [
+  { name: '儀表板', code: 'CORE-01', href: '/admin/dashboard', icon: LayoutDashboard },
+  { name: '公告管理', code: 'COM-02', href: '/admin/announcements', icon: Megaphone },
+  { name: 'CRCRCoin 發放', code: 'COIN-03', href: '/admin/add-coins', icon: Coins },
+  { name: '通行券 XP 發放', code: 'XP-04', href: '/admin/add-xp', icon: Zap },
+  { name: '兌換碼管理', code: 'KEY-05', href: '/admin/redeem-codes', icon: KeyRound },
+  { name: 'Discord 申請', code: 'DC-06', href: '/admin/discord-applications', icon: Users },
+  { name: '演唱者管理', code: 'ART-07', href: '/admin/artists', icon: User },
+  { name: '歌詞管理', code: 'LYRIC-08', href: '/admin/lyrics', icon: Music },
+  { name: '系統設定', code: 'SYS-09', href: '/admin/settings', icon: SettingsIcon }
+]
 
 const AdminLayout = () => {
   const { user, logout } = useAuth()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isLargeScreen, setIsLargeScreen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [clock, setClock] = useState(() => new Date())
+
+  const currentSection = navigation.find((item) => location.pathname === item.href) || navigation[0]
 
   useEffect(() => {
-    const checkScreenSize = () => {
-      setIsLargeScreen(window.innerWidth >= 1024)
-    }
+    setSidebarOpen(false)
+    setUserMenuOpen(false)
+  }, [location.pathname])
 
-    checkScreenSize()
-    window.addEventListener('resize', checkScreenSize)
-
-    return () => window.removeEventListener('resize', checkScreenSize)
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(new Date()), 1000)
+    return () => window.clearInterval(timer)
   }, [])
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
 
-  const navigation = [
-    {
-      name: '儀表板',
-      href: '/admin/dashboard',
-      icon: LayoutDashboard,
-      gradient: 'from-blue-500 to-purple-600'
-    },
-    {
-      name: '公告管理',
-      href: '/admin/announcements',
-      icon: Megaphone,
-      gradient: 'from-orange-500 to-yellow-600'
-    },
-    {
-      name: 'CRCRCoin 發放',
-      href: '/admin/add-coins',
-      icon: Coins,
-      gradient: 'from-yellow-500 to-orange-500'
-    },
-    {
-      name: '通行券XP發放',
-      href: '/admin/add-xp',
-      icon: Zap,
-      gradient: 'from-purple-500 to-pink-600'
-    },
-    {
-      name: '兌換碼管理',
-      href: '/admin/redeem-codes',
-      icon: KeyRound,
-      gradient: 'from-indigo-500 to-purple-600'
-    },
-    {
-      name: 'Discord 申請',
-      href: '/admin/discord-applications',
-      icon: Users,
-      gradient: 'from-indigo-500 to-purple-600'
-    },
-    {
-      name: '演唱者管理',
-      href: '/admin/artists',
-      icon: User,
-      gradient: 'from-indigo-500 to-purple-600'
-    },
-    {
-      name: '歌詞管理',
-      href: '/admin/lyrics',
-      icon: Music,
-      gradient: 'from-pink-500 to-rose-600'
-    },
-    {
-      name: '系統設定',
-      href: '/admin/settings',
-      icon: SettingsIcon,
-      gradient: 'from-green-500 to-teal-600'
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setSidebarOpen(false)
+        setUserMenuOpen(false)
+      }
     }
-  ]
 
-  const handleLogout = async () => {
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [])
+
+  const handleLogout = () => {
     try {
       logout()
       toast.success('已成功登出')
@@ -108,119 +74,159 @@ const AdminLayout = () => {
     }
   }
 
-  const isActive = (href) => location.pathname === href
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Sidebar */}
-      <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-2xl">
-        <div className="flex h-full flex-col">
-          {/* Logo */}
-          <div className="flex h-20 items-center justify-between px-6 border-b border-white/10">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  CRCRC
-                </h1>
-                <p className="text-xs text-gray-500">管理後台</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
-            {navigation.map((item) => {
-              const active = isActive(item.href)
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="group relative block"
-                >
-                  <div
-                    className={`
-                      relative flex items-center px-4 py-3 rounded-xl transition-all duration-300
-                      ${active 
-                        ? 'bg-gradient-to-r ' + item.gradient + ' text-white shadow-lg shadow-blue-500/25' 
-                        : 'text-gray-700 hover:bg-white/60 hover:shadow-md'
-                      }
-                    `}
-                  >
-                    <item.icon className={`w-5 h-5 mr-3 ${active ? 'text-white' : 'text-gray-500'}`} />
-                    <span className="font-medium">{item.name}</span>
-                  </div>
-                </Link>
-              )
-            })}
-          </nav>
-
-          {/* User section */}
-          <div className="p-4 border-t border-white/10 -mt-10">
-            <div className="relative">
-              <button
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="w-full flex items-center px-4 py-3 rounded-xl hover:bg-white/60 transition-all duration-300"
-              >
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <div className="ml-3 flex-1 text-left">
-                  <p className="text-sm font-medium text-gray-900">{user?.username}</p>
-                  <p className="text-xs text-gray-500">管理員</p>
-                </div>
-                <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {userMenuOpen && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center px-4 py-3 text-left hover:bg-red-50 text-red-600 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4 mr-3" />
-                    登出
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+    <div className="admin-hud">
+      <div className="admin-hud-ambient" aria-hidden="true">
+        <span className="admin-hud-orb admin-hud-orb-a" />
+        <span className="admin-hud-orb admin-hud-orb-b" />
+        <span className="admin-hud-scan" />
       </div>
 
-      {/* Main content */}
-      <div className="transition-all duration-300" style={{ paddingLeft: isLargeScreen ? '256px' : '0' }}>
-        {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-white/20">
-          <div className="flex h-16 items-center justify-between px-6">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="搜尋..."
-                  className="pl-10 pr-4 py-2 bg-gray-100 rounded-lg border-0 focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-                />
-              </div>
+      {sidebarOpen && (
+        <button
+          type="button"
+          className="admin-hud-overlay lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+          aria-label="關閉管理選單"
+        />
+      )}
 
-              <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                <Bell className="w-5 h-5 text-gray-600" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-                v1.0.02
-              </span>
+      <aside
+        className={`admin-hud-sidebar fixed inset-y-0 left-0 z-50 flex w-[280px] flex-col transition-transform duration-300 lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="admin-hud-brand">
+          <div className="admin-hud-brand-mark" aria-hidden="true">
+            <span>CR</span>
+          </div>
+          <div className="min-w-0">
+            <div className="admin-hud-brand-title">CRCRC // CONTROL</div>
+            <div className="admin-hud-brand-subtitle">
+              <Radio className="h-3 w-3" /> ADMIN NETWORK
             </div>
           </div>
+          <button
+            type="button"
+            className="admin-hud-icon-button ml-auto lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="關閉管理選單"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        {/* Page content */}
-        <main className="p-6">
+        <div className="admin-hud-side-label">
+          <span>MODULE DIRECTORY</span>
+          <span>{String(navigation.length).padStart(2, '0')} UNITS</span>
+        </div>
+
+        <nav className="admin-hud-navigation" aria-label="管理後台功能">
+          {navigation.map((item) => {
+            const active = location.pathname === item.href
+
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={`admin-hud-nav-link ${active ? 'is-active' : ''}`}
+                aria-current={active ? 'page' : undefined}
+              >
+                <span className="admin-hud-nav-icon">
+                  <item.icon className="h-[18px] w-[18px]" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="admin-hud-nav-name">{item.name}</span>
+                  <span className="admin-hud-nav-code">{item.code}</span>
+                </span>
+                <span className="admin-hud-nav-state" aria-hidden="true" />
+              </Link>
+            )
+          })}
+        </nav>
+
+        <div className="admin-hud-sidebar-footer">
+          <div className="admin-hud-system-readout">
+            <div>
+              <span className="admin-hud-pulse-dot" />
+              SECURE SESSION
+            </div>
+            <span>ENCRYPTED</span>
+          </div>
+
+          <div className="relative">
+            {userMenuOpen && (
+              <div className="admin-hud-user-menu">
+                <button type="button" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  結束管理工作階段
+                </button>
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="admin-hud-user"
+              onClick={() => setUserMenuOpen((open) => !open)}
+              aria-expanded={userMenuOpen}
+            >
+              <span className="admin-hud-user-avatar">
+                <User className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1 text-left">
+                <span className="admin-hud-user-name">{user?.username || user?.name || 'Administrator'}</span>
+                <span className="admin-hud-user-role">LEVEL 01 // 管理員</span>
+              </span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <div className="admin-hud-main min-h-screen lg:pl-[280px]">
+        <header className="admin-hud-topbar sticky top-0 z-30">
+          <div className="flex h-[76px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                className="admin-hud-icon-button lg:hidden"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="開啟管理選單"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+
+              <span className="admin-hud-current-icon hidden sm:flex">
+                <currentSection.icon className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <div className="admin-hud-kicker">ACTIVE MODULE // {currentSection.code}</div>
+                <h1 className="admin-hud-current-title">{currentSection.name}</h1>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="admin-hud-clock hidden md:block">
+                <span>{clock.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
+                <strong>{clock.toLocaleTimeString('zh-TW', { hour12: false })}</strong>
+              </div>
+              <div className="admin-hud-online">
+                <Activity className="h-4 w-4" />
+                <span className="hidden sm:inline">SYSTEM</span> ONLINE
+              </div>
+              <div className="admin-hud-version hidden sm:flex">
+                <ShieldCheck className="h-4 w-4" />
+                v1.0.02
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="admin-hud-content relative p-4 sm:p-6 lg:p-8">
+          <div className="admin-hud-content-rail" aria-hidden="true">
+            <span>CRCRC ADMINISTRATION SYSTEM</span>
+            <span>AUTHORIZED ACCESS ONLY</span>
+          </div>
           <Outlet />
         </main>
       </div>
