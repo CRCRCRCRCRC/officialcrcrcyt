@@ -24,7 +24,7 @@ const AdminThemeSwitch = ({ theme, onChange, compact = false }) => (
           title={option.label}
         >
           <option.icon className="h-4 w-4" aria-hidden="true" />
-          <span className={compact ? 'sr-only' : 'hidden xl:inline'}>{option.label}</span>
+          <span className="sr-only">{option.label}</span>
         </button>
       )
     })}

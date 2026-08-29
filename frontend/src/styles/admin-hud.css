@@ -951,9 +951,16 @@ body.admin-route iframe[src*="ko-fi.com"] {
 }
 
 .admin-theme-cheerful .admin-hud-nav-link {
+  min-height: 60px;
   color: #58697d;
   border-radius: 16px;
   clip-path: none;
+}
+
+.admin-theme-cheerful .admin-hud-nav-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .admin-theme-cheerful .admin-hud-nav-link::before {
@@ -1023,10 +1030,12 @@ body.admin-route iframe[src*="ko-fi.com"] {
 }
 
 .admin-theme-cheerful .admin-hud-user-name {
+  font-size: 15px;
   color: #293a51;
 }
 
 .admin-theme-cheerful .admin-hud-user-role {
+  font-size: 11px;
   color: #75879a;
 }
 
@@ -1038,6 +1047,7 @@ body.admin-route iframe[src*="ko-fi.com"] {
 }
 
 .admin-theme-cheerful .admin-hud-user-menu button {
+  font-size: 14px;
   color: #c7445c;
   border-radius: 10px;
 }
