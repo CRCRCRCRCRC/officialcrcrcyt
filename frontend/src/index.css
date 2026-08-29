@@ -2339,6 +2339,10 @@ body.neon-mode .site-footer h3::before {
   color: var(--fx-accent);
 }
 
+.site-footer-quick-links h3::before {
+  content: none !important;
+}
+
 body:is(.tech-mode, .neon-mode) .site-footer a {
   color: var(--fx-muted) !important;
 }
