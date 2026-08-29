@@ -74,6 +74,16 @@
     <script>
       if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) {
         document.body.classList.add('admin-route');
+      } else {
+        try {
+          const storedColorMode = window.localStorage.getItem('site_color_mode');
+          const colorMode = storedColorMode === 'light' || storedColorMode === 'dark'
+            ? storedColorMode
+            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.body.classList.add(colorMode === 'dark' ? 'site-dark-mode' : 'site-light-mode');
+        } catch {
+          document.body.classList.add('site-light-mode');
+        }
       }
     </script>
     <div id="root"></div>

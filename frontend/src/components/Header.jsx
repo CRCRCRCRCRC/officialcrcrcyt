@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings, Bell, Zap, Package, Cpu, Terminal } from 'lucide-react'
+import { Menu, X, Youtube, MessageCircle, ChevronDown, LogOut, Settings, Bell, Zap, Package, Cpu, Terminal, Moon, Sun } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWebsiteAuth } from '../contexts/WebsiteAuthContext'
 import { useCoin } from '../contexts/CoinContext'
@@ -16,9 +16,21 @@ const resolveAvatarSrc = (value) => {
   return normalized ? `/${normalized}` : ''
 }
 
-const APP_VERSION = 'v1.0.01'
 const TECH_EFFECT_STORAGE_PREFIX = 'tech_effect_enabled:'
 const EFFECT_MODE_STORAGE_PREFIX = 'site_effect_mode:'
+const COLOR_MODE_STORAGE_KEY = 'site_color_mode'
+
+const getInitialColorMode = () => {
+  if (typeof window === 'undefined') return 'light'
+
+  try {
+    const storedMode = window.localStorage.getItem(COLOR_MODE_STORAGE_KEY)
+    if (storedMode === 'light' || storedMode === 'dark') return storedMode
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
+}
 
 const getTechEffectStorageKey = (userId) => {
   if (!userId) return TECH_EFFECT_STORAGE_PREFIX
@@ -87,6 +99,7 @@ const Header = () => {
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [effectMode, setEffectMode] = useState('none')
   const [isEffectMenuOpen, setIsEffectMenuOpen] = useState(false)
+  const [colorMode, setColorMode] = useState(getInitialColorMode)
   const location = useLocation()
   const { user, logout, updateProfile } = useWebsiteAuth()
   const { hasNewNotifications } = useCoin()
@@ -169,6 +182,24 @@ const Header = () => {
   }, [effectMode, hasEffectUnlocked, effectStorageKey, techStorageKey])
 
   useEffect(() => {
+    if (typeof document === 'undefined') return
+
+    const body = document.body
+    body.classList.remove('site-light-mode', 'site-dark-mode')
+    body.classList.add(colorMode === 'dark' ? 'site-dark-mode' : 'site-light-mode')
+
+    try {
+      window.localStorage.setItem(COLOR_MODE_STORAGE_KEY, colorMode)
+    } catch {
+      // 瀏覽器停用儲存功能時，仍保留本次瀏覽的模式。
+    }
+
+    return () => {
+      body.classList.remove('site-light-mode', 'site-dark-mode')
+    }
+  }, [colorMode])
+
+  useEffect(() => {
     return () => {
       if (typeof document !== 'undefined') {
         document.body.classList.remove('tech-mode', 'neon-mode', 'mode-ethereal', 'mode-cosmic')
@@ -192,16 +223,30 @@ const Header = () => {
       <header className="site-header bg-white/95 backdrop-blur-custom border-b border-gray-200 sticky top-0 z-50 transition-colors duration-500">
         <div className="site-header-inner w-full px-4 md:px-8">
           <div className="site-header-bar relative flex items-center justify-between h-16 w-full">
-            {/* Logo - 最左邊 */}
-            <Link to="/" className="site-brand flex items-center space-x-2 z-10">
-              <div className="site-brand-mark w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">CR</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <span className="text-xl font-display font-bold text-gradient">CRCRC</span>
-                <span className="text-[10px] font-medium text-gray-400 tracking-wide">{APP_VERSION}</span>
-              </div>
-            </Link>
+            {/* 明暗模式 - 取代原本的品牌區塊 */}
+            <div className="site-color-switch z-10" role="group" aria-label="網站明暗模式">
+              <span className={`site-color-switch-indicator ${colorMode === 'dark' ? 'is-dark' : ''}`} aria-hidden="true" />
+              <button
+                type="button"
+                className={`site-color-switch-option ${colorMode === 'light' ? 'is-active' : ''}`}
+                onClick={() => setColorMode('light')}
+                aria-label="切換為明亮模式"
+                aria-pressed={colorMode === 'light'}
+                title="明亮模式"
+              >
+                <Sun className="h-[18px] w-[18px]" />
+              </button>
+              <button
+                type="button"
+                className={`site-color-switch-option ${colorMode === 'dark' ? 'is-active' : ''}`}
+                onClick={() => setColorMode('dark')}
+                aria-label="切換為深色模式"
+                aria-pressed={colorMode === 'dark'}
+                title="深色模式"
+              >
+                <Moon className="h-[18px] w-[18px]" />
+              </button>
+            </div>
 
             {/* Desktop Navigation - 絕對置中 */}
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
