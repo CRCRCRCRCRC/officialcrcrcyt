@@ -92,7 +92,7 @@ const Home = () => {
               transition={{ duration: 1, delay: 0.3 }}
               className="text-5xl md:text-7xl lg:text-8xl font-display font-black mb-8 leading-tight"
             >
-              <span className="home-hero-title-text">你好。</span>
+              <span className="home-hero-title-text">。你好。</span>
             </motion.h1>
 
             {/* 副標題 */}
