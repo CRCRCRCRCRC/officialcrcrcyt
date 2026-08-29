@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
+import useAdminTheme from '../hooks/useAdminTheme'
+import AdminThemeSwitch from './AdminThemeSwitch'
 import '../styles/admin-hud.css'
 
 const navigation = [
@@ -34,6 +36,7 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [clock, setClock] = useState(() => new Date())
+  const { theme, setTheme } = useAdminTheme()
 
   const currentSection = navigation.find((item) => location.pathname === item.href) || navigation[0]
 
@@ -69,7 +72,7 @@ const AdminLayout = () => {
   }
 
   return (
-    <div className="admin-hud">
+    <div className={`admin-hud admin-theme-${theme}`}>
       <div className="admin-hud-ambient" aria-hidden="true">
         <span className="admin-hud-orb admin-hud-orb-a" />
         <span className="admin-hud-orb admin-hud-orb-b" />
@@ -165,6 +168,7 @@ const AdminLayout = () => {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              <AdminThemeSwitch theme={theme} onChange={setTheme} />
               <div className="admin-hud-clock hidden md:block">
                 <span>{clock.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' })}</span>
                 <strong>{clock.toLocaleTimeString('zh-TW', { hour12: false })}</strong>

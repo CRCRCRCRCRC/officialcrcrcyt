@@ -802,6 +802,700 @@ body.admin-route iframe[src*="ko-fi.com"] {
   opacity: 0.58;
 }
 
+/* 後台風格切換 */
+.admin-theme-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 40px;
+  padding: 3px;
+  border: 1px solid rgba(84, 216, 245, 0.26);
+  border-radius: 13px;
+  background: rgba(4, 20, 32, 0.74);
+  box-shadow: inset 0 0 18px rgba(44, 177, 209, 0.06);
+  backdrop-filter: blur(14px);
+}
+
+.admin-theme-switch button {
+  min-width: 34px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 9px;
+  color: #729aa6;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.admin-theme-switch button:hover {
+  color: #d7f9ff;
+  background: rgba(55, 174, 204, 0.12);
+}
+
+.admin-theme-switch button.is-active {
+  color: #eaffff;
+  border-color: rgba(100, 231, 255, 0.46);
+  background: linear-gradient(135deg, rgba(10, 124, 153, 0.72), rgba(35, 91, 177, 0.68));
+  box-shadow: 0 5px 16px rgba(10, 111, 148, 0.24), inset 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.admin-theme-switch.is-compact button {
+  width: 34px;
+  padding: 0;
+}
+
+.admin-hud,
+.admin-hud-sidebar,
+.admin-hud-topbar,
+.admin-hud-nav-link,
+.admin-hud-nav-icon,
+.admin-hud-user,
+.admin-hud-user-avatar,
+.admin-hud-content .bg-white,
+.hud-page-heading,
+.hud-panel {
+  transition:
+    color 240ms ease,
+    border-color 240ms ease,
+    background-color 240ms ease,
+    box-shadow 240ms ease;
+}
+
+/* 輕快明亮風格 */
+.admin-hud.admin-theme-cheerful {
+  --hud-bg: #fffaf4;
+  --hud-panel: rgba(255, 255, 255, 0.94);
+  --hud-panel-soft: rgba(248, 252, 255, 0.9);
+  --hud-line: rgba(92, 170, 218, 0.24);
+  --hud-line-strong: rgba(93, 181, 227, 0.42);
+  --hud-cyan: #399ee8;
+  --hud-cyan-bright: #2379bd;
+  --hud-blue: #7386f2;
+  --hud-green: #35b77c;
+  --hud-text: #26364d;
+  --hud-muted: #65758a;
+  color: #26364d;
+  color-scheme: light;
+  background:
+    radial-gradient(circle at 8% 10%, rgba(126, 211, 255, 0.34), transparent 25rem),
+    radial-gradient(circle at 92% 8%, rgba(255, 177, 202, 0.3), transparent 27rem),
+    radial-gradient(circle at 72% 92%, rgba(255, 222, 137, 0.25), transparent 31rem),
+    linear-gradient(145deg, #fffaf4 0%, #f7fcff 52%, #fff8f2 100%);
+}
+
+.admin-theme-cheerful .admin-hud-ambient::before {
+  opacity: 0.5;
+  background-image: radial-gradient(circle, rgba(70, 158, 214, 0.2) 1.5px, transparent 1.5px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(to bottom, black, transparent 94%);
+}
+
+.admin-theme-cheerful .admin-hud-ambient::after {
+  opacity: 0.62;
+  background:
+    radial-gradient(circle at 18% 26%, rgba(255, 255, 255, 0.9) 0 5px, transparent 6px),
+    radial-gradient(circle at 76% 18%, rgba(255, 255, 255, 0.82) 0 8px, transparent 9px),
+    radial-gradient(circle at 68% 72%, rgba(255, 255, 255, 0.78) 0 6px, transparent 7px);
+  background-size: 210px 210px, 290px 290px, 250px 250px;
+}
+
+.admin-theme-cheerful .admin-hud-scan {
+  display: none;
+}
+
+.admin-theme-cheerful .admin-hud-orb {
+  filter: blur(105px);
+  opacity: 0.2;
+}
+
+.admin-theme-cheerful .admin-hud-orb-a {
+  background: #7ed9ff;
+}
+
+.admin-theme-cheerful .admin-hud-orb-b {
+  background: #ffb8cf;
+}
+
+.admin-theme-cheerful .admin-hud-overlay {
+  background: rgba(54, 79, 107, 0.24);
+  backdrop-filter: blur(5px);
+}
+
+.admin-theme-cheerful .admin-hud-sidebar {
+  border-right-color: rgba(102, 180, 222, 0.36);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 252, 255, 0.98)),
+    #ffffff;
+  box-shadow: 16px 0 45px rgba(74, 120, 151, 0.13), inset -1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.admin-theme-cheerful .admin-hud-sidebar::before {
+  height: 4px;
+  background: linear-gradient(90deg, #58baff, #8b8cf6 38%, #ff8fb1 72%, #ffc868);
+  box-shadow: none;
+}
+
+.admin-theme-cheerful .admin-hud-sidebar::after {
+  display: none;
+}
+
+.admin-theme-cheerful .admin-hud-navigation {
+  scrollbar-color: rgba(79, 157, 207, 0.38) transparent;
+}
+
+.admin-theme-cheerful .admin-hud-nav-link {
+  color: #58697d;
+  border-radius: 16px;
+  clip-path: none;
+}
+
+.admin-theme-cheerful .admin-hud-nav-link::before {
+  background: linear-gradient(100deg, rgba(94, 190, 255, 0.18), rgba(255, 162, 193, 0.13));
+}
+
+.admin-theme-cheerful .admin-hud-nav-link:hover {
+  color: #25364e;
+  border-color: rgba(102, 180, 222, 0.25);
+  background: rgba(239, 248, 255, 0.72);
+}
+
+.admin-theme-cheerful .admin-hud-nav-link.is-active {
+  color: #26374e;
+  border-color: rgba(89, 170, 221, 0.4);
+  background: linear-gradient(100deg, rgba(205, 239, 255, 0.86), rgba(255, 225, 235, 0.72));
+  box-shadow: inset 4px 0 #4eacf0, 0 8px 20px rgba(83, 148, 187, 0.11);
+}
+
+.admin-theme-cheerful .admin-hud-nav-icon {
+  color: #5c88a5;
+  border-color: rgba(93, 170, 214, 0.2);
+  border-radius: 12px;
+  background: rgba(236, 247, 255, 0.88);
+}
+
+.admin-theme-cheerful .admin-hud-nav-link:hover .admin-hud-nav-icon,
+.admin-theme-cheerful .admin-hud-nav-link.is-active .admin-hud-nav-icon {
+  color: #287fbd;
+  border-color: rgba(83, 166, 214, 0.4);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 5px 12px rgba(73, 143, 184, 0.1);
+}
+
+.admin-theme-cheerful .admin-hud-nav-state {
+  background: #b7c8d2;
+}
+
+.admin-theme-cheerful .admin-hud-nav-link.is-active .admin-hud-nav-state {
+  background: #ff789e;
+  box-shadow: 0 0 0 4px rgba(255, 120, 158, 0.14);
+}
+
+.admin-theme-cheerful .admin-hud-sidebar-footer {
+  border-top-color: rgba(104, 177, 217, 0.2);
+  background: rgba(246, 251, 255, 0.78);
+}
+
+.admin-theme-cheerful .admin-hud-user {
+  color: #53667b;
+  border-color: rgba(102, 178, 218, 0.3);
+  border-radius: 16px;
+  clip-path: none;
+  background: linear-gradient(105deg, rgba(226, 246, 255, 0.88), rgba(255, 235, 241, 0.78));
+}
+
+.admin-theme-cheerful .admin-hud-user:hover {
+  border-color: rgba(80, 161, 208, 0.48);
+  background: linear-gradient(105deg, rgba(211, 240, 255, 0.94), rgba(255, 224, 235, 0.86));
+}
+
+.admin-theme-cheerful .admin-hud-user-avatar {
+  color: #287eb9;
+  border-color: rgba(73, 161, 210, 0.36);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.admin-theme-cheerful .admin-hud-user-name {
+  color: #293a51;
+}
+
+.admin-theme-cheerful .admin-hud-user-role {
+  color: #75879a;
+}
+
+.admin-theme-cheerful .admin-hud-user-menu {
+  border-color: rgba(238, 103, 127, 0.28);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 40px rgba(82, 102, 125, 0.18);
+}
+
+.admin-theme-cheerful .admin-hud-user-menu button {
+  color: #c7445c;
+  border-radius: 10px;
+}
+
+.admin-theme-cheerful .admin-hud-user-menu button:hover {
+  color: #a62940;
+  background: #fff0f3;
+}
+
+.admin-theme-cheerful .admin-hud-topbar {
+  border-bottom-color: rgba(103, 177, 217, 0.27);
+  background: rgba(255, 253, 249, 0.86);
+  box-shadow: 0 9px 28px rgba(80, 119, 146, 0.1);
+}
+
+.admin-theme-cheerful .admin-hud-topbar::after {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #63baff, #ff91b2);
+  box-shadow: none;
+}
+
+.admin-theme-cheerful .admin-hud-icon-button,
+.admin-theme-cheerful .admin-hud-current-icon {
+  color: #2c82bd;
+  border-color: rgba(87, 167, 211, 0.34);
+  border-radius: 13px;
+  clip-path: none;
+  background: linear-gradient(145deg, rgba(226, 245, 255, 0.95), rgba(255, 234, 242, 0.84));
+}
+
+.admin-theme-cheerful .admin-hud-icon-button:hover {
+  border-color: rgba(68, 150, 198, 0.58);
+  background: #e5f6ff;
+}
+
+.admin-theme-cheerful .admin-hud-current-title {
+  color: #293a51;
+}
+
+.admin-theme-cheerful .admin-hud-clock {
+  border-right-color: rgba(99, 166, 204, 0.24);
+}
+
+.admin-theme-cheerful .admin-hud-clock span {
+  color: #7b8b9d;
+}
+
+.admin-theme-cheerful .admin-hud-clock strong {
+  color: #3c6582;
+}
+
+.admin-theme-cheerful .admin-theme-switch,
+.admin-login-cheerful .admin-theme-switch {
+  border-color: rgba(101, 170, 210, 0.28);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 7px 18px rgba(74, 120, 151, 0.1);
+}
+
+.admin-theme-cheerful .admin-theme-switch button,
+.admin-login-cheerful .admin-theme-switch button {
+  color: #708297;
+}
+
+.admin-theme-cheerful .admin-theme-switch button:hover,
+.admin-login-cheerful .admin-theme-switch button:hover {
+  color: #2f6489;
+  background: #edf8ff;
+}
+
+.admin-theme-cheerful .admin-theme-switch button.is-active,
+.admin-login-cheerful .admin-theme-switch button.is-active {
+  color: #8d3755;
+  border-color: rgba(240, 125, 160, 0.35);
+  background: linear-gradient(135deg, #ffe3ec, #fff1d3);
+  box-shadow: 0 5px 14px rgba(211, 110, 142, 0.13), inset 0 1px #ffffff;
+}
+
+.admin-theme-cheerful .admin-hud-content .bg-white,
+.admin-theme-cheerful .admin-hud-content [class~="bg-white/80"],
+.admin-theme-cheerful .admin-hud-content [class~="bg-white/85"],
+.admin-theme-cheerful .admin-hud-content [class~="bg-white/90"] {
+  color: #2b3a4f !important;
+  border-color: rgba(128, 184, 216, 0.28) !important;
+  background: rgba(255, 255, 255, 0.93) !important;
+  box-shadow: 0 16px 38px rgba(87, 119, 143, 0.1), inset 0 1px rgba(255, 255, 255, 0.9) !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .bg-gray-50,
+.admin-theme-cheerful .admin-hud-content .bg-gray-100,
+.admin-theme-cheerful .admin-hud-content .bg-gray-200,
+.admin-theme-cheerful .admin-hud-content .bg-gray-300,
+.admin-theme-cheerful .admin-hud-content [class~="bg-gray-50/70"],
+.admin-theme-cheerful .admin-hud-content [class~="hover:bg-gray-50"]:hover,
+.admin-theme-cheerful .admin-hud-content [class~="hover:bg-gray-100"]:hover,
+.admin-theme-cheerful .admin-hud-content [class~="hover:bg-gray-200"]:hover {
+  color: #2b3a4f !important;
+  background-color: rgba(240, 247, 251, 0.92) !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .bg-blue-50,
+.admin-theme-cheerful .admin-hud-content .bg-blue-100,
+.admin-theme-cheerful .admin-hud-content .bg-blue-200 {
+  background-color: #eaf6ff !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .bg-indigo-50,
+.admin-theme-cheerful .admin-hud-content .bg-indigo-100,
+.admin-theme-cheerful .admin-hud-content .bg-purple-50,
+.admin-theme-cheerful .admin-hud-content .bg-purple-100,
+.admin-theme-cheerful .admin-hud-content [class~="bg-indigo-50/60"] {
+  background-color: #f2efff !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .bg-green-50,
+.admin-theme-cheerful .admin-hud-content .bg-green-100,
+.admin-theme-cheerful .admin-hud-content .bg-emerald-50,
+.admin-theme-cheerful .admin-hud-content .bg-emerald-100 {
+  background-color: #ebfbf3 !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .bg-yellow-50,
+.admin-theme-cheerful .admin-hud-content .bg-yellow-100,
+.admin-theme-cheerful .admin-hud-content .bg-orange-50 {
+  background-color: #fff7dc !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .bg-red-50,
+.admin-theme-cheerful .admin-hud-content .bg-red-100,
+.admin-theme-cheerful .admin-hud-content .bg-red-200,
+.admin-theme-cheerful .admin-hud-content .bg-rose-50,
+.admin-theme-cheerful .admin-hud-content .bg-rose-100,
+.admin-theme-cheerful .admin-hud-content .bg-pink-50 {
+  background-color: #fff0f3 !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .border-white,
+.admin-theme-cheerful .admin-hud-content .border-gray-100,
+.admin-theme-cheerful .admin-hud-content .border-gray-200,
+.admin-theme-cheerful .admin-hud-content .border-gray-300,
+.admin-theme-cheerful .admin-hud-content .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.admin-theme-cheerful .admin-hud-content .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(132, 182, 210, 0.28) !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .text-gray-900,
+.admin-theme-cheerful .admin-hud-content .text-slate-900,
+.admin-theme-cheerful .admin-hud-content .text-gray-800,
+.admin-theme-cheerful .admin-hud-content .text-slate-800 {
+  color: #28384e !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .text-gray-700,
+.admin-theme-cheerful .admin-hud-content .text-slate-700 {
+  color: #42536a !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .text-gray-600,
+.admin-theme-cheerful .admin-hud-content .text-slate-600 {
+  color: #5d6e82 !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .text-gray-500,
+.admin-theme-cheerful .admin-hud-content .text-slate-500,
+.admin-theme-cheerful .admin-hud-content .text-gray-400,
+.admin-theme-cheerful .admin-hud-content .text-slate-400 {
+  color: #728397 !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .text-gray-300,
+.admin-theme-cheerful .admin-hud-content .text-slate-300 {
+  color: #8798a9 !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .text-transparent {
+  color: #293a51 !important;
+  -webkit-text-fill-color: #293a51 !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .text-blue-500,
+.admin-theme-cheerful .admin-hud-content .text-blue-600,
+.admin-theme-cheerful .admin-hud-content .text-blue-700,
+.admin-theme-cheerful .admin-hud-content .text-blue-800,
+.admin-theme-cheerful .admin-hud-content .text-indigo-600,
+.admin-theme-cheerful .admin-hud-content .text-indigo-700,
+.admin-theme-cheerful .admin-hud-content .text-indigo-800,
+.admin-theme-cheerful .admin-hud-content .text-indigo-900,
+.admin-theme-cheerful .admin-hud-content .text-purple-700,
+.admin-theme-cheerful .admin-hud-content .text-purple-800 {
+  color: #3168b6 !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .text-green-500,
+.admin-theme-cheerful .admin-hud-content .text-green-600,
+.admin-theme-cheerful .admin-hud-content .text-green-700,
+.admin-theme-cheerful .admin-hud-content .text-green-800,
+.admin-theme-cheerful .admin-hud-content .text-emerald-600,
+.admin-theme-cheerful .admin-hud-content .text-emerald-700,
+.admin-theme-cheerful .admin-hud-content .text-emerald-800 {
+  color: #207a55 !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .text-yellow-700,
+.admin-theme-cheerful .admin-hud-content .text-yellow-800,
+.admin-theme-cheerful .admin-hud-content .text-orange-700,
+.admin-theme-cheerful .admin-hud-content .text-orange-800 {
+  color: #98630e !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .text-red-500,
+.admin-theme-cheerful .admin-hud-content .text-red-600,
+.admin-theme-cheerful .admin-hud-content .text-red-700,
+.admin-theme-cheerful .admin-hud-content .text-red-800,
+.admin-theme-cheerful .admin-hud-content .text-rose-500,
+.admin-theme-cheerful .admin-hud-content .text-rose-600,
+.admin-theme-cheerful .admin-hud-content .text-rose-700,
+.admin-theme-cheerful .admin-hud-content .text-rose-800 {
+  color: #bd4057 !important;
+}
+
+.admin-theme-cheerful .admin-hud-content input:not([type="checkbox"]):not([type="radio"]),
+.admin-theme-cheerful .admin-hud-content select,
+.admin-theme-cheerful .admin-hud-content textarea {
+  color: #2a3a50 !important;
+  caret-color: #328ed0;
+  border-color: rgba(105, 171, 210, 0.4) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: inset 0 1px 3px rgba(88, 117, 137, 0.05) !important;
+}
+
+.admin-theme-cheerful .admin-hud-content input::placeholder,
+.admin-theme-cheerful .admin-hud-content textarea::placeholder {
+  color: #94a3b2 !important;
+}
+
+.admin-theme-cheerful .admin-hud-content input:focus,
+.admin-theme-cheerful .admin-hud-content select:focus,
+.admin-theme-cheerful .admin-hud-content textarea:focus {
+  border-color: #59a9dc !important;
+  box-shadow: 0 0 0 4px rgba(84, 174, 226, 0.14) !important;
+}
+
+.admin-theme-cheerful .admin-hud-content select option {
+  color: #2a3a50;
+  background: #ffffff;
+}
+
+.admin-theme-cheerful .admin-hud-content table {
+  color: #34465b;
+  border-color: rgba(125, 178, 207, 0.26) !important;
+}
+
+.admin-theme-cheerful .admin-hud-content thead,
+.admin-theme-cheerful .admin-hud-content th {
+  color: #356b91 !important;
+  border-color: rgba(121, 177, 209, 0.28) !important;
+  background: #eaf6fc !important;
+}
+
+.admin-theme-cheerful .admin-hud-content tbody,
+.admin-theme-cheerful .admin-hud-content td,
+.admin-theme-cheerful .admin-hud-content tr {
+  border-color: rgba(130, 178, 204, 0.2) !important;
+}
+
+.admin-theme-cheerful .admin-hud-content tbody tr:hover {
+  background: rgba(226, 244, 253, 0.68) !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .rounded-2xl {
+  border-radius: 22px !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .rounded-xl {
+  border-radius: 16px !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .rounded-lg {
+  border-radius: 12px !important;
+}
+
+.admin-theme-cheerful .admin-hud-content [class~="from-blue-500"][class~="to-purple-600"],
+.admin-theme-cheerful .admin-hud-content [class~="from-blue-600"][class~="to-indigo-600"] {
+  background-image: linear-gradient(115deg, #4caef1, #817ff0) !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .prose,
+.admin-theme-cheerful .admin-hud-content .prose p,
+.admin-theme-cheerful .admin-hud-content .prose li,
+.admin-theme-cheerful .admin-hud-content .prose strong,
+.admin-theme-cheerful .admin-hud-content .markdown-content {
+  color: #40546a !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .prose h1,
+.admin-theme-cheerful .admin-hud-content .prose h2,
+.admin-theme-cheerful .admin-hud-content .prose h3,
+.admin-theme-cheerful .admin-hud-content .prose h4 {
+  color: #26384f !important;
+}
+
+.admin-theme-cheerful .admin-hud-content .prose a,
+.admin-theme-cheerful .admin-hud-content .markdown-content a {
+  color: #287fbd !important;
+}
+
+.admin-theme-cheerful .admin-hud-content ::-webkit-scrollbar-track,
+.admin-theme-cheerful .admin-hud-navigation::-webkit-scrollbar-track {
+  background: rgba(234, 243, 248, 0.86);
+}
+
+.admin-theme-cheerful .admin-hud-content ::-webkit-scrollbar-thumb,
+.admin-theme-cheerful .admin-hud-navigation::-webkit-scrollbar-thumb {
+  border-color: rgba(234, 243, 248, 0.86);
+  background: rgba(84, 161, 205, 0.48);
+}
+
+.admin-theme-cheerful .hud-page-heading {
+  border-color: rgba(107, 180, 219, 0.3);
+  border-radius: 24px;
+  clip-path: none;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(255, 188, 210, 0.36), transparent 18rem),
+    linear-gradient(115deg, rgba(232, 248, 255, 0.96), rgba(255, 250, 244, 0.96) 58%, rgba(255, 238, 244, 0.94));
+  box-shadow: 0 18px 42px rgba(83, 126, 154, 0.12), inset 5px 0 #61b8ed;
+}
+
+.admin-theme-cheerful .hud-page-heading::after {
+  width: 34%;
+  opacity: 0.54;
+  background:
+    radial-gradient(circle at 70% 35%, rgba(103, 192, 245, 0.26) 0 18px, transparent 19px),
+    radial-gradient(circle at 88% 70%, rgba(255, 143, 177, 0.23) 0 30px, transparent 31px);
+  mask-image: linear-gradient(to right, transparent, black 35%);
+}
+
+.admin-theme-cheerful .hud-page-title {
+  color: #293a51;
+}
+
+.admin-theme-cheerful .hud-page-description {
+  color: #617488;
+}
+
+.admin-theme-cheerful .hud-panel {
+  border-color: rgba(112, 179, 216, 0.29);
+  border-radius: 22px;
+  clip-path: none;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 17px 40px rgba(86, 120, 143, 0.1), inset 0 1px #ffffff;
+}
+
+.admin-theme-cheerful .hud-panel::before,
+.admin-theme-cheerful .hud-panel::after {
+  display: none;
+}
+
+.admin-theme-cheerful .hud-panel .text-white {
+  color: #293a51 !important;
+}
+
+.admin-theme-cheerful .hud-panel .text-slate-300 {
+  color: #5f7185 !important;
+}
+
+.admin-theme-cheerful .hud-danger-panel {
+  border-color: rgba(226, 105, 126, 0.28);
+  background:
+    radial-gradient(circle at 0% 20%, rgba(255, 197, 209, 0.28), transparent 20rem),
+    rgba(255, 253, 253, 0.96);
+}
+
+.admin-theme-cheerful .hud-danger-panel .text-red-100 {
+  color: #b93d54 !important;
+}
+
+.admin-theme-cheerful .hud-danger-button {
+  color: #ffffff;
+  border-color: rgba(213, 76, 101, 0.36);
+  border-radius: 13px;
+  clip-path: none;
+  background: linear-gradient(110deg, #ef6680, #da4967);
+  box-shadow: 0 9px 22px rgba(211, 68, 95, 0.2), inset 0 1px rgba(255, 255, 255, 0.22);
+}
+
+/* 管理員登入頁沿用選定風格 */
+.admin-login-cheerful {
+  color-scheme: light;
+}
+
+.admin-login-cheerful .admin-login-backdrop-base {
+  background: #fffaf4 !important;
+}
+
+.admin-login-cheerful .admin-login-orb-a {
+  background: rgba(100, 199, 255, 0.42) !important;
+  opacity: 0.8;
+}
+
+.admin-login-cheerful .admin-login-orb-b {
+  background: rgba(255, 159, 193, 0.34) !important;
+  opacity: 0.8;
+}
+
+.admin-login-cheerful .admin-login-grid {
+  opacity: 0.42 !important;
+  background-image: radial-gradient(circle, rgba(73, 151, 202, 0.25) 1.5px, transparent 1.5px) !important;
+  background-size: 42px 42px !important;
+}
+
+.admin-login-cheerful .admin-login-vignette {
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08), rgba(255, 250, 244, 0.18) 62%, rgba(245, 250, 253, 0.52)) !important;
+}
+
+.admin-login-cheerful .admin-login-loading {
+  border-color: rgba(104, 174, 213, 0.3) !important;
+  background: rgba(255, 255, 255, 0.76) !important;
+  box-shadow: 0 18px 45px rgba(80, 118, 143, 0.13);
+}
+
+.admin-login-cheerful .admin-login-loading svg {
+  color: #4c8ec1 !important;
+}
+
+.admin-login-cheerful .admin-login-password-frame {
+  background: linear-gradient(110deg, #72c9f7, #a99cf3, #ff9fbc) !important;
+  box-shadow: 0 26px 75px -28px rgba(83, 139, 176, 0.5) !important;
+}
+
+.admin-login-cheerful .admin-login-password-glow {
+  background: linear-gradient(110deg, rgba(100, 200, 255, 0.3), rgba(255, 154, 189, 0.26)) !important;
+}
+
+.admin-login-cheerful .admin-login-password-surface {
+  background: rgba(255, 255, 255, 0.94) !important;
+}
+
+.admin-login-cheerful .admin-login-password-icon {
+  color: #5c80bf !important;
+}
+
+.admin-login-cheerful .admin-login-password-input {
+  color: #29394e !important;
+  caret-color: #4d9ed2 !important;
+}
+
+.admin-login-cheerful .admin-login-password-input::placeholder {
+  color: #a5b1bf !important;
+}
+
+.admin-login-cheerful .admin-login-password-submit {
+  color: #6f8195 !important;
+}
+
+.admin-login-cheerful .admin-login-password-submit:hover,
+.admin-login-cheerful .admin-login-password-submit:focus-visible {
+  color: #307dae !important;
+}
+
 @keyframes admin-hud-scan {
   from { transform: translateY(-30vh); }
   to { transform: translateY(130vh); }
