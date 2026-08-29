@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Navigate, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
@@ -23,7 +24,6 @@ import SongsPage from './pages/lyrics/SongsPage'
 import LyricDetailPage from './pages/lyrics/LyricDetailPage'
 
 import AdminLogin from './pages/admin/Login'
-import AdminDashboard from './pages/admin/Dashboard'
 
 import AdminAnnouncements from './pages/admin/Announcements'
 import AdminSettings from './pages/admin/Settings'
@@ -36,10 +36,24 @@ import AdminRedeemCodes from './pages/admin/RedeemCodes'
 import ProtectedRoute from './components/ProtectedRoute'
 import NotFound from './pages/NotFound'
 
+const RouteBodyClass = () => {
+  const location = useLocation()
+
+  useEffect(() => {
+    const isAdminRoute = location.pathname === '/admin' || location.pathname.startsWith('/admin/')
+    document.body.classList.toggle('admin-route', isAdminRoute)
+
+    return () => document.body.classList.remove('admin-route')
+  }, [location.pathname])
+
+  return null
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <RouteBodyClass />
         <Routes>
           {/* 公開頁面 */}
           <Route path="/" element={<Layout />}>
@@ -76,8 +90,8 @@ function App() {
               <AdminLayout />
             </ProtectedRoute>
           }>
-            <Route index element={<AdminDashboard />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route index element={<Navigate to="announcements" replace />} />
+            <Route path="dashboard" element={<Navigate to="/admin/announcements" replace />} />
 
             <Route path="announcements" element={<AdminAnnouncements />} />
             <Route path="add-coins" element={<AdminAddCoins />} />

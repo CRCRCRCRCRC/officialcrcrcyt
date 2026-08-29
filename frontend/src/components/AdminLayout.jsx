@@ -4,7 +4,6 @@ import {
   ChevronDown,
   Coins,
   KeyRound,
-  LayoutDashboard,
   LogOut,
   Megaphone,
   Menu,
@@ -19,7 +18,6 @@ import { useAuth } from '../contexts/AuthContext'
 import '../styles/admin-hud.css'
 
 const navigation = [
-  { name: '儀表板', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: '公告管理', href: '/admin/announcements', icon: Megaphone },
   { name: 'coin 發放', href: '/admin/add-coins', icon: Coins },
   { name: '通行券XP發放', href: '/admin/add-xp', icon: Zap },

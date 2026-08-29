@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, Outlet } from 'react-router-dom'
 import {
-  LayoutDashboard,
   Video,
   Settings as SettingsIcon,
   Users,
@@ -38,11 +37,6 @@ const AdminLayoutSimple = () => {
   }, [])
 
   const navigation = [
-    { 
-      name: '儀表板', 
-      href: '/admin/dashboard', 
-      icon: LayoutDashboard
-    },
     {
       name: '熱門影片',
       href: '/admin/featured-videos',

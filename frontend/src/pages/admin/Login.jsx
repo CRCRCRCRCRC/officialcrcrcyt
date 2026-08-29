@@ -46,7 +46,7 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (isAuthenticated && user?.role === 'admin') {
-    return <Navigate to="/admin/dashboard" replace />
+    return <Navigate to="/admin/announcements" replace />
   }
 
   const handleGoogleCode = async (code) => {
@@ -69,7 +69,7 @@ const Login = () => {
     setIsSubmitting(true)
     try {
       await completeAdminGoogleLogin(challenge, password)
-      navigate('/admin/dashboard', { replace: true })
+      navigate('/admin/announcements', { replace: true })
     } catch (error) {
       const responseData = error.response?.data
       toast.error(responseData?.error || error.message || '登入失敗')

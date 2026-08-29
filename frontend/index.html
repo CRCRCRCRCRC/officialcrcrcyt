@@ -71,16 +71,23 @@
     <title>CRCRC 官方網站！</title>
   </head>
   <body>
+    <script>
+      if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) {
+        document.body.classList.add('admin-route');
+      }
+    </script>
     <div id="root"></div>
     <!-- Ko-fi overlay widget -->
     <script src="https://storage.ko-fi.com/cdn/scripts/overlay-widget.js"></script>
     <script>
-      kofiWidgetOverlay.draw('crcrcyt', {
-        'type': 'floating-chat',
-        'floating-chat.donateButton.text': 'Donate',
-        'floating-chat.donateButton.background-color': '#5bc0de',
-        'floating-chat.donateButton.text-color': '#323842'
-      });
+      if (!document.body.classList.contains('admin-route')) {
+        kofiWidgetOverlay.draw('crcrcyt', {
+          'type': 'floating-chat',
+          'floating-chat.donateButton.text': 'Donate',
+          'floating-chat.donateButton.background-color': '#5bc0de',
+          'floating-chat.donateButton.text-color': '#323842'
+        });
+      }
     </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
