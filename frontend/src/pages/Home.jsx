@@ -74,17 +74,16 @@ const Home = () => {
   return (
     <div className="min-h-full">
       {/* Hero Section */}
-      <section ref={heroRef} className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
-        {/* 靜態漸層背景 - 高效能 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary-600 via-purple-600 to-pink-600"></div>
-        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 via-transparent to-yellow-400/10"></div>
+      <section ref={heroRef} className="home-hero relative min-h-[85vh] flex items-center justify-center overflow-hidden">
+        <div className="home-hero-backdrop" aria-hidden="true" />
+        <div className="home-hero-atmosphere" aria-hidden="true" />
 
-        <div className="relative container-custom py-16 lg:py-24 text-center">
+        <div className="home-hero-content relative container-custom py-16 lg:py-24 text-center">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={heroInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 1, ease: "easeOut" }}
-            className="max-w-5xl mx-auto p-8 lg:p-12"
+            className="home-hero-copy max-w-5xl mx-auto p-8 lg:p-12"
           >
             {/* 主標題 */}
             <motion.h1
@@ -93,7 +92,7 @@ const Home = () => {
               transition={{ duration: 1, delay: 0.3 }}
               className="text-5xl md:text-7xl lg:text-8xl font-display font-black mb-8 leading-tight"
             >
-              <span className="text-white drop-shadow-2xl">你好。</span>
+              <span className="home-hero-title-text">你好。</span>
             </motion.h1>
 
             {/* 副標題 */}
@@ -107,16 +106,16 @@ const Home = () => {
               className="flex flex-wrap items-center justify-center gap-4 mb-12"
             >
               {[
-                { icon: Heart, text: "哈哈哈", color: "from-pink-400 to-red-400" },
-                { icon: TrendingUp, text: "特別好吃（?", color: "from-green-400 to-blue-400" },
-                { icon: Star, text: "嘿嘿嘿", color: "from-yellow-400 to-orange-400" },
+                { icon: Heart, text: "哈哈哈", tone: "rose" },
+                { icon: TrendingUp, text: "特別好吃（?", tone: "sky" },
+                { icon: Star, text: "嘿嘿嘿", tone: "amber" },
               ].map((item, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={heroInView ? { opacity: 1, scale: 1 } : {}}
                   transition={{ duration: 0.6, delay: 0.8 + index * 0.1 }}
-                  className={`flex items-center space-x-2 bg-gradient-to-r ${item.color} rounded-full px-4 py-2 text-white font-medium shadow-lg`}
+                  className={`home-hero-chip home-hero-chip--${item.tone} flex items-center space-x-2 px-4 py-2 font-medium`}
                 >
                   <item.icon className="w-4 h-4" />
                   <span className="text-sm">{item.text}</span>
@@ -129,13 +128,13 @@ const Home = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={heroInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 1, delay: 0.9 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-6"
+              className="home-hero-actions flex flex-col sm:flex-row items-center justify-center gap-5"
             >
               <a
                 href="https://youtube.com/@officialcrcrcyt"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn-large bg-gradient-to-r from-red-500 to-pink-600 text-white hover:from-red-600 hover:to-pink-700 shadow-glow-lg"
+                className="home-hero-action home-hero-action--primary"
               >
                 <span className="text-lg font-bold">訂閱頻道</span>
               </a>
@@ -148,7 +147,7 @@ const Home = () => {
                   href="https://youtube.com/@officialcrcrcyt"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-large btn-ghost"
+                  className="home-hero-action home-hero-action--secondary"
                 >
                   <span className="text-lg font-bold">觀看影片</span>
                 </a>
