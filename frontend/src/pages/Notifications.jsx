@@ -25,7 +25,7 @@ const GIFT_META = {
 }
 
 const CONTACT_META = {
-  label: '聯絡回覆',
+  label: '站內私訊',
   colorClass: 'text-violet-600 bg-violet-50',
   icon: Mail
 }
@@ -141,7 +141,7 @@ const Notifications = () => {
           </div>
           <h1 className="text-2xl font-bold text-gray-900">請先登入</h1>
           <p className="text-gray-600 text-sm leading-relaxed">
-            登入 CRCRC 帳號即可接收「幫你宣傳」等人工審核商品的最新通知。
+            登入後即可接收站內私訊、禮物與商品處理通知。
           </p>
           <Link
             to="/"
@@ -231,11 +231,7 @@ const Notifications = () => {
                           {notification.reply}
                         </div>
                       )}
-                      {isContact ? (
-                        <p className="mt-2 text-xs text-gray-500">
-                          聯絡編號：{notification.reference || '—'}
-                        </p>
-                      ) : (
+                      {!isContact && (
                         <p className="mt-2 text-xs text-gray-500">
                           {isGift ? '禮物' : '商品'}：{productLabel}｜{priceLabel}：
                           {Number(notification.price || 0).toLocaleString('zh-TW')} coin{quantityLabel}

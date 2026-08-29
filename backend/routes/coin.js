@@ -1676,14 +1676,12 @@ router.get('/notifications', authenticateToken, async (req, res) => {
     const contactNotifications = (contactRows || []).map((message) => ({
       type: 'contact',
       id: `contact:${message.id}`,
-      contactId: message.id,
-      reference: message.reference_code,
-      subject: message.subject,
-      status: 'replied',
-      message: `你的聯絡訊息「${message.subject}」已收到回覆。`,
-      reply: message.admin_reply,
+      conversationId: message.conversation_id,
+      status: 'message',
+      message: '管理員傳來一則站內私訊。',
+      reply: message.body,
       variant: 'success',
-      createdAt: message.replied_at || message.updated_at || message.created_at || null,
+      createdAt: message.created_at || null,
       notifiedAt: message.user_notified_at || null
     }));
 

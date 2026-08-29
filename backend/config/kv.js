@@ -430,16 +430,24 @@ class KVDatabase {
     return `coin_backpack_items:${userId}`;
   }
 
-  contactMessageKey(messageId) {
-    return `contact_message:${messageId}`;
+  contactConversationKey(conversationId) {
+    return `contact_conversation:${conversationId}`;
   }
 
-  contactMessageSetKey() {
-    return 'contact_messages';
+  contactConversationSetKey() {
+    return 'contact_conversations';
   }
 
-  contactReferenceIndexKey() {
-    return 'contact_reference_index';
+  contactConversationUserIndexKey() {
+    return 'contact_conversation_user_index';
+  }
+
+  contactChatMessageKey(messageId) {
+    return `contact_chat_message:${messageId}`;
+  }
+
+  contactConversationMessagesKey(conversationId) {
+    return `contact_conversation_messages:${conversationId}`;
   }
 
   parsePassList(raw) {
@@ -1045,210 +1053,240 @@ class KVDatabase {
     return this.mapBackpackItemRecord(updated);
   }
 
-  mapContactMessageRecord(raw) {
+  mapContactConversationRecord(raw) {
     if (!raw || Object.keys(raw).length === 0) return null;
     return {
       id: raw.id,
-      reference_code: raw.reference_code,
-      user_id: raw.user_id || null,
-      sender_name: raw.sender_name,
-      sender_email: raw.sender_email,
-      category: raw.category,
-      subject: raw.subject,
-      message: raw.message,
-      attachment_name: raw.attachment_name || null,
-      attachment_mime: raw.attachment_mime || null,
-      attachment_data: raw.attachment_data || null,
-      has_attachment: Boolean(raw.attachment_data || raw.has_attachment),
-      source_page: raw.source_page || null,
-      color_mode: raw.color_mode || null,
-      effect_mode: raw.effect_mode || null,
-      status: raw.status || 'new',
-      admin_reply: raw.admin_reply || null,
-      read_at: raw.read_at || null,
-      replied_at: raw.replied_at || null,
-      replied_by: raw.replied_by || null,
-      user_notified_at: raw.user_notified_at || null,
-      user_dismissed_at: raw.user_dismissed_at || null,
+      user_id: raw.user_id,
+      status: raw.status || 'open',
+      admin_last_read_at: raw.admin_last_read_at || null,
+      user_last_read_at: raw.user_last_read_at || null,
+      last_message_at: raw.last_message_at || null,
       created_at: raw.created_at || null,
       updated_at: raw.updated_at || null,
-      user_display_name: raw.user_display_name || null,
-      user_public_id: raw.user_public_id || null,
-      user_avatar_url: raw.user_avatar_url || null
+      user_display_name: raw.user_display_name || raw.user_username || raw.user_email || '',
+      user_email: raw.user_email || raw.user_username || '',
+      user_public_id: raw.user_public_id || '',
+      user_avatar_url: raw.user_avatar_url || '',
+      last_message: raw.last_message || '',
+      last_sender_role: raw.last_sender_role || null,
+      admin_unread_count: Number(raw.admin_unread_count) || 0,
+      user_unread_count: Number(raw.user_unread_count) || 0
     };
   }
 
-  async generateContactReference(maxAttempts = 10) {
-    for (let i = 0; i < maxAttempts; i += 1) {
-      const reference = `CR-${this.generatePublicId(8)}`;
-      const existing = await this.kv.hget(this.contactReferenceIndexKey(), reference);
-      if (!existing) return reference;
-    }
-    throw new Error('Unable to generate contact reference');
+  mapContactChatMessageRecord(raw) {
+    if (!raw || Object.keys(raw).length === 0) return null;
+    return {
+      id: raw.id,
+      conversation_id: raw.conversation_id,
+      sender_id: raw.sender_id || null,
+      sender_role: raw.sender_role,
+      body: raw.body,
+      sender_name: raw.sender_name || null,
+      sender_avatar_url: raw.sender_avatar_url || null,
+      user_notified_at: raw.user_notified_at || null,
+      user_dismissed_at: raw.user_dismissed_at || null,
+      created_at: raw.created_at || null
+    };
   }
 
-  async createContactMessage(payload = {}) {
-    const id = `contact-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const reference = await this.generateContactReference();
+  async getContactConversationForUser(userId) {
+    const conversationId = await this.kv.hget(
+      this.contactConversationUserIndexKey(),
+      String(userId)
+    );
+    return conversationId ? this.getContactConversationById(conversationId) : null;
+  }
+
+  async getOrCreateContactConversation(userId) {
+    const existing = await this.getContactConversationForUser(userId);
+    if (existing) return existing;
+
+    const id = `contact-conversation-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const now = new Date().toISOString();
-    const user = payload.userId ? await this.getUserById(payload.userId) : null;
     const record = {
       id,
-      reference_code: reference,
-      user_id: payload.userId || null,
-      sender_name: payload.senderName,
-      sender_email: payload.senderEmail,
-      category: payload.category,
-      subject: payload.subject,
-      message: payload.message,
-      attachment_name: payload.attachment?.name || null,
-      attachment_mime: payload.attachment?.mime || null,
-      attachment_data: payload.attachment?.data || null,
-      source_page: payload.sourcePage || null,
-      color_mode: payload.colorMode || null,
-      effect_mode: payload.effectMode || null,
-      status: 'new',
-      admin_reply: null,
-      read_at: null,
-      replied_at: null,
-      replied_by: null,
-      user_notified_at: null,
-      user_dismissed_at: null,
+      user_id: userId,
+      status: 'open',
+      admin_last_read_at: null,
+      user_last_read_at: now,
+      last_message_at: now,
       created_at: now,
-      updated_at: now,
-      user_display_name: user?.display_name || null,
-      user_public_id: user?.public_id || null,
-      user_avatar_url: user?.avatar_url || null
+      updated_at: now
     };
-    await this.kv.hset(this.contactMessageKey(id), record);
-    await this.kv.sadd(this.contactMessageSetKey(), id);
-    await this.kv.hset(this.contactReferenceIndexKey(), { [reference]: id });
-    return this.mapContactMessageRecord(record);
+    await this.kv.hset(this.contactConversationKey(id), record);
+    await this.kv.sadd(this.contactConversationSetKey(), id);
+    await this.kv.hset(this.contactConversationUserIndexKey(), { [String(userId)]: id });
+    return this.getContactConversationById(id);
   }
 
-  async getContactMessages(options = {}) {
-    const ids = await this.kv.smembers(this.contactMessageSetKey());
-    const status = String(options.status || '').trim().toLowerCase();
-    const category = String(options.category || '').trim().toLowerCase();
-    const search = String(options.search || '').trim().toLowerCase();
-    const list = [];
+  async getContactConversationById(conversationId) {
+    if (!conversationId) return null;
+    const raw = await this.kv.hgetall(this.contactConversationKey(conversationId));
+    if (!raw || Object.keys(raw).length === 0) return null;
+    const user = await this.getUserById(raw.user_id);
+    const messages = await this.getContactChatMessages(conversationId, 500);
+    const adminLastRead = toTimestamp(raw.admin_last_read_at);
+    const userLastRead = toTimestamp(raw.user_last_read_at);
+    const lastMessage = messages[messages.length - 1] || null;
+    return this.mapContactConversationRecord({
+      ...raw,
+      user_display_name: user?.display_name || user?.displayName || user?.username || '',
+      user_email: user?.email || user?.username || '',
+      user_public_id: user?.public_id || user?.publicId || '',
+      user_avatar_url: user?.avatar_url || user?.avatarUrl || '',
+      last_message: lastMessage?.body || '',
+      last_sender_role: lastMessage?.sender_role || null,
+      admin_unread_count: messages.filter((message) => (
+        message.sender_role === 'user' &&
+        (adminLastRead === null || toTimestamp(message.created_at) > adminLastRead)
+      )).length,
+      user_unread_count: messages.filter((message) => (
+        message.sender_role === 'admin' &&
+        (userLastRead === null || toTimestamp(message.created_at) > userLastRead)
+      )).length
+    });
+  }
 
+  async listContactConversations(options = {}) {
+    const ids = await this.kv.smembers(this.contactConversationSetKey());
+    const search = String(options.search || '').trim().toLowerCase();
+    const conversations = [];
     for (const id of ids) {
-      const raw = await this.kv.hgetall(this.contactMessageKey(id));
-      const item = this.mapContactMessageRecord(raw);
-      if (!item) continue;
-      if (status && status !== 'all' && item.status !== status) continue;
-      if (category && category !== 'all' && item.category !== category) continue;
+      const conversation = await this.getContactConversationById(id);
+      if (!conversation) continue;
       if (search) {
         const haystack = [
-          item.reference_code,
-          item.sender_name,
-          item.sender_email,
-          item.subject,
-          item.message
+          conversation.user_display_name,
+          conversation.user_email,
+          conversation.user_public_id
         ].join(' ').toLowerCase();
         if (!haystack.includes(search)) continue;
       }
-      list.push({ ...item, attachment_data: null, has_attachment: Boolean(item.attachment_data) });
+      conversations.push(conversation);
     }
-
-    list.sort((a, b) => {
-      if (a.status === 'new' && b.status !== 'new') return -1;
-      if (a.status !== 'new' && b.status === 'new') return 1;
-      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-    });
-    return list.slice(0, Math.max(1, Math.min(300, Number(options.limit) || 150)));
+    conversations.sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0));
+    return conversations.slice(0, Math.max(1, Math.min(300, Number(options.limit) || 150)));
   }
 
-  async getContactMessageById(messageId) {
-    if (!messageId) return null;
-    const raw = await this.kv.hgetall(this.contactMessageKey(messageId));
-    return this.mapContactMessageRecord(raw);
+  async getContactChatMessages(conversationId, limit = 200) {
+    const ids = await this.kv.smembers(this.contactConversationMessagesKey(conversationId));
+    const messages = [];
+    for (const id of ids) {
+      const raw = await this.kv.hgetall(this.contactChatMessageKey(id));
+      const message = this.mapContactChatMessageRecord(raw);
+      if (!message) continue;
+      const sender = message.sender_id ? await this.getUserById(message.sender_id) : null;
+      messages.push({
+        ...message,
+        sender_name: sender?.display_name || sender?.displayName || sender?.username || null,
+        sender_avatar_url: sender?.avatar_url || sender?.avatarUrl || null
+      });
+    }
+    messages.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+    return messages.slice(-Math.max(1, Math.min(500, Number(limit) || 200)));
   }
 
-  async markContactMessageRead(messageId) {
-    const current = await this.getContactMessageById(messageId);
-    if (!current) return null;
-    await this.kv.hset(this.contactMessageKey(messageId), {
-      read_at: current.read_at || new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
-    return this.getContactMessageById(messageId);
-  }
-
-  async updateContactMessage(messageId, payload = {}) {
-    const current = await this.getContactMessageById(messageId);
-    if (!current) return null;
+  async addContactChatMessage(payload = {}) {
+    const conversation = await this.getContactConversationById(payload.conversationId);
+    if (!conversation) return null;
+    const senderRole = payload.senderRole === 'admin' ? 'admin' : 'user';
+    const id = `contact-message-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
     const now = new Date().toISOString();
-    const updates = {
-      status: payload.status || current.status,
-      read_at: current.read_at || now,
-      updated_at: now
+    const record = {
+      id,
+      conversation_id: payload.conversationId,
+      sender_id: payload.senderId || null,
+      sender_role: senderRole,
+      body: payload.body,
+      user_notified_at: null,
+      user_dismissed_at: null,
+      created_at: now
     };
-    if (payload.reply !== undefined) {
-      updates.admin_reply = payload.reply;
-      updates.replied_by = payload.adminId || null;
-      updates.replied_at = now;
-      updates.user_notified_at = null;
-      updates.user_dismissed_at = null;
-    }
-    await this.kv.hset(this.contactMessageKey(messageId), updates);
-    return this.getContactMessageById(messageId);
+    await this.kv.hset(this.contactChatMessageKey(id), record);
+    await this.kv.sadd(this.contactConversationMessagesKey(payload.conversationId), id);
+    await this.kv.hset(this.contactConversationKey(payload.conversationId), {
+      status: 'open',
+      last_message_at: now,
+      updated_at: now,
+      ...(senderRole === 'admin' ? { admin_last_read_at: now } : { user_last_read_at: now })
+    });
+    const sender = payload.senderId ? await this.getUserById(payload.senderId) : null;
+    return this.mapContactChatMessageRecord({
+      ...record,
+      sender_name: sender?.display_name || sender?.displayName || sender?.username || null,
+      sender_avatar_url: sender?.avatar_url || sender?.avatarUrl || null
+    });
   }
 
-  async getContactNotifications(userId) {
-    const ids = await this.kv.smembers(this.contactMessageSetKey());
-    const notifications = [];
+  async markContactConversationRead(conversationId, readerRole) {
+    const conversation = await this.getContactConversationById(conversationId);
+    if (!conversation) return null;
     const now = new Date().toISOString();
-    for (const id of ids) {
-      const raw = await this.kv.hgetall(this.contactMessageKey(id));
-      const item = this.mapContactMessageRecord(raw);
-      if (
-        item &&
-        String(item.user_id) === String(userId) &&
-        item.status === 'replied' &&
-        item.admin_reply &&
-        !item.user_notified_at &&
-        !item.user_dismissed_at
-      ) {
-        notifications.push(item);
-        await this.kv.hset(this.contactMessageKey(id), { user_notified_at: now });
-      }
-    }
-    notifications.sort((a, b) => new Date(b.replied_at || 0) - new Date(a.replied_at || 0));
-    return notifications;
-  }
-
-  async listContactNotifications(userId) {
-    const ids = await this.kv.smembers(this.contactMessageSetKey());
-    const notifications = [];
-    const now = new Date().toISOString();
-    for (const id of ids) {
-      const raw = await this.kv.hgetall(this.contactMessageKey(id));
-      const item = this.mapContactMessageRecord(raw);
-      if (
-        item &&
-        String(item.user_id) === String(userId) &&
-        item.status === 'replied' &&
-        item.admin_reply &&
-        !item.user_dismissed_at
-      ) {
-        notifications.push(item);
-        if (!item.user_notified_at) {
-          await this.kv.hset(this.contactMessageKey(id), { user_notified_at: now });
+    await this.kv.hset(this.contactConversationKey(conversationId), {
+      [readerRole === 'admin' ? 'admin_last_read_at' : 'user_last_read_at']: now,
+      updated_at: now
+    });
+    if (readerRole !== 'admin') {
+      const messages = await this.getContactChatMessages(conversationId, 500);
+      for (const message of messages) {
+        if (message.sender_role === 'admin' && !message.user_notified_at) {
+          await this.kv.hset(this.contactChatMessageKey(message.id), { user_notified_at: now });
         }
       }
     }
-    notifications.sort((a, b) => new Date(b.replied_at || 0) - new Date(a.replied_at || 0));
-    return notifications;
+    return this.getContactConversationById(conversationId);
+  }
+
+  async setContactConversationStatus(conversationId, status) {
+    const conversation = await this.getContactConversationById(conversationId);
+    if (!conversation) return null;
+    await this.kv.hset(this.contactConversationKey(conversationId), {
+      status,
+      updated_at: new Date().toISOString()
+    });
+    return this.getContactConversationById(conversationId);
+  }
+
+  async getContactNotifications(userId) {
+    const conversation = await this.getContactConversationForUser(userId);
+    if (!conversation) return [];
+    const messages = await this.getContactChatMessages(conversation.id, 500);
+    const notifications = messages.filter((message) => (
+      message.sender_role === 'admin' && !message.user_notified_at && !message.user_dismissed_at
+    ));
+    const now = new Date().toISOString();
+    for (const message of notifications) {
+      await this.kv.hset(this.contactChatMessageKey(message.id), { user_notified_at: now });
+    }
+    return notifications.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  }
+
+  async listContactNotifications(userId) {
+    const conversation = await this.getContactConversationForUser(userId);
+    if (!conversation) return [];
+    const messages = await this.getContactChatMessages(conversation.id, 500);
+    const notifications = messages.filter((message) => (
+      message.sender_role === 'admin' && !message.user_dismissed_at
+    ));
+    const now = new Date().toISOString();
+    for (const message of notifications) {
+      if (!message.user_notified_at) {
+        await this.kv.hset(this.contactChatMessageKey(message.id), { user_notified_at: now });
+      }
+    }
+    return notifications.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
   }
 
   async dismissContactNotification(messageId, userId) {
-    const item = await this.getContactMessageById(messageId);
-    if (!item || String(item.user_id) !== String(userId) || item.user_dismissed_at) return null;
-    await this.kv.hset(this.contactMessageKey(messageId), {
-      user_dismissed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+    const messageRaw = await this.kv.hgetall(this.contactChatMessageKey(messageId));
+    const message = this.mapContactChatMessageRecord(messageRaw);
+    if (!message || message.sender_role !== 'admin' || message.user_dismissed_at) return null;
+    const conversation = await this.getContactConversationById(message.conversation_id);
+    if (!conversation || String(conversation.user_id) !== String(userId)) return null;
+    await this.kv.hset(this.contactChatMessageKey(messageId), {
+      user_dismissed_at: new Date().toISOString()
     });
     return { id: messageId };
   }

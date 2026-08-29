@@ -42,7 +42,7 @@ api.interceptors.request.use(
     const websiteToken = localStorage.getItem('website_token')
     const url = String(config.url || '')
     const isCoinApi = url.includes('/coin/')
-    const isPublicContactApi = /^\/contact(?:\?|$)/.test(url)
+    const isPublicContactApi = /^\/contact\/(?:conversation|messages)(?:[/?]|$)/.test(url)
     
     // 對於 Coin API，需要根據具體的端點來決定使用哪個令牌
     let picked = null;
@@ -59,7 +59,7 @@ api.interceptors.request.use(
         picked = websiteToken || adminToken;
       }
     } else if (isPublicContactApi) {
-      // 公開聯絡表單優先辨識網站帳號，讓回覆可以送進使用者通知中心。
+      // 使用者站內私訊優先使用網站帳號的 token。
       picked = websiteToken || adminToken;
     } else {
       // 非 Coin API 端點優先使用 adminToken
@@ -327,17 +327,23 @@ export const announcementAPI = {
 }
 
 export const contactAPI = {
-  submit: (payload) =>
-    api.post('/contact', payload),
+  getConversation: () =>
+    api.get('/contact/conversation'),
 
-  getAll: (params = {}) =>
-    api.get('/contact/admin', { params }),
+  sendMessage: (message) =>
+    api.post('/contact/messages', { message }),
 
-  getById: (messageId) =>
-    api.get(`/contact/admin/${encodeURIComponent(messageId)}`),
+  getConversations: (params = {}) =>
+    api.get('/contact/admin/conversations', { params }),
 
-  update: (messageId, payload) =>
-    api.patch(`/contact/admin/${encodeURIComponent(messageId)}`, payload)
+  getAdminConversation: (conversationId) =>
+    api.get(`/contact/admin/conversations/${encodeURIComponent(conversationId)}`),
+
+  sendAdminMessage: (conversationId, message) =>
+    api.post(`/contact/admin/conversations/${encodeURIComponent(conversationId)}/messages`, { message }),
+
+  updateConversation: (conversationId, status) =>
+    api.patch(`/contact/admin/conversations/${encodeURIComponent(conversationId)}`, { status })
 }
 
 export const artistsAPI = {

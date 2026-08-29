@@ -528,40 +528,34 @@ class NeonDatabase {
         CREATE INDEX IF NOT EXISTS idx_redeem_code_uses_user_id ON redeem_code_uses(user_id)
       `);
       await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS contact_messages (
+        CREATE TABLE IF NOT EXISTS contact_conversations (
           id SERIAL PRIMARY KEY,
-          reference_code VARCHAR(24) UNIQUE NOT NULL,
-          user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-          sender_name VARCHAR(100) NOT NULL,
-          sender_email VARCHAR(255) NOT NULL,
-          category VARCHAR(40) NOT NULL,
-          subject VARCHAR(150) NOT NULL,
-          message TEXT NOT NULL,
-          attachment_name VARCHAR(180),
-          attachment_mime VARCHAR(80),
-          attachment_data TEXT,
-          source_page VARCHAR(500),
-          color_mode VARCHAR(20),
-          effect_mode VARCHAR(20),
-          status VARCHAR(30) NOT NULL DEFAULT 'new',
-          admin_reply TEXT,
-          read_at TIMESTAMP,
-          replied_at TIMESTAMP,
-          replied_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
-          user_notified_at TIMESTAMP,
-          user_dismissed_at TIMESTAMP,
+          user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          status VARCHAR(20) NOT NULL DEFAULT 'open',
+          admin_last_read_at TIMESTAMP,
+          user_last_read_at TIMESTAMP,
+          last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
       await this.pool.query(`
-        CREATE INDEX IF NOT EXISTS idx_contact_messages_status ON contact_messages(status)
+        CREATE TABLE IF NOT EXISTS contact_chat_messages (
+          id SERIAL PRIMARY KEY,
+          conversation_id INTEGER NOT NULL REFERENCES contact_conversations(id) ON DELETE CASCADE,
+          sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          sender_role VARCHAR(20) NOT NULL,
+          body TEXT NOT NULL,
+          user_notified_at TIMESTAMP,
+          user_dismissed_at TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
       `);
       await this.pool.query(`
-        CREATE INDEX IF NOT EXISTS idx_contact_messages_user_id ON contact_messages(user_id)
+        CREATE INDEX IF NOT EXISTS idx_contact_conversations_last_message ON contact_conversations(last_message_at DESC)
       `);
       await this.pool.query(`
-        CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at ON contact_messages(created_at DESC)
+        CREATE INDEX IF NOT EXISTS idx_contact_chat_messages_conversation ON contact_chat_messages(conversation_id, created_at)
       `);
       await this.pool.query(`
         ALTER TABLE coin_orders
@@ -1522,237 +1516,263 @@ class NeonDatabase {
     }
   }
 
-  mapContactMessageRow(row) {
+  mapContactConversationRow(row) {
     if (!row) return null;
     return {
       id: row.id,
-      reference_code: row.reference_code,
-      user_id: row.user_id || null,
-      sender_name: row.sender_name,
-      sender_email: row.sender_email,
-      category: row.category,
-      subject: row.subject,
-      message: row.message,
-      attachment_name: row.attachment_name || null,
-      attachment_mime: row.attachment_mime || null,
-      attachment_data: row.attachment_data || null,
-      has_attachment: Boolean(row.has_attachment || row.attachment_data),
-      source_page: row.source_page || null,
-      color_mode: row.color_mode || null,
-      effect_mode: row.effect_mode || null,
-      status: row.status || 'new',
-      admin_reply: row.admin_reply || null,
-      read_at: row.read_at || null,
-      replied_at: row.replied_at || null,
-      replied_by: row.replied_by || null,
-      user_notified_at: row.user_notified_at || null,
-      user_dismissed_at: row.user_dismissed_at || null,
+      user_id: row.user_id,
+      status: row.status || 'open',
+      admin_last_read_at: row.admin_last_read_at || null,
+      user_last_read_at: row.user_last_read_at || null,
+      last_message_at: row.last_message_at || null,
       created_at: row.created_at || null,
       updated_at: row.updated_at || null,
-      user_display_name: row.user_display_name || null,
-      user_public_id: row.user_public_id || null,
-      user_avatar_url: row.user_avatar_url || null
+      user_display_name: row.user_display_name || row.user_username || row.user_email || '',
+      user_email: row.user_email || row.user_username || '',
+      user_public_id: row.user_public_id || '',
+      user_avatar_url: row.user_avatar_url || '',
+      last_message: row.last_message || '',
+      last_sender_role: row.last_sender_role || null,
+      admin_unread_count: Number(row.admin_unread_count) || 0,
+      user_unread_count: Number(row.user_unread_count) || 0
     };
   }
 
-  async generateContactReference(maxAttempts = 10) {
-    for (let i = 0; i < maxAttempts; i += 1) {
-      const reference = `CR-${this.generatePublicId(8)}`;
-      const existing = await this.pool.query(
-        'SELECT id FROM contact_messages WHERE reference_code = $1 LIMIT 1',
-        [reference]
-      );
-      if (!existing.rows.length) return reference;
-    }
-    throw new Error('Unable to generate contact reference');
+  mapContactChatMessageRow(row) {
+    if (!row) return null;
+    return {
+      id: row.id,
+      conversation_id: row.conversation_id,
+      sender_id: row.sender_id || null,
+      sender_role: row.sender_role,
+      body: row.body,
+      sender_name: row.sender_name || null,
+      sender_avatar_url: row.sender_avatar_url || null,
+      user_notified_at: row.user_notified_at || null,
+      user_dismissed_at: row.user_dismissed_at || null,
+      created_at: row.created_at || null
+    };
   }
 
-  async createContactMessage(payload = {}) {
-    const reference = await this.generateContactReference();
-    const attachment = payload.attachment || null;
+  contactConversationSelect() {
+    return `SELECT c.*,
+      u.display_name AS user_display_name,
+      u.username AS user_username,
+      u.email AS user_email,
+      u.public_id AS user_public_id,
+      u.avatar_url AS user_avatar_url,
+      (SELECT m.body FROM contact_chat_messages m
+       WHERE m.conversation_id = c.id ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_message,
+      (SELECT m.sender_role FROM contact_chat_messages m
+       WHERE m.conversation_id = c.id ORDER BY m.created_at DESC, m.id DESC LIMIT 1) AS last_sender_role,
+      (SELECT COUNT(*) FROM contact_chat_messages m
+       WHERE m.conversation_id = c.id AND m.sender_role = 'user'
+         AND (c.admin_last_read_at IS NULL OR m.created_at > c.admin_last_read_at)) AS admin_unread_count,
+      (SELECT COUNT(*) FROM contact_chat_messages m
+       WHERE m.conversation_id = c.id AND m.sender_role = 'admin'
+         AND (c.user_last_read_at IS NULL OR m.created_at > c.user_last_read_at)) AS user_unread_count
+      FROM contact_conversations c
+      INNER JOIN users u ON u.id = c.user_id`;
+  }
+
+  async getContactConversationForUser(userId) {
     const result = await this.pool.query(
-      `INSERT INTO contact_messages (
-         reference_code, user_id, sender_name, sender_email, category, subject, message,
-         attachment_name, attachment_mime, attachment_data, source_page, color_mode, effect_mode
-       )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-       RETURNING *`,
-      [
-        reference,
-        payload.userId || null,
-        payload.senderName,
-        payload.senderEmail,
-        payload.category,
-        payload.subject,
-        payload.message,
-        attachment?.name || null,
-        attachment?.mime || null,
-        attachment?.data || null,
-        payload.sourcePage || null,
-        payload.colorMode || null,
-        payload.effectMode || null
-      ]
+      `${this.contactConversationSelect()} WHERE c.user_id = $1 LIMIT 1`,
+      [userId]
     );
-    return this.mapContactMessageRow(result.rows[0]);
+    return this.mapContactConversationRow(result.rows[0]);
   }
 
-  async getContactMessages(options = {}) {
-    const values = [];
-    const clauses = [];
-    const status = String(options.status || '').trim().toLowerCase();
-    const category = String(options.category || '').trim().toLowerCase();
-    const search = String(options.search || '').trim();
+  async getOrCreateContactConversation(userId) {
+    const result = await this.pool.query(
+      `INSERT INTO contact_conversations (user_id)
+       VALUES ($1)
+       ON CONFLICT (user_id) DO UPDATE SET user_id = EXCLUDED.user_id
+       RETURNING id`,
+      [userId]
+    );
+    return this.getContactConversationById(result.rows[0].id);
+  }
 
-    if (status && status !== 'all') {
-      values.push(status);
-      clauses.push(`c.status = $${values.length}`);
-    }
-    if (category && category !== 'all') {
-      values.push(category);
-      clauses.push(`c.category = $${values.length}`);
-    }
+  async getContactConversationById(conversationId) {
+    const id = Number(conversationId);
+    if (!Number.isInteger(id) || id <= 0) return null;
+    const result = await this.pool.query(
+      `${this.contactConversationSelect()} WHERE c.id = $1 LIMIT 1`,
+      [id]
+    );
+    return this.mapContactConversationRow(result.rows[0]);
+  }
+
+  async listContactConversations(options = {}) {
+    const search = String(options.search || '').trim();
+    const values = [];
+    let where = '';
     if (search) {
       values.push(`%${search}%`);
-      clauses.push(`(
-        c.reference_code ILIKE $${values.length}
-        OR c.sender_name ILIKE $${values.length}
-        OR c.sender_email ILIKE $${values.length}
-        OR c.subject ILIKE $${values.length}
-        OR c.message ILIKE $${values.length}
-      )`);
+      where = `WHERE (
+        u.display_name ILIKE $1 OR u.username ILIKE $1 OR u.email ILIKE $1 OR u.public_id ILIKE $1
+      )`;
     }
-
     values.push(Math.max(1, Math.min(300, Number(options.limit) || 150)));
-    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
     const result = await this.pool.query(
-      `SELECT
-         c.id, c.reference_code, c.user_id, c.sender_name, c.sender_email, c.category,
-         c.subject, c.message, c.attachment_name, c.attachment_mime,
-         (c.attachment_data IS NOT NULL) AS has_attachment,
-         c.source_page, c.color_mode, c.effect_mode, c.status, c.admin_reply,
-         c.read_at, c.replied_at, c.replied_by, c.user_notified_at,
-         c.user_dismissed_at, c.created_at, c.updated_at,
-         u.display_name AS user_display_name, u.public_id AS user_public_id,
-         u.avatar_url AS user_avatar_url
-       FROM contact_messages c
-       LEFT JOIN users u ON u.id = c.user_id
+      `${this.contactConversationSelect()}
        ${where}
-       ORDER BY CASE WHEN c.status = 'new' THEN 0 ELSE 1 END, c.created_at DESC
+       ORDER BY c.last_message_at DESC, c.id DESC
        LIMIT $${values.length}`,
       values
     );
-    return result.rows.map((row) => this.mapContactMessageRow(row));
+    return result.rows.map((row) => this.mapContactConversationRow(row));
   }
 
-  async getContactMessageById(messageId) {
-    const id = Number(messageId);
-    if (!Number.isInteger(id) || id <= 0) return null;
+  async getContactChatMessages(conversationId, limit = 200) {
+    const id = Number(conversationId);
+    if (!Number.isInteger(id) || id <= 0) return [];
+    const safeLimit = Math.max(1, Math.min(500, Number(limit) || 200));
     const result = await this.pool.query(
-      `SELECT c.*, u.display_name AS user_display_name, u.public_id AS user_public_id,
-              u.avatar_url AS user_avatar_url
-       FROM contact_messages c
-       LEFT JOIN users u ON u.id = c.user_id
-       WHERE c.id = $1`,
-      [id]
+      `SELECT * FROM (
+         SELECT m.*, COALESCE(u.display_name, u.username) AS sender_name,
+                u.avatar_url AS sender_avatar_url
+         FROM contact_chat_messages m
+         LEFT JOIN users u ON u.id = m.sender_id
+         WHERE m.conversation_id = $1
+         ORDER BY m.created_at DESC, m.id DESC
+         LIMIT $2
+       ) recent
+       ORDER BY recent.created_at ASC, recent.id ASC`,
+      [id, safeLimit]
     );
-    return this.mapContactMessageRow(result.rows[0]);
+    return result.rows.map((row) => this.mapContactChatMessageRow(row));
   }
 
-  async markContactMessageRead(messageId) {
-    const id = Number(messageId);
-    if (!Number.isInteger(id) || id <= 0) return null;
-    await this.pool.query(
-      `UPDATE contact_messages
-       SET read_at = COALESCE(read_at, CURRENT_TIMESTAMP), updated_at = CURRENT_TIMESTAMP
-       WHERE id = $1`,
-      [id]
-    );
-    return this.getContactMessageById(id);
+  async addContactChatMessage(payload = {}) {
+    const conversationId = Number(payload.conversationId);
+    const senderRole = payload.senderRole === 'admin' ? 'admin' : 'user';
+    if (!Number.isInteger(conversationId) || conversationId <= 0) return null;
+
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const conversation = await client.query(
+        'SELECT id FROM contact_conversations WHERE id = $1 FOR UPDATE',
+        [conversationId]
+      );
+      if (!conversation.rows.length) {
+        await client.query('ROLLBACK');
+        return null;
+      }
+
+      const inserted = await client.query(
+        `INSERT INTO contact_chat_messages (conversation_id, sender_id, sender_role, body)
+         VALUES ($1, $2, $3, $4)
+         RETURNING *`,
+        [conversationId, payload.senderId || null, senderRole, payload.body]
+      );
+      await client.query(
+        `UPDATE contact_conversations
+         SET status = 'open',
+             last_message_at = CURRENT_TIMESTAMP,
+             updated_at = CURRENT_TIMESTAMP,
+             admin_last_read_at = CASE WHEN $2 = 'admin' THEN CURRENT_TIMESTAMP ELSE admin_last_read_at END,
+             user_last_read_at = CASE WHEN $2 = 'user' THEN CURRENT_TIMESTAMP ELSE user_last_read_at END
+         WHERE id = $1`,
+        [conversationId, senderRole]
+      );
+      await client.query('COMMIT');
+
+      const row = inserted.rows[0];
+      const sender = payload.senderId ? await this.getUserById(payload.senderId) : null;
+      return this.mapContactChatMessageRow({
+        ...row,
+        sender_name: sender?.display_name || sender?.username || null,
+        sender_avatar_url: sender?.avatar_url || null
+      });
+    } catch (error) {
+      try { await client.query('ROLLBACK'); } catch {}
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
-  async updateContactMessage(messageId, payload = {}) {
-    const id = Number(messageId);
+  async markContactConversationRead(conversationId, readerRole) {
+    const id = Number(conversationId);
     if (!Number.isInteger(id) || id <= 0) return null;
-
-    const values = [];
-    const assignments = [];
-    if (payload.status) {
-      values.push(payload.status);
-      assignments.push(`status = $${values.length}`);
-    }
-    if (payload.reply !== undefined) {
-      values.push(payload.reply);
-      assignments.push(`admin_reply = $${values.length}`);
-      values.push(payload.adminId || null);
-      assignments.push(`replied_by = $${values.length}`);
-      assignments.push('replied_at = CURRENT_TIMESTAMP');
-      assignments.push('user_notified_at = NULL');
-      assignments.push('user_dismissed_at = NULL');
-    }
-    assignments.push('read_at = COALESCE(read_at, CURRENT_TIMESTAMP)');
-    assignments.push('updated_at = CURRENT_TIMESTAMP');
-    values.push(id);
-
+    const column = readerRole === 'admin' ? 'admin_last_read_at' : 'user_last_read_at';
     await this.pool.query(
-      `UPDATE contact_messages SET ${assignments.join(', ')} WHERE id = $${values.length}`,
-      values
+      `UPDATE contact_conversations SET ${column} = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+      [id]
     );
-    return this.getContactMessageById(id);
+    if (readerRole !== 'admin') {
+      await this.pool.query(
+        `UPDATE contact_chat_messages
+         SET user_notified_at = COALESCE(user_notified_at, CURRENT_TIMESTAMP)
+         WHERE conversation_id = $1 AND sender_role = 'admin'`,
+        [id]
+      );
+    }
+    return this.getContactConversationById(id);
+  }
+
+  async setContactConversationStatus(conversationId, status) {
+    const id = Number(conversationId);
+    if (!Number.isInteger(id) || id <= 0) return null;
+    await this.pool.query(
+      `UPDATE contact_conversations SET status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+      [id, status]
+    );
+    return this.getContactConversationById(id);
   }
 
   async getContactNotifications(userId) {
     const result = await this.pool.query(
-      `SELECT * FROM contact_messages
-       WHERE user_id = $1
-         AND status = 'replied'
-         AND admin_reply IS NOT NULL
-         AND user_notified_at IS NULL
-         AND user_dismissed_at IS NULL
-       ORDER BY replied_at DESC`,
+      `SELECT m.* FROM contact_chat_messages m
+       INNER JOIN contact_conversations c ON c.id = m.conversation_id
+       WHERE c.user_id = $1 AND m.sender_role = 'admin'
+         AND m.user_notified_at IS NULL AND m.user_dismissed_at IS NULL
+       ORDER BY m.created_at DESC`,
       [userId]
     );
     const ids = result.rows.map((row) => row.id);
     if (ids.length) {
       await this.pool.query(
-        `UPDATE contact_messages
-         SET user_notified_at = CURRENT_TIMESTAMP
-         WHERE user_id = $1 AND id = ANY($2::int[])`,
-        [userId, ids]
+        `UPDATE contact_chat_messages SET user_notified_at = CURRENT_TIMESTAMP
+         WHERE id = ANY($1::int[])`,
+        [ids]
       );
     }
-    return result.rows.map((row) => this.mapContactMessageRow(row));
+    return result.rows.map((row) => this.mapContactChatMessageRow(row));
   }
 
   async listContactNotifications(userId) {
     const result = await this.pool.query(
-      `SELECT * FROM contact_messages
-       WHERE user_id = $1
-         AND status = 'replied'
-         AND admin_reply IS NOT NULL
-         AND user_dismissed_at IS NULL
-       ORDER BY replied_at DESC`,
+      `SELECT m.* FROM contact_chat_messages m
+       INNER JOIN contact_conversations c ON c.id = m.conversation_id
+       WHERE c.user_id = $1 AND m.sender_role = 'admin' AND m.user_dismissed_at IS NULL
+       ORDER BY m.created_at DESC`,
       [userId]
     );
     const ids = result.rows.filter((row) => !row.user_notified_at).map((row) => row.id);
     if (ids.length) {
       await this.pool.query(
-        `UPDATE contact_messages
-         SET user_notified_at = CURRENT_TIMESTAMP
-         WHERE user_id = $1 AND id = ANY($2::int[])`,
-        [userId, ids]
+        `UPDATE contact_chat_messages SET user_notified_at = CURRENT_TIMESTAMP
+         WHERE id = ANY($1::int[])`,
+        [ids]
       );
     }
-    return result.rows.map((row) => this.mapContactMessageRow(row));
+    return result.rows.map((row) => this.mapContactChatMessageRow(row));
   }
 
   async dismissContactNotification(messageId, userId) {
     const id = Number(messageId);
     if (!Number.isInteger(id) || id <= 0) return null;
     const result = await this.pool.query(
-      `UPDATE contact_messages
-       SET user_dismissed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $1 AND user_id = $2 AND user_dismissed_at IS NULL
-       RETURNING id`,
+      `UPDATE contact_chat_messages m
+       SET user_dismissed_at = CURRENT_TIMESTAMP
+       FROM contact_conversations c
+       WHERE m.id = $1 AND m.conversation_id = c.id AND c.user_id = $2
+         AND m.sender_role = 'admin' AND m.user_dismissed_at IS NULL
+       RETURNING m.id`,
       [id, userId]
     );
     return result.rows[0] || null;

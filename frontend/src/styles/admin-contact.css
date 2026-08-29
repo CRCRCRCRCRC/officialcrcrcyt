@@ -1,421 +1,230 @@
-.admin-contact-page {
+.admin-message-page {
   display: grid;
-  max-width: 1500px;
+  max-width: 1450px;
   margin-inline: auto;
   gap: 18px;
   color: var(--hud-text);
 }
 
-.admin-contact-heading {
+.admin-message-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
 }
 
-.admin-contact-refresh,
-.admin-contact-status-editor button,
-.admin-contact-reply-footer button,
-.admin-contact-reply-footer a {
+.admin-message-heading > button,
+.admin-message-chat-header > button {
   display: inline-flex;
-  min-height: 42px;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 15px;
+  gap: 7px;
+  padding: 0 13px;
   color: var(--hud-text);
   border: 1px solid var(--hud-line-strong);
-  background: rgba(14, 77, 99, 0.28);
-  font-size: 0.8rem;
+  background: rgba(22, 105, 135, 0.24);
+  font-size: 0.76rem;
   font-weight: 700;
-  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 
-.admin-contact-refresh:hover,
-.admin-contact-status-editor button:hover,
-.admin-contact-reply-footer button:hover,
-.admin-contact-reply-footer a:hover {
-  color: var(--hud-text);
+.admin-message-heading > button:hover,
+.admin-message-chat-header > button:hover {
   border-color: var(--hud-cyan);
-  background: rgba(22, 111, 141, 0.38);
-  transform: translateY(-1px);
+  background: rgba(28, 132, 163, 0.32);
 }
 
-.admin-contact-refresh svg,
-.admin-contact-status-editor button svg,
-.admin-contact-reply-footer :is(button, a) svg {
-  width: 16px;
-  height: 16px;
-}
+.admin-message-heading button svg,
+.admin-message-chat-header button svg { width: 15px; }
 
-.admin-contact-stats {
+.admin-message-window {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.admin-contact-stats > button {
-  display: flex;
-  min-height: 88px;
-  align-items: center;
-  gap: 13px;
-  padding: 15px;
-  text-align: left;
-  color: var(--hud-muted);
-  border: 1px solid var(--hud-line);
-  background: var(--hud-panel);
-  clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 9px 100%, 0 calc(100% - 9px));
-  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
-}
-
-.admin-contact-stats > button:hover,
-.admin-contact-stats > button.is-active {
-  color: var(--hud-text);
-  border-color: var(--hud-line-strong);
-  background: var(--hud-panel-soft);
-  transform: translateY(-1px);
-}
-
-.admin-contact-stats > button.is-active { box-shadow: inset 3px 0 var(--hud-cyan); }
-
-.admin-contact-stats > button > span {
-  display: grid;
-  width: 42px;
-  height: 42px;
-  flex: 0 0 auto;
-  place-items: center;
-  color: var(--hud-cyan-bright);
-  border: 1px solid var(--hud-line);
-  background: rgba(44, 183, 218, 0.08);
-}
-
-.admin-contact-stats svg { width: 19px; }
-.admin-contact-stats div { display: grid; }
-.admin-contact-stats strong { color: var(--hud-text); font-size: 1.45rem; line-height: 1; }
-.admin-contact-stats small { margin-top: 5px; color: var(--hud-muted); font-size: 0.77rem; }
-
-.admin-contact-workspace {
-  display: grid;
-  grid-template-columns: minmax(315px, 380px) minmax(0, 1fr);
-  min-height: 680px;
+  grid-template-columns: minmax(290px, 350px) minmax(0, 1fr);
+  height: min(750px, calc(100vh - 190px));
+  min-height: 590px;
   overflow: hidden;
   border: 1px solid var(--hud-line);
   background: var(--hud-panel);
-  box-shadow: 0 22px 65px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
 }
 
-.admin-contact-inbox {
+.admin-message-sidebar {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   min-width: 0;
   border-right: 1px solid var(--hud-line);
 }
 
-.admin-contact-tools {
-  display: grid;
-  gap: 9px;
-  padding: 14px;
-  border-bottom: 1px solid var(--hud-line);
-  background: rgba(3, 14, 24, 0.32);
-}
-
-.admin-contact-search {
+.admin-message-search {
   display: flex;
   align-items: center;
+  margin: 13px;
   color: var(--hud-muted);
   border: 1px solid var(--hud-line);
-  background: rgba(2, 10, 17, 0.52);
+  background: rgba(2, 10, 17, 0.5);
 }
 
-.admin-contact-search svg { width: 17px; margin-left: 12px; }
+.admin-message-search svg { width: 16px; margin-left: 11px; }
 
-.admin-contact-search input,
-.admin-contact-tools select,
-.admin-contact-status-editor select,
-.admin-contact-reply-editor textarea {
-  color: var(--hud-text);
-  border: 1px solid var(--hud-line);
-  outline: none;
-  background: rgba(2, 10, 17, 0.58);
-}
-
-.admin-contact-search input {
+.admin-message-search input {
   width: 100%;
-  height: 43px;
-  padding: 0 12px 0 9px;
+  height: 42px;
+  padding: 0 11px 0 8px;
+  color: var(--hud-text);
   border: 0;
+  outline: 0;
   background: transparent;
+  font-size: 0.78rem;
 }
 
-.admin-contact-search input::placeholder,
-.admin-contact-reply-editor textarea::placeholder { color: #658794; }
+.admin-message-search input::placeholder,
+.admin-message-composer textarea::placeholder { color: #668894; }
 
-.admin-contact-tools select { width: 100%; height: 42px; padding: 0 11px; }
-.admin-contact-page option { color: var(--hud-text); background: #071725; }
+.admin-message-list { min-height: 0; overflow-y: auto; border-top: 1px solid var(--hud-line); }
 
-.admin-contact-search:focus-within,
-.admin-contact-tools select:focus,
-.admin-contact-status-editor select:focus,
-.admin-contact-reply-editor textarea:focus {
-  border-color: var(--hud-line-strong);
-  box-shadow: 0 0 0 3px rgba(85, 230, 255, 0.08);
-}
-
-.admin-contact-list {
-  max-height: 740px;
-  overflow-y: auto;
-}
-
-.admin-contact-list-item {
+.admin-message-list > button {
   position: relative;
   display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   width: 100%;
-  gap: 7px;
-  padding: 16px;
+  min-height: 78px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 13px;
   text-align: left;
   color: var(--hud-muted);
   border: 0;
   border-bottom: 1px solid var(--hud-line);
   background: transparent;
-  transition: background 180ms ease, box-shadow 180ms ease;
 }
 
-.admin-contact-list-item:hover,
-.admin-contact-list-item.is-selected {
+.admin-message-list > button:hover,
+.admin-message-list > button.is-selected {
   color: var(--hud-text);
-  background: rgba(27, 118, 151, 0.13);
+  background: rgba(30, 128, 158, 0.13);
 }
 
-.admin-contact-list-item.is-selected { box-shadow: inset 3px 0 var(--hud-cyan); }
-.admin-contact-list-item.is-unread::after {
-  position: absolute;
-  top: 19px;
-  right: 16px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--hud-green);
-  box-shadow: 0 0 9px var(--hud-green);
-  content: '';
-}
+.admin-message-list > button.is-selected { box-shadow: inset 3px 0 var(--hud-cyan); }
+.admin-message-list img { width: 43px; height: 43px; border: 1px solid var(--hud-line); object-fit: cover; }
+.admin-message-list button > div { display: grid; min-width: 0; }
+.admin-message-list strong { overflow: hidden; color: var(--hud-text); font-size: 0.8rem; text-overflow: ellipsis; white-space: nowrap; }
+.admin-message-list p { overflow: hidden; margin: 5px 0 0; color: #789ba6; font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
+.admin-message-list button > span { display: grid; min-width: 38px; justify-items: end; gap: 8px; }
+.admin-message-list time { color: #668894; font-size: 0.61rem; }
+.admin-message-list i { display: grid; min-width: 19px; height: 19px; padding-inline: 5px; place-items: center; color: #001116; border-radius: 999px; background: var(--hud-cyan); font-size: 0.62rem; font-style: normal; font-weight: 800; }
 
-.admin-contact-list-topline { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-right: 11px; }
-.admin-contact-list-topline time { color: #648a96; font-size: 0.66rem; }
-
-.admin-contact-status {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  padding: 4px 8px;
-  border: 1px solid currentColor;
-  font-size: 0.67rem;
-  font-weight: 730;
-}
-
-.admin-contact-status.is-new { color: #8de8ff; background: rgba(44, 184, 219, 0.09); }
-.admin-contact-status.is-progress { color: #ffd37d; background: rgba(245, 165, 35, 0.09); }
-.admin-contact-status.is-replied { color: #6ff2b4; background: rgba(43, 194, 121, 0.09); }
-.admin-contact-status.is-closed { color: #a1afba; background: rgba(127, 144, 155, 0.08); }
-
-.admin-contact-list-subject { overflow: hidden; color: var(--hud-text); font-size: 0.92rem; text-overflow: ellipsis; white-space: nowrap; }
-.admin-contact-list-sender { overflow: hidden; color: var(--hud-muted); font-size: 0.72rem; text-overflow: ellipsis; white-space: nowrap; }
-.admin-contact-list-item > p { display: -webkit-box; overflow: hidden; margin: 1px 0 0; color: #789da8; font-size: 0.74rem; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.admin-contact-list-footer { display: flex; min-width: 0; align-items: center; gap: 7px; color: #5f8591; font-size: 0.66rem; }
-.admin-contact-list-footer span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.admin-contact-list-footer svg { width: 13px; height: 13px; flex: 0 0 auto; }
-.admin-contact-list-footer svg:last-child { margin-left: auto; }
-
-.admin-contact-detail {
-  min-width: 0;
-  max-height: 830px;
-  overflow-y: auto;
-  background: rgba(2, 10, 17, 0.22);
-}
-
-.admin-contact-detail-placeholder,
-.admin-contact-empty,
-.admin-contact-loading {
+.admin-message-list-state,
+.admin-message-placeholder {
   display: grid;
-  min-height: 320px;
+  min-height: 220px;
   place-content: center;
   justify-items: center;
-  padding: 30px;
-  text-align: center;
+  gap: 9px;
   color: var(--hud-muted);
+  font-size: 0.77rem;
 }
 
-.admin-contact-detail-placeholder > svg,
-.admin-contact-empty > svg {
-  width: 42px;
-  height: 42px;
-  margin-bottom: 13px;
-  color: var(--hud-cyan);
-  opacity: 0.72;
+.admin-message-list-state svg,
+.admin-message-placeholder svg { width: 30px; color: var(--hud-cyan); }
+
+.admin-message-chat {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: rgba(2, 10, 17, 0.25);
 }
 
-.admin-contact-detail-placeholder strong,
-.admin-contact-empty strong { color: var(--hud-text); }
-.admin-contact-detail-placeholder p,
-.admin-contact-empty span { margin: 6px 0 0; font-size: 0.77rem; }
+.admin-message-placeholder { grid-row: 1 / -1; }
 
-.admin-contact-detail-content { padding: clamp(20px, 3vw, 34px); }
-.admin-contact-detail-header { padding-bottom: 22px; border-bottom: 1px solid var(--hud-line); }
-.admin-contact-detail-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.admin-contact-detail-badges > span:not(.admin-contact-status) { padding: 4px 8px; color: var(--hud-muted); border: 1px solid var(--hud-line); font-size: 0.67rem; }
-.admin-contact-detail-header h3 { margin: 14px 0 9px; color: var(--hud-text); font-size: clamp(1.35rem, 3vw, 2rem); line-height: 1.3; }
-.admin-contact-reference { display: flex; align-items: center; gap: 6px; color: var(--hud-cyan-bright); font-size: 0.73rem; letter-spacing: 0.07em; }
-.admin-contact-reference button { display: grid; width: 28px; height: 28px; place-items: center; color: var(--hud-muted); border: 1px solid var(--hud-line); background: transparent; }
-.admin-contact-reference button:hover { color: var(--hud-cyan); }
-.admin-contact-reference svg { width: 13px; }
-
-.admin-contact-sender-card {
+.admin-message-chat-header {
   display: flex;
+  min-height: 76px;
   align-items: center;
-  gap: 13px;
-  margin-top: 20px;
-  padding: 14px;
-  border: 1px solid var(--hud-line);
-  background: var(--hud-panel-soft);
+  gap: 11px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--hud-line);
+  background: var(--hud-panel);
 }
 
-.admin-contact-sender-card img { width: 50px; height: 50px; flex: 0 0 auto; border: 1px solid var(--hud-line-strong); object-fit: cover; }
-.admin-contact-sender-card > div { display: grid; min-width: 0; }
-.admin-contact-sender-card strong { color: var(--hud-text); }
-.admin-contact-sender-card button { display: flex; width: fit-content; max-width: 100%; align-items: center; gap: 6px; overflow: hidden; padding: 0; color: var(--hud-cyan-bright); border: 0; background: transparent; font-size: 0.76rem; text-overflow: ellipsis; white-space: nowrap; }
-.admin-contact-sender-card button svg { width: 13px; flex: 0 0 auto; }
-.admin-contact-sender-card span { margin-top: 2px; color: var(--hud-muted); font-size: 0.7rem; }
+.admin-message-chat-header img { width: 45px; height: 45px; border: 1px solid var(--hud-line-strong); object-fit: cover; }
+.admin-message-chat-header > div { display: grid; min-width: 0; }
+.admin-message-chat-header strong { overflow: hidden; color: var(--hud-text); font-size: 0.86rem; text-overflow: ellipsis; white-space: nowrap; }
+.admin-message-chat-header span { margin-top: 3px; color: var(--hud-muted); font-size: 0.68rem; }
+.admin-message-chat-header > button { margin-left: auto; }
 
-.admin-contact-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
-.admin-contact-meta-grid > div { display: grid; padding: 12px; border: 1px solid var(--hud-line); background: rgba(3, 15, 24, 0.32); }
-.admin-contact-meta-grid span,
-.admin-contact-source > span { color: var(--hud-muted); font-size: 0.67rem; }
-.admin-contact-meta-grid strong { margin-top: 3px; color: var(--hud-text); font-size: 0.76rem; }
-
-.admin-contact-message-body,
-.admin-contact-attachment,
-.admin-contact-status-editor,
-.admin-contact-reply-editor {
-  margin-top: 17px;
-  padding: 17px;
-  border: 1px solid var(--hud-line);
-  background: var(--hud-panel-soft);
+.admin-message-history {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 22px;
 }
 
-.admin-contact-page h4 { margin: 0; color: var(--hud-text); font-size: 0.88rem; }
-.admin-contact-message-body > p { margin: 12px 0 0; color: #c5e0e7; font-size: 0.82rem; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
-.admin-contact-attachment > div { display: flex; align-items: center; gap: 8px; }
-.admin-contact-attachment > div svg { width: 17px; color: var(--hud-cyan); }
-.admin-contact-attachment > div span { overflow: hidden; margin-left: auto; color: var(--hud-muted); font-size: 0.68rem; text-overflow: ellipsis; white-space: nowrap; }
-.admin-contact-attachment > a { position: relative; display: block; margin-top: 12px; overflow: hidden; border: 1px solid var(--hud-line); }
-.admin-contact-attachment img { display: block; width: 100%; max-height: 430px; object-fit: contain; background: #01070c; }
-.admin-contact-attachment > a > span { position: absolute; right: 9px; bottom: 9px; display: flex; align-items: center; gap: 6px; padding: 7px 9px; color: #fff; background: rgba(1, 7, 12, 0.78); font-size: 0.7rem; }
-.admin-contact-attachment > a svg { width: 13px; }
+.admin-message-row { display: flex; margin: 10px 0; }
+.admin-message-row.is-mine { justify-content: flex-end; }
+.admin-message-row > div { display: grid; max-width: min(72%, 620px); }
+.admin-message-row p { margin: 0; padding: 10px 13px; color: #d4edf3; border: 1px solid var(--hud-line); background: var(--hud-panel-soft); font-size: 0.8rem; line-height: 1.65; overflow-wrap: anywhere; white-space: pre-wrap; }
+.admin-message-row.is-user p { border-radius: 0 10px 10px 10px; }
+.admin-message-row.is-mine p { color: #001318; border-color: var(--hud-cyan); border-radius: 10px 0 10px 10px; background: var(--hud-cyan); }
+.admin-message-row time { margin: 4px 3px 0; color: var(--hud-muted); font-size: 0.6rem; }
+.admin-message-row.is-mine time { text-align: right; }
 
-.admin-contact-source { display: grid; margin-top: 10px; padding: 11px 13px; border: 1px solid var(--hud-line); background: rgba(3, 15, 24, 0.28); }
-.admin-contact-source a { display: flex; min-width: 0; align-items: center; gap: 6px; overflow: hidden; margin-top: 3px; color: var(--hud-cyan-bright); font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
-.admin-contact-source a svg { width: 12px; flex: 0 0 auto; }
-
-.admin-contact-status-editor { display: grid; grid-template-columns: minmax(0, 1fr) 140px auto; align-items: end; gap: 12px; }
-.admin-contact-status-editor p,
-.admin-contact-reply-editor > div:first-child p { margin: 5px 0 0; color: var(--hud-muted); font-size: 0.72rem; line-height: 1.55; }
-.admin-contact-status-editor select { height: 42px; padding: 0 10px; }
-.admin-contact-status-editor button:disabled,
-.admin-contact-reply-footer :is(button, a).is-disabled { cursor: not-allowed; opacity: 0.45; transform: none; }
-
-.admin-contact-reply-editor textarea { width: 100%; min-height: 170px; margin-top: 13px; padding: 13px; resize: vertical; font-size: 0.8rem; line-height: 1.7; }
-.admin-contact-reply-footer { display: flex; align-items: center; justify-content: space-between; gap: 13px; margin-top: 10px; }
-.admin-contact-reply-footer > span { color: var(--hud-muted); font-size: 0.68rem; }
-.admin-contact-reply-footer > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
-.admin-contact-reply-footer button { color: #00131a; border-color: var(--hud-cyan); background: var(--hud-cyan); }
-.admin-contact-reply-footer button:hover { color: #00131a; background: var(--hud-cyan-bright); }
-.admin-contact-last-reply { margin: 10px 0 0; color: var(--hud-muted); font-size: 0.68rem; }
-
-.admin-contact-loading { min-height: 65vh; gap: 10px; }
-.admin-contact-loading svg { width: 30px; color: var(--hud-cyan); animation: admin-contact-spin 0.8s linear infinite; }
-.admin-contact-page .is-spinning { animation: admin-contact-spin 0.8s linear infinite; }
-
-/* 輕鬆歡快模式 */
-.admin-theme-cheerful .admin-contact-page { color: #293a51; }
-.admin-theme-cheerful .admin-contact-stats > button,
-.admin-theme-cheerful .admin-contact-workspace { border-color: rgba(108, 177, 215, 0.28); background: rgba(255, 255, 255, 0.95); box-shadow: 0 17px 42px rgba(82, 120, 145, 0.1); }
-.admin-theme-cheerful .admin-contact-stats > button { color: #60758b; border-radius: 17px; clip-path: none; }
-.admin-theme-cheerful .admin-contact-stats > button:hover,
-.admin-theme-cheerful .admin-contact-stats > button.is-active { color: #26384f; border-color: rgba(73, 157, 207, 0.48); background: #edf8ff; }
-.admin-theme-cheerful .admin-contact-stats > button.is-active { box-shadow: inset 4px 0 #54aee2; }
-.admin-theme-cheerful .admin-contact-stats > button > span { color: #348fc7; border-color: rgba(81, 164, 211, 0.25); border-radius: 13px; background: #e9f7ff; }
-.admin-theme-cheerful .admin-contact-stats strong,
-.admin-theme-cheerful .admin-contact-detail-header h3,
-.admin-theme-cheerful .admin-contact-page h4,
-.admin-theme-cheerful .admin-contact-list-subject,
-.admin-theme-cheerful .admin-contact-sender-card strong,
-.admin-theme-cheerful .admin-contact-detail-placeholder strong,
-.admin-theme-cheerful .admin-contact-empty strong { color: #293a51; }
-.admin-theme-cheerful .admin-contact-stats small,
-.admin-theme-cheerful .admin-contact-list-sender,
-.admin-theme-cheerful .admin-contact-list-item > p,
-.admin-theme-cheerful .admin-contact-detail-placeholder,
-.admin-theme-cheerful .admin-contact-empty,
-.admin-theme-cheerful .admin-contact-status-editor p,
-.admin-theme-cheerful .admin-contact-reply-editor > div:first-child p,
-.admin-theme-cheerful .admin-contact-last-reply { color: #64788d; }
-.admin-theme-cheerful .admin-contact-workspace { overflow: hidden; border-radius: 22px; }
-.admin-theme-cheerful .admin-contact-inbox { border-color: rgba(108, 177, 215, 0.25); }
-.admin-theme-cheerful .admin-contact-tools,
-.admin-theme-cheerful .admin-contact-detail { background: #f4faff; }
-.admin-theme-cheerful .admin-contact-search,
-.admin-theme-cheerful .admin-contact-search input,
-.admin-theme-cheerful .admin-contact-tools select,
-.admin-theme-cheerful .admin-contact-status-editor select,
-.admin-theme-cheerful .admin-contact-reply-editor textarea { color: #293a51; border-color: rgba(104, 171, 209, 0.3); background: #fff; }
-.admin-theme-cheerful .admin-contact-page option { color: #293a51; background: #fff; }
-.admin-theme-cheerful .admin-contact-list-item { color: #5f7388; border-color: rgba(108, 177, 215, 0.2); }
-.admin-theme-cheerful .admin-contact-list-item:hover,
-.admin-theme-cheerful .admin-contact-list-item.is-selected { color: #293a51; background: #eaf7ff; }
-.admin-theme-cheerful .admin-contact-list-item.is-selected { box-shadow: inset 4px 0 #52abe0; }
-.admin-theme-cheerful .admin-contact-list-topline time,
-.admin-theme-cheerful .admin-contact-list-footer { color: #7b8fa2; }
-.admin-theme-cheerful .admin-contact-detail-content { background: #fbfdff; }
-.admin-theme-cheerful .admin-contact-sender-card,
-.admin-theme-cheerful .admin-contact-message-body,
-.admin-theme-cheerful .admin-contact-attachment,
-.admin-theme-cheerful .admin-contact-status-editor,
-.admin-theme-cheerful .admin-contact-reply-editor { border-color: rgba(106, 173, 210, 0.26); border-radius: 15px; background: #f3faff; }
-.admin-theme-cheerful .admin-contact-meta-grid > div,
-.admin-theme-cheerful .admin-contact-source { border-color: rgba(106, 173, 210, 0.24); border-radius: 12px; background: #f7fbfe; }
-.admin-theme-cheerful .admin-contact-message-body > p { color: #40566b; }
-.admin-theme-cheerful .admin-contact-sender-card span,
-.admin-theme-cheerful .admin-contact-meta-grid span,
-.admin-theme-cheerful .admin-contact-source > span { color: #71869a; }
-.admin-theme-cheerful .admin-contact-meta-grid strong { color: #33485d; }
-.admin-theme-cheerful .admin-contact-refresh,
-.admin-theme-cheerful .admin-contact-status-editor button,
-.admin-theme-cheerful .admin-contact-reply-footer a { color: #345d78; border-color: rgba(79, 158, 203, 0.35); border-radius: 12px; background: #edf8ff; }
-.admin-theme-cheerful .admin-contact-reply-footer button { color: #fff; border-color: #4ba9de; border-radius: 12px; background: linear-gradient(110deg, #4caee5, #767de5); }
-.admin-theme-cheerful .admin-contact-reply-footer button:hover { color: #fff; background: linear-gradient(110deg, #359dd5, #656bd4); }
-
-@keyframes admin-contact-spin { to { transform: rotate(360deg); } }
-
-@media (max-width: 1150px) {
-  .admin-contact-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .admin-contact-workspace { grid-template-columns: minmax(285px, 340px) minmax(0, 1fr); }
-  .admin-contact-status-editor { grid-template-columns: 1fr 130px; }
-  .admin-contact-status-editor > div { grid-column: 1 / -1; }
+.admin-message-composer {
+  padding: 12px 14px;
+  border-top: 1px solid var(--hud-line);
+  background: var(--hud-panel);
 }
 
-@media (max-width: 850px) {
-  .admin-contact-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .admin-contact-workspace { grid-template-columns: 1fr; }
-  .admin-contact-inbox { border-right: 0; border-bottom: 1px solid var(--hud-line); }
-  .admin-contact-list { max-height: 430px; }
-  .admin-contact-detail { max-height: none; }
+.admin-message-composer > p { margin: 0 0 7px; color: var(--hud-muted); font-size: 0.67rem; text-align: center; }
+.admin-message-composer > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 9px; }
+.admin-message-composer textarea { width: 100%; min-height: 45px; max-height: 130px; padding: 11px 12px; resize: vertical; color: var(--hud-text); border: 1px solid var(--hud-line); outline: 0; background: rgba(2, 10, 17, 0.56); font-size: 0.78rem; line-height: 1.5; }
+.admin-message-composer textarea:focus { border-color: var(--hud-line-strong); box-shadow: 0 0 0 3px rgba(85, 230, 255, 0.07); }
+.admin-message-composer button { display: grid; width: 45px; height: 45px; place-items: center; color: #001318; border: 1px solid var(--hud-cyan); background: var(--hud-cyan); }
+.admin-message-composer button:disabled { cursor: default; opacity: 0.38; }
+.admin-message-composer button svg { width: 17px; }
+.admin-message-page .is-spinning { animation: admin-message-spin 0.8s linear infinite; }
+
+.admin-theme-cheerful .admin-message-page { color: #293a51; }
+.admin-theme-cheerful .admin-message-window { overflow: hidden; border-color: rgba(103, 173, 211, 0.3); border-radius: 21px; background: #fff; box-shadow: 0 19px 48px rgba(77, 115, 139, 0.12); }
+.admin-theme-cheerful .admin-message-sidebar { border-color: rgba(103, 173, 211, 0.25); }
+.admin-theme-cheerful .admin-message-search { color: #6d8092; border-color: rgba(103, 173, 211, 0.28); border-radius: 12px; background: #f4faff; }
+.admin-theme-cheerful .admin-message-search input,
+.admin-theme-cheerful .admin-message-composer textarea { color: #293a51; }
+.admin-theme-cheerful .admin-message-list { border-color: rgba(103, 173, 211, 0.22); }
+.admin-theme-cheerful .admin-message-list > button { color: #65788a; border-color: rgba(103, 173, 211, 0.2); }
+.admin-theme-cheerful .admin-message-list > button:hover,
+.admin-theme-cheerful .admin-message-list > button.is-selected { color: #293a51; background: #ebf7ff; }
+.admin-theme-cheerful .admin-message-list > button.is-selected { box-shadow: inset 4px 0 #52aae0; }
+.admin-theme-cheerful .admin-message-list strong,
+.admin-theme-cheerful .admin-message-chat-header strong { color: #293a51; }
+.admin-theme-cheerful .admin-message-list p,
+.admin-theme-cheerful .admin-message-list time,
+.admin-theme-cheerful .admin-message-chat-header span { color: #708496; }
+.admin-theme-cheerful .admin-message-chat { background: #f4f9fc; }
+.admin-theme-cheerful .admin-message-chat-header,
+.admin-theme-cheerful .admin-message-composer { border-color: rgba(103, 173, 211, 0.25); background: #fff; }
+.admin-theme-cheerful .admin-message-row p { color: #344b5f; border-color: rgba(103, 173, 211, 0.28); background: #fff; }
+.admin-theme-cheerful .admin-message-row.is-mine p { color: #fff; border-color: #58aee0; background: #58aee0; }
+.admin-theme-cheerful .admin-message-row time { color: #75899a; }
+.admin-theme-cheerful .admin-message-composer textarea { border-color: rgba(103, 173, 211, 0.3); border-radius: 11px; background: #f5faff; }
+.admin-theme-cheerful .admin-message-composer button { color: #fff; border-color: #58aee0; border-radius: 11px; background: #58aee0; }
+.admin-theme-cheerful .admin-message-heading > button,
+.admin-theme-cheerful .admin-message-chat-header > button { color: #3b6680; border-color: rgba(79, 158, 203, 0.34); border-radius: 11px; background: #edf8ff; }
+
+@keyframes admin-message-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 880px) {
+  .admin-message-window { grid-template-columns: minmax(250px, 310px) minmax(0, 1fr); }
+  .admin-message-row > div { max-width: 82%; }
 }
 
-@media (max-width: 560px) {
-  .admin-contact-heading { align-items: stretch; flex-direction: column; }
-  .admin-contact-refresh { width: 100%; }
-  .admin-contact-meta-grid { grid-template-columns: 1fr; }
-  .admin-contact-status-editor { grid-template-columns: 1fr; align-items: stretch; }
-  .admin-contact-status-editor > div { grid-column: auto; }
-  .admin-contact-reply-footer { align-items: stretch; flex-direction: column; }
-  .admin-contact-reply-footer > div { display: grid; }
+@media (max-width: 700px) {
+  .admin-message-window { grid-template-columns: 1fr; height: auto; min-height: 0; }
+  .admin-message-sidebar { max-height: 390px; border-right: 0; border-bottom: 1px solid var(--hud-line); }
+  .admin-message-chat { min-height: 600px; }
+}
+
+@media (max-width: 520px) {
+  .admin-message-heading { align-items: stretch; flex-direction: column; }
+  .admin-message-heading > button { width: 100%; }
+  .admin-message-chat-header > button { padding-inline: 10px; }
 }
