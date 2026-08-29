@@ -430,6 +430,18 @@ class KVDatabase {
     return `coin_backpack_items:${userId}`;
   }
 
+  contactMessageKey(messageId) {
+    return `contact_message:${messageId}`;
+  }
+
+  contactMessageSetKey() {
+    return 'contact_messages';
+  }
+
+  contactReferenceIndexKey() {
+    return 'contact_reference_index';
+  }
+
   parsePassList(raw) {
     if (!raw) return [];
     if (Array.isArray(raw)) {
@@ -1031,6 +1043,214 @@ class KVDatabase {
     await this.kv.hset(this.backpackItemKey(itemId), payload);
     const updated = await this.kv.hgetall(this.backpackItemKey(itemId));
     return this.mapBackpackItemRecord(updated);
+  }
+
+  mapContactMessageRecord(raw) {
+    if (!raw || Object.keys(raw).length === 0) return null;
+    return {
+      id: raw.id,
+      reference_code: raw.reference_code,
+      user_id: raw.user_id || null,
+      sender_name: raw.sender_name,
+      sender_email: raw.sender_email,
+      category: raw.category,
+      subject: raw.subject,
+      message: raw.message,
+      attachment_name: raw.attachment_name || null,
+      attachment_mime: raw.attachment_mime || null,
+      attachment_data: raw.attachment_data || null,
+      has_attachment: Boolean(raw.attachment_data || raw.has_attachment),
+      source_page: raw.source_page || null,
+      color_mode: raw.color_mode || null,
+      effect_mode: raw.effect_mode || null,
+      status: raw.status || 'new',
+      admin_reply: raw.admin_reply || null,
+      read_at: raw.read_at || null,
+      replied_at: raw.replied_at || null,
+      replied_by: raw.replied_by || null,
+      user_notified_at: raw.user_notified_at || null,
+      user_dismissed_at: raw.user_dismissed_at || null,
+      created_at: raw.created_at || null,
+      updated_at: raw.updated_at || null,
+      user_display_name: raw.user_display_name || null,
+      user_public_id: raw.user_public_id || null,
+      user_avatar_url: raw.user_avatar_url || null
+    };
+  }
+
+  async generateContactReference(maxAttempts = 10) {
+    for (let i = 0; i < maxAttempts; i += 1) {
+      const reference = `CR-${this.generatePublicId(8)}`;
+      const existing = await this.kv.hget(this.contactReferenceIndexKey(), reference);
+      if (!existing) return reference;
+    }
+    throw new Error('Unable to generate contact reference');
+  }
+
+  async createContactMessage(payload = {}) {
+    const id = `contact-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const reference = await this.generateContactReference();
+    const now = new Date().toISOString();
+    const user = payload.userId ? await this.getUserById(payload.userId) : null;
+    const record = {
+      id,
+      reference_code: reference,
+      user_id: payload.userId || null,
+      sender_name: payload.senderName,
+      sender_email: payload.senderEmail,
+      category: payload.category,
+      subject: payload.subject,
+      message: payload.message,
+      attachment_name: payload.attachment?.name || null,
+      attachment_mime: payload.attachment?.mime || null,
+      attachment_data: payload.attachment?.data || null,
+      source_page: payload.sourcePage || null,
+      color_mode: payload.colorMode || null,
+      effect_mode: payload.effectMode || null,
+      status: 'new',
+      admin_reply: null,
+      read_at: null,
+      replied_at: null,
+      replied_by: null,
+      user_notified_at: null,
+      user_dismissed_at: null,
+      created_at: now,
+      updated_at: now,
+      user_display_name: user?.display_name || null,
+      user_public_id: user?.public_id || null,
+      user_avatar_url: user?.avatar_url || null
+    };
+    await this.kv.hset(this.contactMessageKey(id), record);
+    await this.kv.sadd(this.contactMessageSetKey(), id);
+    await this.kv.hset(this.contactReferenceIndexKey(), { [reference]: id });
+    return this.mapContactMessageRecord(record);
+  }
+
+  async getContactMessages(options = {}) {
+    const ids = await this.kv.smembers(this.contactMessageSetKey());
+    const status = String(options.status || '').trim().toLowerCase();
+    const category = String(options.category || '').trim().toLowerCase();
+    const search = String(options.search || '').trim().toLowerCase();
+    const list = [];
+
+    for (const id of ids) {
+      const raw = await this.kv.hgetall(this.contactMessageKey(id));
+      const item = this.mapContactMessageRecord(raw);
+      if (!item) continue;
+      if (status && status !== 'all' && item.status !== status) continue;
+      if (category && category !== 'all' && item.category !== category) continue;
+      if (search) {
+        const haystack = [
+          item.reference_code,
+          item.sender_name,
+          item.sender_email,
+          item.subject,
+          item.message
+        ].join(' ').toLowerCase();
+        if (!haystack.includes(search)) continue;
+      }
+      list.push({ ...item, attachment_data: null, has_attachment: Boolean(item.attachment_data) });
+    }
+
+    list.sort((a, b) => {
+      if (a.status === 'new' && b.status !== 'new') return -1;
+      if (a.status !== 'new' && b.status === 'new') return 1;
+      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+    return list.slice(0, Math.max(1, Math.min(300, Number(options.limit) || 150)));
+  }
+
+  async getContactMessageById(messageId) {
+    if (!messageId) return null;
+    const raw = await this.kv.hgetall(this.contactMessageKey(messageId));
+    return this.mapContactMessageRecord(raw);
+  }
+
+  async markContactMessageRead(messageId) {
+    const current = await this.getContactMessageById(messageId);
+    if (!current) return null;
+    await this.kv.hset(this.contactMessageKey(messageId), {
+      read_at: current.read_at || new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    return this.getContactMessageById(messageId);
+  }
+
+  async updateContactMessage(messageId, payload = {}) {
+    const current = await this.getContactMessageById(messageId);
+    if (!current) return null;
+    const now = new Date().toISOString();
+    const updates = {
+      status: payload.status || current.status,
+      read_at: current.read_at || now,
+      updated_at: now
+    };
+    if (payload.reply !== undefined) {
+      updates.admin_reply = payload.reply;
+      updates.replied_by = payload.adminId || null;
+      updates.replied_at = now;
+      updates.user_notified_at = null;
+      updates.user_dismissed_at = null;
+    }
+    await this.kv.hset(this.contactMessageKey(messageId), updates);
+    return this.getContactMessageById(messageId);
+  }
+
+  async getContactNotifications(userId) {
+    const ids = await this.kv.smembers(this.contactMessageSetKey());
+    const notifications = [];
+    const now = new Date().toISOString();
+    for (const id of ids) {
+      const raw = await this.kv.hgetall(this.contactMessageKey(id));
+      const item = this.mapContactMessageRecord(raw);
+      if (
+        item &&
+        String(item.user_id) === String(userId) &&
+        item.status === 'replied' &&
+        item.admin_reply &&
+        !item.user_notified_at &&
+        !item.user_dismissed_at
+      ) {
+        notifications.push(item);
+        await this.kv.hset(this.contactMessageKey(id), { user_notified_at: now });
+      }
+    }
+    notifications.sort((a, b) => new Date(b.replied_at || 0) - new Date(a.replied_at || 0));
+    return notifications;
+  }
+
+  async listContactNotifications(userId) {
+    const ids = await this.kv.smembers(this.contactMessageSetKey());
+    const notifications = [];
+    const now = new Date().toISOString();
+    for (const id of ids) {
+      const raw = await this.kv.hgetall(this.contactMessageKey(id));
+      const item = this.mapContactMessageRecord(raw);
+      if (
+        item &&
+        String(item.user_id) === String(userId) &&
+        item.status === 'replied' &&
+        item.admin_reply &&
+        !item.user_dismissed_at
+      ) {
+        notifications.push(item);
+        if (!item.user_notified_at) {
+          await this.kv.hset(this.contactMessageKey(id), { user_notified_at: now });
+        }
+      }
+    }
+    notifications.sort((a, b) => new Date(b.replied_at || 0) - new Date(a.replied_at || 0));
+    return notifications;
+  }
+
+  async dismissContactNotification(messageId, userId) {
+    const item = await this.getContactMessageById(messageId);
+    if (!item || String(item.user_id) !== String(userId) || item.user_dismissed_at) return null;
+    await this.kv.hset(this.contactMessageKey(messageId), {
+      user_dismissed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    return { id: messageId };
   }
 
   mapRedeemCodeRecord(raw) {

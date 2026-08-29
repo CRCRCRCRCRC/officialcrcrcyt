@@ -82,6 +82,18 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
+const authenticateTokenOptional = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+
+  return authenticateToken(req, res, next);
+};
+
 const requireAdmin = (req, res, next) => {
   // 確保用戶對象存在
   if (!req.user) {
@@ -106,5 +118,6 @@ const requireAdmin = (req, res, next) => {
 
 module.exports = {
   authenticateToken,
+  authenticateTokenOptional,
   requireAdmin
 };

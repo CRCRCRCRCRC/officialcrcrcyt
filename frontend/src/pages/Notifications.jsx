@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Bell, Trash2, RefreshCw, CheckCircle2, AlertTriangle, Loader2, Gift, Check, Undo2 } from 'lucide-react'
+import { ArrowLeft, Bell, Trash2, RefreshCw, CheckCircle2, AlertTriangle, Loader2, Gift, Check, Undo2, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useCoin } from '../contexts/CoinContext'
 import { coinAPI } from '../services/api'
@@ -24,8 +24,15 @@ const GIFT_META = {
   icon: Gift
 }
 
+const CONTACT_META = {
+  label: '聯絡回覆',
+  colorClass: 'text-violet-600 bg-violet-50',
+  icon: Mail
+}
+
 const resolveMeta = (notification) => {
   if (notification?.type === 'gift') return GIFT_META
+  if (notification?.type === 'contact') return CONTACT_META
   return STATUS_META[notification?.status] || STATUS_META.accepted
 }
 
@@ -188,6 +195,7 @@ const Notifications = () => {
           <div className="space-y-4">
             {notifications.map((notification) => {
               const isGift = notification.type === 'gift'
+              const isContact = notification.type === 'contact'
               const meta = resolveMeta(notification)
               const Icon = meta.icon || Bell
               const giftId = notification.giftId || notification.id
@@ -218,10 +226,21 @@ const Notifications = () => {
                         <span className="text-xs text-gray-400">{formatDateTime(notification.createdAt)}</span>
                       </div>
                       <p className="mt-2 text-gray-800 whitespace-pre-line">{notification.message}</p>
-                      <p className="mt-2 text-xs text-gray-500">
-                        {isGift ? '禮物' : '商品'}：{productLabel}｜{priceLabel}：
-                        {Number(notification.price || 0).toLocaleString('zh-TW')} coin{quantityLabel}
-                      </p>
+                      {isContact && notification.reply && (
+                        <div className="mt-3 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm leading-relaxed text-gray-700 whitespace-pre-line">
+                          {notification.reply}
+                        </div>
+                      )}
+                      {isContact ? (
+                        <p className="mt-2 text-xs text-gray-500">
+                          聯絡編號：{notification.reference || '—'}
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-xs text-gray-500">
+                          {isGift ? '禮物' : '商品'}：{productLabel}｜{priceLabel}：
+                          {Number(notification.price || 0).toLocaleString('zh-TW')} coin{quantityLabel}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
@@ -270,10 +289,10 @@ const Notifications = () => {
                           刪除
                         </button>
                         <Link
-                          to="/shop"
+                          to={isContact ? '/contact' : '/shop'}
                           className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:shadow-xl whitespace-nowrap"
                         >
-                          前往商店
+                          {isContact ? '再次聯絡' : '前往商店'}
                         </Link>
                       </>
                     )}

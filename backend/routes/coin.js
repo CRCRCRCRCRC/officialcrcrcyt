@@ -1599,8 +1599,16 @@ router.get('/notifications', authenticateToken, async (req, res) => {
       mode === 'all'
         ? database.listGiftNotifications(req.user.id)
         : database.getGiftNotifications(req.user.id);
+    const contactFetcher =
+      mode === 'all'
+        ? database.listContactNotifications(req.user.id)
+        : database.getContactNotifications(req.user.id);
 
-    const [orderRows, giftRows] = await Promise.all([orderFetcher, giftFetcher]);
+    const [orderRows, giftRows, contactRows] = await Promise.all([
+      orderFetcher,
+      giftFetcher,
+      contactFetcher
+    ]);
 
     const orderNotifications = (orderRows || [])
       .map((order) => {
@@ -1665,7 +1673,25 @@ router.get('/notifications', authenticateToken, async (req, res) => {
       };
     });
 
-    const notifications = [...orderNotifications, ...giftNotifications].sort(
+    const contactNotifications = (contactRows || []).map((message) => ({
+      type: 'contact',
+      id: `contact:${message.id}`,
+      contactId: message.id,
+      reference: message.reference_code,
+      subject: message.subject,
+      status: 'replied',
+      message: `你的聯絡訊息「${message.subject}」已收到回覆。`,
+      reply: message.admin_reply,
+      variant: 'success',
+      createdAt: message.replied_at || message.updated_at || message.created_at || null,
+      notifiedAt: message.user_notified_at || null
+    }));
+
+    const notifications = [
+      ...orderNotifications,
+      ...giftNotifications,
+      ...contactNotifications
+    ].sort(
       (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     );
 
@@ -1682,7 +1708,13 @@ router.delete('/notifications/:notificationId', authenticateToken, async (req, r
     if (!notificationId) {
       return res.status(400).json({ error: '缺少通知編號' });
     }
-    const result = await database.dismissCoinOrderNotification(notificationId, req.user.id);
+    const isContactNotification = notificationId.startsWith('contact:');
+    const result = isContactNotification
+      ? await database.dismissContactNotification(
+          notificationId.slice('contact:'.length),
+          req.user.id
+        )
+      : await database.dismissCoinOrderNotification(notificationId, req.user.id);
     if (!result) {
       return res.status(404).json({ error: '找不到通知或已刪除' });
     }

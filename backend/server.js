@@ -22,6 +22,7 @@ const lyricsRoutes = require('./routes/lyrics');
 const artistsRoutes = require('./routes/artists');
 const lyricCommentsRoutes = require('./routes/lyricComments');
 const sitemapRoutes = require('./routes/sitemap');
+const contactRoutes = require('./routes/contact');
 const database = require('./config/database');
 const { getSiteUrl, toSiteOrigin } = require('./config/site');
 
@@ -97,6 +98,8 @@ app.use('/api/announcements', announcementRoutes);
 console.log('✅ /api/announcements 路由已註冊');
 app.use('/api/coin', coinRoutes);
 console.log('✅ /api/coin 路由已註冊');
+app.use('/api/contact', contactRoutes);
+console.log('✅ /api/contact 路由已註冊');
 app.use('/api/videos', videoRoutes);
 console.log('✅ /api/videos 路由已註冊');
 app.use('/api/artists', artistsRoutes);

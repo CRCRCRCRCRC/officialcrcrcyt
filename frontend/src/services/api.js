@@ -42,6 +42,7 @@ api.interceptors.request.use(
     const websiteToken = localStorage.getItem('website_token')
     const url = String(config.url || '')
     const isCoinApi = url.includes('/coin/')
+    const isPublicContactApi = /^\/contact(?:\?|$)/.test(url)
     
     // 對於 Coin API，需要根據具體的端點來決定使用哪個令牌
     let picked = null;
@@ -57,6 +58,9 @@ api.interceptors.request.use(
         // 普通 Coin API 端點優先使用 websiteToken
         picked = websiteToken || adminToken;
       }
+    } else if (isPublicContactApi) {
+      // 公開聯絡表單優先辨識網站帳號，讓回覆可以送進使用者通知中心。
+      picked = websiteToken || adminToken;
     } else {
       // 非 Coin API 端點優先使用 adminToken
       picked = adminToken || websiteToken;
@@ -285,7 +289,7 @@ export const coinAPI = {
   getNotifications: (mode = 'new') =>
     api.get('/coin/notifications', { params: { mode } }),
   dismissNotification: (notificationId) =>
-    api.delete(`/coin/notifications/${notificationId}`),
+    api.delete(`/coin/notifications/${encodeURIComponent(notificationId)}`),
   // 兌換碼（管理員）
   getRedeemCodes: (params = {}) =>
     api.get('/coin/redeem-codes', { params, headers: authHeaderForCoin() }),
@@ -320,6 +324,20 @@ export const announcementAPI = {
 
   reset: () =>
     api.post('/announcements/reset')
+}
+
+export const contactAPI = {
+  submit: (payload) =>
+    api.post('/contact', payload),
+
+  getAll: (params = {}) =>
+    api.get('/contact/admin', { params }),
+
+  getById: (messageId) =>
+    api.get(`/contact/admin/${encodeURIComponent(messageId)}`),
+
+  update: (messageId, payload) =>
+    api.patch(`/contact/admin/${encodeURIComponent(messageId)}`, payload)
 }
 
 export const artistsAPI = {

@@ -7,6 +7,7 @@ import {
   LogOut,
   Megaphone,
   Menu,
+  MessageSquare,
   Music,
   Settings as SettingsIcon,
   User,
@@ -21,6 +22,7 @@ import '../styles/admin-hud.css'
 
 const navigation = [
   { name: '公告管理', href: '/admin/announcements', icon: Megaphone },
+  { name: '聯絡訊息', href: '/admin/contact-messages', icon: MessageSquare },
   { name: 'coin 發放', href: '/admin/add-coins', icon: Coins },
   { name: '通行券XP發放', href: '/admin/add-xp', icon: Zap },
   { name: '兌換碼管理', href: '/admin/redeem-codes', icon: KeyRound },

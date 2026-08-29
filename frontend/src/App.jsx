@@ -18,6 +18,7 @@ import Notifications from './pages/Notifications'
 import Profile from './pages/Profile'
 import DiscordCallback from './pages/DiscordCallback'
 import RedeemCode from './pages/RedeemCode'
+import Contact from './pages/Contact'
 import CategoryPage from './pages/lyrics/CategoryPage'
 import ArtistsPage from './pages/lyrics/ArtistsPage'
 import SongsPage from './pages/lyrics/SongsPage'
@@ -33,6 +34,7 @@ import AdminDiscordApplications from './pages/admin/DiscordApplications'
 import AdminLyrics from './pages/admin/Lyrics'
 import AdminArtists from './pages/admin/Artists'
 import AdminRedeemCodes from './pages/admin/RedeemCodes'
+import AdminContactMessages from './pages/admin/ContactMessages'
 import ProtectedRoute from './components/ProtectedRoute'
 import NotFound from './pages/NotFound'
 
@@ -70,6 +72,7 @@ function App() {
             <Route path="notifications" element={<Notifications />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="redeem" element={<RedeemCode />} />
+            <Route path="contact" element={<Contact />} />
             <Route path="profile" element={<Profile />} />
             <Route path="profile/discord/callback" element={<DiscordCallback />} />
 
@@ -98,6 +101,7 @@ function App() {
             <Route path="add-xp" element={<AdminAddXP />} />
             <Route path="discord-applications" element={<AdminDiscordApplications />} />
             <Route path="redeem-codes" element={<AdminRedeemCodes />} />
+            <Route path="contact-messages" element={<AdminContactMessages />} />
             <Route path="artists" element={<AdminArtists />} />
             <Route path="lyrics" element={<AdminLyrics />} />
             <Route path="settings" element={<AdminSettings />} />
