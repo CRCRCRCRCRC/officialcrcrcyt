@@ -73,7 +73,7 @@ const RedeemCodes = () => {
     if (rewardType === 'coins') {
       const amountValue = Math.floor(Number(coinAmount))
       if (!Number.isFinite(amountValue) || amountValue <= 0) {
-        toast.error('請輸入正確的 CRCRCoin 數量')
+        toast.error('請輸入正確的 coin 數量')
         return
       }
     }
@@ -120,7 +120,7 @@ const RedeemCodes = () => {
 
   const getRewardLabel = (code) => {
     if (code.rewardType === 'coins') {
-      return `${formatNumber(code.coinAmount)} CRCRCoin`
+      return `${formatNumber(code.coinAmount)} coin`
     }
     const match = products.find((item) => item.id === code.productId)
     return match?.name || code.productName || code.productId || '商品'
@@ -181,7 +181,7 @@ const RedeemCodes = () => {
                   }`}
                 >
                   <Coins className="w-4 h-4" />
-                  CRCRCoin
+                  coin
                 </button>
               </div>
             </div>
@@ -237,7 +237,7 @@ const RedeemCodes = () => {
           ) : (
             <div>
               <label className="block text-sm font-semibold text-gray-800 mb-2">
-                發放 CRCRCoin 數量
+                發放 coin 數量
               </label>
               <input
                 type="number"

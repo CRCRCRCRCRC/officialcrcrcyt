@@ -125,7 +125,7 @@ const RedeemCode = () => {
             <Coins className="h-4 w-4" />
             <span>
               {isLoggedIn && hydrated
-                ? `餘額：${formatCoin(balance)} CRCRCoin`
+                ? `餘額：${formatCoin(balance)} coin`
                 : '登入後顯示餘額'}
             </span>
           </div>

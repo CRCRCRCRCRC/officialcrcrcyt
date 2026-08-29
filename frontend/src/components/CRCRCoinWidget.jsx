@@ -113,7 +113,7 @@ const CRCRCoinWidget = ({ compact = false }) => {
     setClaiming(true)
 
     // 立即顯示成功訊息（樂觀更新）
-    toast.success('簽到成功！獲得 50 CRCRCoin', {
+    toast.success('簽到成功！獲得 50 coin', {
       duration: 2000,
       icon: '🎉'
     })
@@ -144,9 +144,9 @@ const CRCRCoinWidget = ({ compact = false }) => {
       <Link
         to="/wallet"
         className={pillClass}
-        title="前往 CRCRCoin 錢包"
+        title="前往 coin 錢包"
       >
-        <img src={CoinIcon} className="w-4 h-4" alt="CRCRCoin" />
+        <img src={CoinIcon} className="w-4 h-4" alt="coin" />
         <span className="font-semibold tabular-nums">
           {hydrated ? fmtCoin(balance) : (cachedBalance !== null ? fmtCoin(cachedBalance) : '...')}
         </span>
@@ -160,9 +160,9 @@ const CRCRCoinWidget = ({ compact = false }) => {
             <div className="flex items-center justify-between p-4 pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow">
-                  <img src={CoinIcon} className="w-4 h-4" alt="CRCRCoin" />
+                  <img src={CoinIcon} className="w-4 h-4" alt="coin" />
                 </div>
-                <h3 className="text-sm font-semibold text-gray-900">CRCRCoin 錢包</h3>
+                <h3 className="text-sm font-semibold text-gray-900">coin 錢包</h3>
               </div>
               <button
                 className="text-gray-400 hover:text-gray-700 text-sm"
@@ -181,7 +181,7 @@ const CRCRCoinWidget = ({ compact = false }) => {
                   <div className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-700 via-orange-600 to-amber-600 text-3xl font-black leading-none">
                     {fmtCoin(balance)}
                   </div>
-                  <div className="text-[10px] text-gray-500 mb-1">CRCRCoin</div>
+                  <div className="text-[10px] text-gray-500 mb-1">coin</div>
                 </div>
               </div>
             </div>

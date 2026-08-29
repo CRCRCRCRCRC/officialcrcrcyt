@@ -35,10 +35,10 @@ const PRODUCTS = [
   },
   {
     id: 'crcrcoin-pack-50',
-    name: '50 CRCRCoin',
+    name: '50 coin',
     price: 100,
     description:
-      '來點惡趣味：花 100 CRCRCoin 換 50 CRCRCoin，可一次購買多份數量，純屬娛樂用途。',
+      '來點惡趣味：花 100 coin 換 50 coin，可一次購買多份數量，純屬娛樂用途。',
     allowQuantity: true
   },
   {
@@ -344,12 +344,12 @@ const Shop = () => {
             返回錢包
           </Link>
           <h1 className="text-2xl font-bold text-transparent bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text">
-            CRCRCoin 商店
+            coin 商店
           </h1>
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <Coins className="h-4 w-4" />
             <span>
-              餘額：{hydrated ? `${Number(balance || 0).toLocaleString('zh-TW')} CRCRCoin` : '同步中…'}
+              餘額：{hydrated ? `${Number(balance || 0).toLocaleString('zh-TW')} coin` : '同步中…'}
             </span>
           </div>
         </div>
@@ -413,7 +413,7 @@ const Shop = () => {
                     <div className="mt-6 space-y-4 text-center md:text-left">
                       <div className="text-xl font-extrabold text-transparent bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text md:text-2xl">
                         價格: {product.price.toLocaleString('zh-TW')}
-                        <span className="ml-1 text-base font-semibold text-purple-500 md:text-lg">CRCRCoin</span>
+                        <span className="ml-1 text-base font-semibold text-purple-500 md:text-lg">coin</span>
                       </div>
                       <p className="text-sm text-gray-600 leading-relaxed">{product.description}</p>
                       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -441,7 +441,7 @@ const Shop = () => {
                           hydrated &&
                           typeof balance === 'number' &&
                           balance < product.price && (
-                          <p className="text-xs text-red-500 md:text-right">餘額不足，請先累積更多 CRCRCoin。</p>
+                          <p className="text-xs text-red-500 md:text-right">餘額不足，請先累積更多 coin。</p>
                         )}
                       </div>
                     </div>
@@ -486,7 +486,7 @@ const Shop = () => {
             >
               {selectedProduct?.requirePromotionContent
                 ? '下一步'
-                : `確認購買（${totalCost.toLocaleString('zh-TW')} CRCRCoin）`}
+                : `確認購買（${totalCost.toLocaleString('zh-TW')} coin）`}
             </button>
           )
         ]}
@@ -506,14 +506,14 @@ const Shop = () => {
               className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-200"
               disabled={processing}
             />
-            <p className="text-sm text-gray-600">總價：{totalCost.toLocaleString('zh-TW')} CRCRCoin</p>
+            <p className="text-sm text-gray-600">總價：{totalCost.toLocaleString('zh-TW')} coin</p>
             {insufficientBalance && (
-              <p className="text-xs text-red-500">餘額不足，請調整數量或先賺取更多 CRCRCoin。</p>
+              <p className="text-xs text-red-500">餘額不足，請調整數量或先賺取更多 coin。</p>
             )}
           </div>
         )}
         {!selectedProduct?.allowQuantity && (
-          <p className="text-sm text-gray-600">總價：{totalCost.toLocaleString('zh-TW')} CRCRCoin</p>
+          <p className="text-sm text-gray-600">總價：{totalCost.toLocaleString('zh-TW')} coin</p>
         )}
       </Modal>
 
@@ -542,7 +542,7 @@ const Shop = () => {
               className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={processing || insufficientBalance}
             >
-              {processing ? '處理中…' : `送出申請（${totalCost.toLocaleString('zh-TW')} CRCRCoin）`}
+              {processing ? '處理中…' : `送出申請（${totalCost.toLocaleString('zh-TW')} coin）`}
             </button>
           )
         ]}
@@ -572,7 +572,7 @@ const Shop = () => {
             </p>
           </div>
           {insufficientBalance && (
-            <p className="text-xs text-red-500">餘額不足，請先累積更多 CRCRCoin 再送出申請。</p>
+            <p className="text-xs text-red-500">餘額不足，請先累積更多 coin 再送出申請。</p>
           )}
         </div>
       </Modal>
@@ -604,7 +604,7 @@ const Shop = () => {
             >
               {giftProcessing
                 ? '處理中…'
-                : `確認贈禮（${giftTotalCost.toLocaleString('zh-TW')} CRCRCoin）`}
+                : `確認贈禮（${giftTotalCost.toLocaleString('zh-TW')} coin）`}
             </button>
           )
         ]}
@@ -693,7 +693,7 @@ const Shop = () => {
           )}
 
           <div className="text-sm text-gray-600">
-            總價：{giftTotalCost.toLocaleString('zh-TW')} CRCRCoin
+            總價：{giftTotalCost.toLocaleString('zh-TW')} coin
           </div>
           {giftInsufficientBalance && (
             <p className="text-xs text-red-500">餘額不足，無法贈禮。</p>

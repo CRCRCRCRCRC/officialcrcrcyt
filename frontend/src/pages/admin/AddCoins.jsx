@@ -79,7 +79,7 @@ const AddCoins = () => {
       return
     }
     if (!Number.isFinite(value) || value === 0) {
-      toast.error('請輸入正確的 CRCRCoin 數量（可正負整數）')
+      toast.error('請輸入正確的 coin 數量（可正負整數）')
       return
     }
 
@@ -112,9 +112,9 @@ const AddCoins = () => {
       console.log('✅ grantCoins 響應:', response)
       
       if (value > 0) {
-        toast.success(`已發放 ${value} CRCRCoin 給 ${trimmedEmail}`)
+        toast.success(`已發放 ${value} coin 給 ${trimmedEmail}`)
       } else {
-        toast.success(`已扣除 ${Math.abs(value)} CRCRCoin，目標：${trimmedEmail}`)
+        toast.success(`已扣除 ${Math.abs(value)} coin，目標：${trimmedEmail}`)
       }
       setEmail('')
       setAmount('')
@@ -138,10 +138,10 @@ const AddCoins = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                管理員發放 CRCRCoin
+                管理員發放 coin
               </h1>
               <p className="text-sm text-gray-600">
-                直接依電子郵件搜尋用戶，支援發放或扣除 CRCRCoin 餘額
+                直接依電子郵件搜尋用戶，支援發放或扣除 coin 餘額
               </p>
             </div>
           </div>
@@ -227,7 +227,7 @@ const AddCoins = () => {
 
           <div>
             <label className="block text-sm font-semibold text-gray-800 mb-2">
-              發放數量（CRCRCoin）
+              發放數量（coin）
             </label>
             <input
               type="number"

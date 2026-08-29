@@ -220,7 +220,7 @@ const Notifications = () => {
                       <p className="mt-2 text-gray-800 whitespace-pre-line">{notification.message}</p>
                       <p className="mt-2 text-xs text-gray-500">
                         {isGift ? '禮物' : '商品'}：{productLabel}｜{priceLabel}：
-                        {Number(notification.price || 0).toLocaleString('zh-TW')} CRCRCoin{quantityLabel}
+                        {Number(notification.price || 0).toLocaleString('zh-TW')} coin{quantityLabel}
                       </p>
                     </div>
                   </div>

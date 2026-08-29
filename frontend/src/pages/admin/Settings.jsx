@@ -5,7 +5,7 @@ import { coinAPI } from '../../services/api'
 const Settings = () => {
   const handleResetAllCoins = async () => {
     try {
-      if (!window.confirm('確定要將所有用戶的 CRCRCoin 歸零？此動作無法復原')) return
+      if (!window.confirm('確定要將所有用戶的 coin 歸零？此動作無法復原')) return
       await coinAPI.adminReset()
       toast.success('已觸發重置，使用者下次重新載入即歸零')
     } catch (error) {
@@ -34,12 +34,12 @@ const Settings = () => {
           <div className="max-w-2xl">
             <div className="flex items-start gap-4">
               <span className="grid h-12 w-12 shrink-0 place-items-center border border-red-400/40 bg-red-500/10 text-sm font-bold text-red-100">
-                COIN
+                coin
               </span>
               <div>
-                <h3 className="text-xl font-bold text-white sm:text-2xl">CRCRCoin 管理</h3>
+                <h3 className="text-xl font-bold text-white sm:text-2xl">coin 管理</h3>
                 <p className="mt-2 leading-7 text-slate-300">
-                  觸發後，所有使用者在下次載入網站時將自動清空本地 CRCRCoin 錢包（localStorage）。
+                  觸發後，所有使用者在下次載入網站時將自動清空本地 coin 錢包（localStorage）。
                 </p>
               </div>
             </div>

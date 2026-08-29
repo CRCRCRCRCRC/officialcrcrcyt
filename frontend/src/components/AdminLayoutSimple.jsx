@@ -54,7 +54,7 @@ const AdminLayoutSimple = () => {
       icon: Megaphone
     },
     {
-      name: 'CRCRCoin 發放',
+      name: 'coin 發放',
       href: '/admin/add-coins',
       icon: Coins
     },

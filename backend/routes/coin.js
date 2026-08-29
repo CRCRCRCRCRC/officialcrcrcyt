@@ -99,7 +99,7 @@ const formatPromotionRefundAmount = (price) => {
 };
 const buildPromotionRejectedMessage = (price, label = '購買') => {
   const formatted = formatPromotionRefundAmount(price);
-  return `您${label}的宣傳服務已被管理員回絕，可能是因為內容不洽當，已將${formatted} CRCRCoin退還給您，若還想宣傳，請嘗試修改內容再次提交`;
+  return `您${label}的宣傳服務已被管理員回絕，可能是因為內容不洽當，已將 ${formatted} coin 退還給您，若還想宣傳，請嘗試修改內容再次提交`;
 };
 const isEnabledFlag = (value) => value === true || value === 'true' || value === 1 || value === '1';
 
@@ -127,9 +127,9 @@ const SHOP_PRODUCTS = [
   },
   {
     id: 'crcrcoin-pack-50',
-    name: '50 CRCRCoin',
+    name: '50 coin',
     price: 100,
-    description: '花 100 CRCRCoin 換來 50 CRCRCoin，只是用來打發時間的惡趣味商品，可輸入購買數量。',
+    description: '花 100 coin 換來 50 coin，只是用來打發時間的惡趣味商品，可輸入購買數量。',
     allowQuantity: true,
     rewardCoins: 50
   },
@@ -252,7 +252,7 @@ const PASS_TASKS = [
 
     title: '逛逛商城',
 
-    description: '到 CRCRCoin 商店看看今日有什麼驚喜。每天可完成一次。',
+    description: '到 coin 商店看看今日有什麼驚喜。每天可完成一次。',
 
     xp: 80,
 
@@ -377,7 +377,7 @@ const createPassReward = (level) => {
 
       coins: freeCoins,
 
-      description: `獲得 ${freeCoins} CRCRCoin`
+      description: `獲得 ${freeCoins} coin`
 
     },
 
@@ -385,7 +385,7 @@ const createPassReward = (level) => {
 
       coins: premiumCoins,
 
-      description: `額外獲得 ${premiumCoins} CRCRCoin`
+      description: `額外獲得 ${premiumCoins} coin`
 
     }
 
@@ -893,7 +893,7 @@ router.post('/redeem-codes', authenticateToken, requireAdmin, async (req, res) =
     } else if (rewardType === 'coins') {
       const coinAmount = Math.floor(Number(req.body?.coinAmount));
       if (!Number.isFinite(coinAmount) || coinAmount <= 0) {
-        return res.status(400).json({ error: '請輸入正確的 CRCRCoin 數量' });
+        return res.status(400).json({ error: '請輸入正確的 coin 數量' });
       }
 
       payload = {
@@ -997,7 +997,7 @@ router.post('/redeem', authenticateToken, async (req, res) => {
         success: true,
         reward: { type: 'coins', amount },
         wallet: mapWallet(addResult.wallet),
-        message: `已兌換 ${amount} CRCRCoin`
+        message: `已兌換 ${amount} coin`
       });
     }
 
@@ -1127,7 +1127,7 @@ router.post('/redeem', authenticateToken, async (req, res) => {
           success: true,
           reward: { type: 'coins', amount: rewardAmount },
           wallet: mapWallet(addResult.wallet),
-          message: `已兌換 ${rewardAmount} CRCRCoin`
+          message: `已兌換 ${rewardAmount} coin`
         });
       }
 
@@ -2440,7 +2440,7 @@ router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
 
         error: '找不到該用戶，請確認電子郵件是否正確',
 
-        hint: '該用戶需要先在公開網站登入一次才能接收 CRCRCoin'
+        hint: '該用戶需要先在公開網站登入一次才能接收 coin'
 
       });
 
@@ -2480,7 +2480,7 @@ router.post('/grant', authenticateToken, requireAdmin, async (req, res) => {
 
       success: true,
 
-      message: `已${parsedAmount > 0 ? '發放' : '扣除'} ${Math.abs(parsedAmount)} CRCRCoin`,
+      message: `已${parsedAmount > 0 ? '發放' : '扣除'} ${Math.abs(parsedAmount)} coin`,
 
       target: {
 

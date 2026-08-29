@@ -92,7 +92,7 @@ const Leaderboard = () => {
             返回錢包
           </Link>
           <h1 className="text-2xl font-bold text-transparent bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text">
-            CRCRCoin 排行榜
+            coin 排行榜
           </h1>
           <div className="w-24"></div> {/* 用於平衡布局 */}
         </div>
@@ -112,7 +112,7 @@ const Leaderboard = () => {
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">富豪榜</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              看看誰是 CRCRCoin 的最大持有者！
+              看看誰是 coin 的最大持有者！
             </p>
           </div>
 
@@ -175,7 +175,7 @@ const Leaderboard = () => {
                     <span className="font-bold text-lg text-gray-900">
                       {Number(user.balance || 0).toLocaleString('zh-TW')}
                     </span>
-                    <span className="text-gray-500 ml-1">CRCRCoin</span>
+                    <span className="text-gray-500 ml-1">coin</span>
                   </div>
                 </motion.div>
               ))}
@@ -185,7 +185,7 @@ const Leaderboard = () => {
           <div className="mt-12 text-center">
             <div className="inline-flex items-center bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold">
               <Coins className="w-5 h-5 mr-2" />
-              繼續努力賺取更多 CRCRCoin 吧！
+              繼續努力賺取更多 coin 吧！
             </div>
           </div>
         </motion.div>

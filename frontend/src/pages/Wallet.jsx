@@ -89,7 +89,7 @@ const Wallet = () => {
     try {
       const res = await claimDaily()
       if (res?.success) {
-        toast.success(`簽到成功！獲得 ${res.amount} CRCRCoin`)
+        toast.success(`簽到成功！獲得 ${res.amount} coin`)
       } else {
         const msg = normalizeMessage(res?.error, '尚未到下次簽到時間')
         toast.error(msg)
@@ -107,7 +107,7 @@ const Wallet = () => {
             <Coins className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">請先登入</h2>
-          <p className="text-gray-600 mb-6">登入後即可查看您的 CRCRCoin 錢包</p>
+          <p className="text-gray-600 mb-6">登入後即可查看您的 coin 錢包</p>
           <Link
             to="/"
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
@@ -134,7 +134,7 @@ const Wallet = () => {
               返回首頁
             </Link>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-              CRCRCoin 錢包
+              coin 錢包
             </h1>
             <div className="w-20"></div> {/* Spacer for centering */}
           </div>
@@ -154,18 +154,18 @@ const Wallet = () => {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg">
-                    <img src={CoinIcon} className="w-6 h-6" alt="CRCRCoin" />
+                    <img src={CoinIcon} className="w-6 h-6" alt="coin" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">目前餘額</h2>
-                    <p className="text-sm text-gray-600">CRCRCoin 錢包</p>
+                    <p className="text-sm text-gray-600">coin 錢包</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-700 via-orange-600 to-amber-600">
                     {hydrated ? fmtCoin(balance) : '...'}
                   </div>
-                  <div className="text-sm text-gray-500">CRCRCoin</div>
+                  <div className="text-sm text-gray-500">coin</div>
                 </div>
               </div>
 
@@ -267,7 +267,7 @@ const Wallet = () => {
               <div className="text-center py-8">
                 <WalletIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">尚無交易記錄</p>
-                <p className="text-sm text-gray-400 mt-1">開始使用 CRCRCoin 來記錄您的交易</p>
+                <p className="text-sm text-gray-400 mt-1">開始使用 coin 來記錄您的交易</p>
               </div>
             ) : (
               <div className="space-y-3 max-h-96 overflow-auto">

@@ -164,7 +164,7 @@ const DiscordApplications = () => {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">{order.product_name}</td>
                         <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap">
-                          {Number(order.price || 0).toLocaleString('zh-TW')} CRCRCoin
+                          {Number(order.price || 0).toLocaleString('zh-TW')} coin
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-700 whitespace-nowrap font-mono">
                           {order.discord_id || '—'}
