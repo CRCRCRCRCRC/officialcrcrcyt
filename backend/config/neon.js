@@ -47,7 +47,7 @@ class NeonDatabase {
     this._initPromise = null;
 
     this.pool = createPool({ connectionString });
-    this.initializeTables();
+    this._tablesPromise = this.initializeTables();
   }
 
   generatePublicId(length = 10) {
@@ -1558,7 +1558,7 @@ class NeonDatabase {
     return `SELECT c.*,
       u.display_name AS user_display_name,
       u.username AS user_username,
-      u.email AS user_email,
+      u.username AS user_email,
       u.public_id AS user_public_id,
       u.avatar_url AS user_avatar_url,
       (SELECT m.body FROM contact_chat_messages m
@@ -1611,7 +1611,7 @@ class NeonDatabase {
     if (search) {
       values.push(`%${search}%`);
       where = `WHERE (
-        u.display_name ILIKE $1 OR u.username ILIKE $1 OR u.email ILIKE $1 OR u.public_id ILIKE $1
+        u.display_name ILIKE $1 OR u.username ILIKE $1 OR u.public_id ILIKE $1
       )`;
     }
     values.push(Math.max(1, Math.min(300, Number(options.limit) || 150)));
@@ -2053,6 +2053,9 @@ class NeonDatabase {
 
     this._initPromise = (async () => {
       try {
+        // 等待資料表初始化完成，避免冷啟動時路由先查詢到尚未建立的資料表。
+        await this._tablesPromise;
+
       // 添加 slug 欄位並修改約束(如果不存在)
       try {
         console.log('🔄 檢查並添加 slug 欄位...');
