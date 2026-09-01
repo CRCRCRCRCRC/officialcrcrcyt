@@ -45,9 +45,9 @@ class NeonDatabase {
     // 初始化狀態旗標，避免重複初始化造成阻塞
     this._initDone = false;
     this._initPromise = null;
+    this._contactTablesPromise = null;
 
     this.pool = createPool({ connectionString });
-    this._tablesPromise = this.initializeTables();
   }
 
   generatePublicId(length = 10) {
@@ -112,6 +112,70 @@ class NeonDatabase {
       claimedPremium: this.parsePassList(state.claimedPremium),
       xp: Number.isFinite(rawXp) ? Math.max(0, Math.floor(rawXp)) : 0
     };
+  }
+
+  async ensureContactTables() {
+    if (this._contactTablesPromise) {
+      return this._contactTablesPromise;
+    }
+
+    this._contactTablesPromise = (async () => {
+      try {
+        await this.pool.query(`
+          SELECT 1
+          FROM contact_conversations c
+          LEFT JOIN contact_chat_messages m ON false
+          LIMIT 1
+        `);
+        return true;
+      } catch (error) {
+        // 42P01：資料表不存在；其餘資料庫錯誤直接交由上層處理。
+        if (error?.code !== '42P01') throw error;
+      }
+
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS contact_conversations (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          status VARCHAR(20) NOT NULL DEFAULT 'open',
+          admin_last_read_at TIMESTAMP,
+          user_last_read_at TIMESTAMP,
+          last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await this.pool.query(`
+        CREATE TABLE IF NOT EXISTS contact_chat_messages (
+          id SERIAL PRIMARY KEY,
+          conversation_id INTEGER NOT NULL REFERENCES contact_conversations(id) ON DELETE CASCADE,
+          sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+          sender_role VARCHAR(20) NOT NULL,
+          body TEXT NOT NULL,
+          user_notified_at TIMESTAMP,
+          user_dismissed_at TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      await Promise.all([
+        this.pool.query(`
+          CREATE INDEX IF NOT EXISTS idx_contact_conversations_last_message
+          ON contact_conversations(last_message_at DESC)
+        `),
+        this.pool.query(`
+          CREATE INDEX IF NOT EXISTS idx_contact_chat_messages_conversation
+          ON contact_chat_messages(conversation_id, created_at)
+        `)
+      ]);
+      return true;
+    })();
+
+    try {
+      return await this._contactTablesPromise;
+    } catch (error) {
+      this._contactTablesPromise = null;
+      throw error;
+    }
   }
 
   async initializeTables() {
@@ -527,36 +591,7 @@ class NeonDatabase {
       await this.pool.query(`
         CREATE INDEX IF NOT EXISTS idx_redeem_code_uses_user_id ON redeem_code_uses(user_id)
       `);
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS contact_conversations (
-          id SERIAL PRIMARY KEY,
-          user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          status VARCHAR(20) NOT NULL DEFAULT 'open',
-          admin_last_read_at TIMESTAMP,
-          user_last_read_at TIMESTAMP,
-          last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-      await this.pool.query(`
-        CREATE TABLE IF NOT EXISTS contact_chat_messages (
-          id SERIAL PRIMARY KEY,
-          conversation_id INTEGER NOT NULL REFERENCES contact_conversations(id) ON DELETE CASCADE,
-          sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-          sender_role VARCHAR(20) NOT NULL,
-          body TEXT NOT NULL,
-          user_notified_at TIMESTAMP,
-          user_dismissed_at TIMESTAMP,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-      await this.pool.query(`
-        CREATE INDEX IF NOT EXISTS idx_contact_conversations_last_message ON contact_conversations(last_message_at DESC)
-      `);
-      await this.pool.query(`
-        CREATE INDEX IF NOT EXISTS idx_contact_chat_messages_conversation ON contact_chat_messages(conversation_id, created_at)
-      `);
+      await this.ensureContactTables();
       await this.pool.query(`
         ALTER TABLE coin_orders
         ADD COLUMN IF NOT EXISTS user_email VARCHAR(255)
@@ -1576,6 +1611,7 @@ class NeonDatabase {
   }
 
   async getContactConversationForUser(userId) {
+    await this.ensureContactTables();
     const result = await this.pool.query(
       `${this.contactConversationSelect()} WHERE c.user_id = $1 LIMIT 1`,
       [userId]
@@ -1584,6 +1620,7 @@ class NeonDatabase {
   }
 
   async getOrCreateContactConversation(userId) {
+    await this.ensureContactTables();
     const result = await this.pool.query(
       `INSERT INTO contact_conversations (user_id)
        VALUES ($1)
@@ -1597,6 +1634,7 @@ class NeonDatabase {
   async getContactConversationById(conversationId) {
     const id = Number(conversationId);
     if (!Number.isInteger(id) || id <= 0) return null;
+    await this.ensureContactTables();
     const result = await this.pool.query(
       `${this.contactConversationSelect()} WHERE c.id = $1 LIMIT 1`,
       [id]
@@ -1605,6 +1643,7 @@ class NeonDatabase {
   }
 
   async listContactConversations(options = {}) {
+    await this.ensureContactTables();
     const search = String(options.search || '').trim();
     const values = [];
     let where = '';
@@ -1628,6 +1667,7 @@ class NeonDatabase {
   async getContactChatMessages(conversationId, limit = 200) {
     const id = Number(conversationId);
     if (!Number.isInteger(id) || id <= 0) return [];
+    await this.ensureContactTables();
     const safeLimit = Math.max(1, Math.min(500, Number(limit) || 200));
     const result = await this.pool.query(
       `SELECT * FROM (
@@ -1649,6 +1689,7 @@ class NeonDatabase {
     const conversationId = Number(payload.conversationId);
     const senderRole = payload.senderRole === 'admin' ? 'admin' : 'user';
     if (!Number.isInteger(conversationId) || conversationId <= 0) return null;
+    await this.ensureContactTables();
 
     const client = await this.pool.connect();
     try {
@@ -1698,6 +1739,7 @@ class NeonDatabase {
   async markContactConversationRead(conversationId, readerRole) {
     const id = Number(conversationId);
     if (!Number.isInteger(id) || id <= 0) return null;
+    await this.ensureContactTables();
     const column = readerRole === 'admin' ? 'admin_last_read_at' : 'user_last_read_at';
     await this.pool.query(
       `UPDATE contact_conversations SET ${column} = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
@@ -1717,6 +1759,7 @@ class NeonDatabase {
   async setContactConversationStatus(conversationId, status) {
     const id = Number(conversationId);
     if (!Number.isInteger(id) || id <= 0) return null;
+    await this.ensureContactTables();
     await this.pool.query(
       `UPDATE contact_conversations SET status = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
       [id, status]
@@ -1725,6 +1768,7 @@ class NeonDatabase {
   }
 
   async getContactNotifications(userId) {
+    await this.ensureContactTables();
     const result = await this.pool.query(
       `SELECT m.* FROM contact_chat_messages m
        INNER JOIN contact_conversations c ON c.id = m.conversation_id
@@ -1745,6 +1789,7 @@ class NeonDatabase {
   }
 
   async listContactNotifications(userId) {
+    await this.ensureContactTables();
     const result = await this.pool.query(
       `SELECT m.* FROM contact_chat_messages m
        INNER JOIN contact_conversations c ON c.id = m.conversation_id
@@ -1766,6 +1811,7 @@ class NeonDatabase {
   async dismissContactNotification(messageId, userId) {
     const id = Number(messageId);
     if (!Number.isInteger(id) || id <= 0) return null;
+    await this.ensureContactTables();
     const result = await this.pool.query(
       `UPDATE contact_chat_messages m
        SET user_dismissed_at = CURRENT_TIMESTAMP
@@ -2053,8 +2099,7 @@ class NeonDatabase {
 
     this._initPromise = (async () => {
       try {
-        // 等待資料表初始化完成，避免冷啟動時路由先查詢到尚未建立的資料表。
-        await this._tablesPromise;
+        await this.initializeTables();
 
       // 添加 slug 欄位並修改約束(如果不存在)
       try {

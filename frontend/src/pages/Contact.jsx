@@ -29,9 +29,11 @@ const Contact = () => {
   const [refreshing, setRefreshing] = useState(false)
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef(null)
+  const loadInFlightRef = useRef(false)
 
   const loadConversation = useCallback(async ({ quiet = false } = {}) => {
-    if (!isLoggedIn) return
+    if (!isLoggedIn || loadInFlightRef.current) return
+    loadInFlightRef.current = true
     if (quiet) setRefreshing(true)
     else setLoading(true)
     try {
@@ -41,6 +43,7 @@ const Contact = () => {
     } catch (error) {
       if (!quiet) toast.error(error.response?.data?.error || '無法載入私訊')
     } finally {
+      loadInFlightRef.current = false
       setLoading(false)
       setRefreshing(false)
     }

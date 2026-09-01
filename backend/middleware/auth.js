@@ -46,10 +46,7 @@ const authenticateToken = async (req, res, next) => {
 
     const userId = decoded.userId ?? decoded.user_id ?? decoded.id;
 
-    // 確保資料庫已初始化
-    await database.initializeData();
-
-    // 讀取使用者
+    // 權杖只會對應既有使用者，直接查詢即可；避免每次請求都重跑全站資料初始化。
     const user = await database.getUserById(userId);
 
     if (!user) {

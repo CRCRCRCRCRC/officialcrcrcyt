@@ -328,16 +328,16 @@ export const announcementAPI = {
 
 export const contactAPI = {
   getConversation: () =>
-    api.get('/contact/conversation'),
+    api.get('/contact/conversation', { timeout: 15000 }),
 
   sendMessage: (message) =>
     api.post('/contact/messages', { message }),
 
   getConversations: (params = {}) =>
-    api.get('/contact/admin/conversations', { params }),
+    api.get('/contact/admin/conversations', { params, timeout: 15000 }),
 
   getAdminConversation: (conversationId) =>
-    api.get(`/contact/admin/conversations/${encodeURIComponent(conversationId)}`),
+    api.get(`/contact/admin/conversations/${encodeURIComponent(conversationId)}`, { timeout: 15000 }),
 
   sendAdminMessage: (conversationId, message) =>
     api.post(`/contact/admin/conversations/${encodeURIComponent(conversationId)}/messages`, { message }),

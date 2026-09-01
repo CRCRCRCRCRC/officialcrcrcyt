@@ -47,8 +47,12 @@ const AdminContactMessages = () => {
   const [sending, setSending] = useState(false)
   const [changingStatus, setChangingStatus] = useState(false)
   const messagesEndRef = useRef(null)
+  const conversationsLoadInFlightRef = useRef(false)
+  const detailRequestRef = useRef(null)
 
   const loadConversations = useCallback(async ({ quiet = false } = {}) => {
+    if (conversationsLoadInFlightRef.current) return
+    conversationsLoadInFlightRef.current = true
     if (quiet) setRefreshing(true)
     else setLoading(true)
     try {
@@ -57,6 +61,7 @@ const AdminContactMessages = () => {
     } catch (error) {
       if (!quiet) toast.error(error.response?.data?.error || '無法載入站內私訊')
     } finally {
+      conversationsLoadInFlightRef.current = false
       setLoading(false)
       setRefreshing(false)
     }
@@ -64,10 +69,14 @@ const AdminContactMessages = () => {
 
   const openConversation = useCallback(async (conversationId, { quiet = false } = {}) => {
     if (!conversationId) return
+    if (quiet && detailRequestRef.current) return
+    const requestKey = Symbol('contact-detail-request')
+    detailRequestRef.current = requestKey
     setSelectedId(conversationId)
     if (!quiet) setDetailLoading(true)
     try {
       const response = await contactAPI.getAdminConversation(conversationId)
+      if (detailRequestRef.current !== requestKey) return
       setConversation(response.data?.conversation || null)
       setMessages(response.data?.messages || [])
       setConversations((current) => current.map((item) => (
@@ -76,9 +85,14 @@ const AdminContactMessages = () => {
           : item
       )))
     } catch (error) {
-      if (!quiet) toast.error(error.response?.data?.error || '無法開啟對話')
+      if (detailRequestRef.current === requestKey && !quiet) {
+        toast.error(error.response?.data?.error || '無法開啟對話')
+      }
     } finally {
-      setDetailLoading(false)
+      if (detailRequestRef.current === requestKey) {
+        detailRequestRef.current = null
+        setDetailLoading(false)
+      }
     }
   }, [])
 
